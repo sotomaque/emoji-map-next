@@ -1,0 +1,29 @@
+# Ignore artifacts:
+node_modules
+.next
+out
+public
+build
+next.config.mjs
+package.json
+package-lock.json
+pnpm-lock
+prettier.config.js
+tailwind.config.js
+pnpm-lock.yaml
+
+# git workflows
+.github/workflows/*
+
+# test config
+setupTests.js
+vite.config.js
+
+# MD files
+*.md
+
+# Ignore logs:
+*.log
+
+# Ignore env files:
+.env*
