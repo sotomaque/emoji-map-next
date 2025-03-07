@@ -1,4 +1,4 @@
-import type { NavItem } from '@/types/nav-items';
+import type { NavItem } from '@/src/types/nav-items';
 
 export const navItems: NavItem[] = [
   {
@@ -6,7 +6,6 @@ export const navItems: NavItem[] = [
     href: '/',
     target: false,
   },
-  // Docs
   {
     label: 'Docs',
     href: '/api-docs',
