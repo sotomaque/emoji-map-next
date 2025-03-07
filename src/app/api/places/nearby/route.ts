@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from 'next/server';
+import type { Place, GooglePlacesResponse, PlaceResult } from '@/types/google-places';
+import { env } from '@/env';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const location = searchParams.get('location');
+    const radius = searchParams.get('radius') || '5000';
+    const type = searchParams.get('type');
+    const keyword = searchParams.get('keyword');
+    const openNow = searchParams.get('openNow') === 'true';
+    const category = searchParams.get('category') || '';
+
+    // Validate required parameters
+    if (!location) {
+      return NextResponse.json(
+        { error: 'Missing required parameter: location' },
+        { status: 400 }
+      );
+    }
+
+    if (!type) {
+      return NextResponse.json(
+        { error: 'Missing required parameter: type' },
+        { status: 400 }
+      );
+    }
+
+    // Build the Google Places API URL using type-safe environment variables
+    const apiKey = env.GOOGLE_PLACES_API_KEY;
+    const baseUrl = env.GOOGLE_PLACES_URL;
+    
+    const params = new URLSearchParams({
+      location,
+      radius,
+      type,
+      key: apiKey,
+    });
+
+    // Add optional parameters if provided
+    if (keyword) params.append('keyword', keyword);
+    if (openNow) params.append('opennow', 'true');
+
+    // Make the request to Google Places API
+    const response = await fetch(`${baseUrl}?${params.toString()}`);
+    const data: GooglePlacesResponse = await response.json();
+
+    // Check for API errors
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      return NextResponse.json(
+        { error: data.error_message || `API Error: ${data.status}` },
+        { status: 500 }
+      );
+    }
+
+    // Transform the results to match our Place model
+    const places: Place[] = data.results.map((result: PlaceResult) => ({
+      placeId: result.place_id,
+      name: result.name,
+      coordinate: {
+        latitude: result.geometry.location.lat,
+        longitude: result.geometry.location.lng,
+      },
+      category: category, // Use the provided category
+      description: result.vicinity,
+      priceLevel: result.price_level,
+      openNow: result.opening_hours?.open_now,
+      rating: result.rating,
+    }));
+
+    return NextResponse.json({ places });
+  } catch (error) {
+    console.error('Error fetching nearby places:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch nearby places' },
+      { status: 500 }
+    );
+  }
+} 

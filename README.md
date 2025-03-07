@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Emoji Map Web App
+
+A Next.js web application that displays places on a map using emoji markers, similar to the iOS app. This web app uses the Google Places API to fetch location data and display it on an interactive map.
+
+## Features
+
+- 🗺️ Interactive Google Maps integration
+- 🍔 Category-based place search with emoji markers
+- 🔍 Search for places near your current location
+- ⭐ View place details including ratings, photos, and reviews
+- 🌙 Dark mode support
+- 📱 Responsive design for mobile and desktop
+
+## Tech Stack
+
+- [Next.js 15](https://nextjs.org/) - React framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Google Maps API](https://developers.google.com/maps) - Maps and location services
+- [Google Places API](https://developers.google.com/maps/documentation/places/web-service) - Place data
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [@t3-oss/env-nextjs](https://github.com/t3-oss/env-nextjs) - Type-safe environment variables
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- Google Maps API key with Places API enabled
+
+### Environment Variables
+
+Create a `.env.local` file in the root of the web directory with the following variables:
+
+```
+# Google Places API Key (for client-side use)
+NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=your_api_key_here
+
+# Google Places API Key (for server-side use)
+GOOGLE_PLACES_API_KEY=your_api_key_here
+
+# Google Places API URLs
+GOOGLE_PLACES_URL=https://maps.googleapis.com/maps/api/place/nearbysearch/json
+GOOGLE_PLACES_DETAILS_URL=https://maps.googleapis.com/maps/api/place/details/json
+GOOGLE_PLACES_PHOTO_URL=https://maps.googleapis.com/maps/api/place/photo
+```
+
+> **Note:** The application uses type-safe environment variables with `@t3-oss/env-nextjs`. If any required environment variables are missing, the build will fail with a clear error message.
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Run the development server
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### `/api/places/nearby`
 
-## Learn More
+Fetches nearby places based on location and category.
 
-To learn more about Next.js, take a look at the following resources:
+**Parameters:**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `location` (required): Latitude and longitude in format "lat,lng"
+- `radius` (optional): Search radius in meters (default: 5000)
+- `type` (required): Google Places type (e.g., "restaurant", "cafe")
+- `keyword` (optional): Specific keyword to search for
+- `category` (optional): Category name to assign to results
+- `openNow` (optional): Set to "true" to only show places that are currently open
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Example:**
 
-## Deploy on Vercel
+```
+/api/places/nearby?location=37.7749,-122.4194&radius=5000&type=restaurant&keyword=burger&category=burger&openNow=true
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### `/api/places/details`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Fetches details for a specific place.
+
+**Parameters:**
+
+- `placeId` (required): The Google Places ID of the place
+
+**Example:**
+
+```
+/api/places/details?placeId=ChIJN1t_tDeuEmsRUsoyG83frY4
+```
+
+## Project Structure
+
+```
+web/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── places/
+│   │   │   │   ├── nearby/
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── details/
+│   │   │   │       └── route.ts
+│   │   ├── components/
+│   │   │   └── PlacesSearch.tsx
+│   │   ├── utils/
+│   │   │   └── googlePlacesService.ts
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── types/
+│   │   └── google-places.ts
+│   └── env.ts
+├── public/
+├── .env.local
+├── next.config.ts
+└── package.json
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- Emoji Map iOS app for the original concept
+- Google Maps and Places API for location data
+- Next.js team for the amazing framework
