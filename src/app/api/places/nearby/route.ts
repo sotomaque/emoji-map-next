@@ -1,7 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Place, GooglePlacesResponse, PlaceResult } from '@/types/google-places';
-import { env } from '@/env';
+import type {
+  Place,
+  GooglePlacesResponse,
+  PlaceResult,
+} from '@/src/types/google-places';
+import { env } from '@/src/env';
 
+/**
+ * @swagger
+ * /api/places/nearby:
+ *   get:
+ *     summary: Get nearby places
+ *     description: Fetches places near a specified location based on type and category
+ *     tags:
+ *       - places
+ *     parameters:
+ *       - name: location
+ *         in: query
+ *         description: Latitude and longitude in format "lat,lng"
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "37.7749,-122.4194"
+ *       - name: radius
+ *         in: query
+ *         description: Search radius in meters
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 5000
+ *           example: 5000
+ *       - name: type
+ *         in: query
+ *         description: Google Places type (e.g., "restaurant", "cafe")
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "restaurant"
+ *       - name: keyword
+ *         in: query
+ *         description: Specific keyword to search for
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "burger"
+ *       - name: category
+ *         in: query
+ *         description: Category name to assign to results
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "burger"
+ *       - name: openNow
+ *         in: query
+ *         description: Set to "true" to only show places that are currently open
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: ["true", "false"]
+ *           example: "true"
+ *     responses:
+ *       200:
+ *         description: List of places matching the criteria
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 places:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Place'
+ *       400:
+ *         description: Bad request - missing required parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
@@ -31,7 +113,7 @@ export async function GET(request: NextRequest) {
     // Build the Google Places API URL using type-safe environment variables
     const apiKey = env.GOOGLE_PLACES_API_KEY;
     const baseUrl = env.GOOGLE_PLACES_URL;
-    
+
     const params = new URLSearchParams({
       location,
       radius,
@@ -78,4 +160,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

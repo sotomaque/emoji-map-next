@@ -1,5 +1,5 @@
+import { env } from '@/src/env';
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '@/env';
 
 // Define the response types based on the iOS app models
 interface Photo {
@@ -32,6 +32,45 @@ interface PlaceDetails {
   }[];
 }
 
+/**
+ * @swagger
+ * /api/places/details:
+ *   get:
+ *     summary: Get place details
+ *     description: Fetches details for a specific place including photos and reviews
+ *     tags:
+ *       - places
+ *     parameters:
+ *       - name: placeId
+ *         in: query
+ *         description: The Google Places ID of the place
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "ChIJN1t_tDeuEmsRUsoyG83frY4"
+ *     responses:
+ *       200:
+ *         description: Details of the place
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 placeDetails:
+ *                   $ref: '#/components/schemas/PlaceDetails'
+ *       400:
+ *         description: Bad request - missing required parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
@@ -49,7 +88,7 @@ export async function GET(request: NextRequest) {
     // Build the Google Places API URL using type-safe environment variables
     const apiKey = env.GOOGLE_PLACES_API_KEY;
     const baseUrl = env.GOOGLE_PLACES_DETAILS_URL;
-    
+
     const params = new URLSearchParams({
       place_id: placeId,
       fields: 'name,photos,reviews',
@@ -69,21 +108,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Create photo URLs
-    const photos = data.result.photos?.map(photo => {
-      const photoParams = new URLSearchParams({
-        maxwidth: '400',
-        photoreference: photo.photo_reference,
-        key: apiKey,
-      });
-      return `${env.GOOGLE_PLACES_PHOTO_URL}?${photoParams.toString()}`;
-    }) || [];
+    const photos =
+      data.result.photos?.map((photo) => {
+        const photoParams = new URLSearchParams({
+          maxwidth: '400',
+          photoreference: photo.photo_reference,
+          key: apiKey,
+        });
+        return `${env.GOOGLE_PLACES_PHOTO_URL}?${photoParams.toString()}`;
+      }) || [];
 
     // Transform the reviews
-    const reviews = data.result.reviews?.map(review => ({
-      author: review.author_name,
-      text: review.text,
-      rating: review.rating,
-    })) || [];
+    const reviews =
+      data.result.reviews?.map((review) => ({
+        author: review.author_name,
+        text: review.text,
+        rating: review.rating,
+      })) || [];
 
     // Create the place details object
     const placeDetails: PlaceDetails = {

@@ -10,6 +10,7 @@ A Next.js web application that displays places on a map using emoji markers, sim
 - ⭐ View place details including ratings, photos, and reviews
 - 🌙 Dark mode support
 - 📱 Responsive design for mobile and desktop
+- 📚 Interactive API documentation with Swagger UI
 
 ## Tech Stack
 
@@ -19,6 +20,8 @@ A Next.js web application that displays places on a map using emoji markers, sim
 - [Google Places API](https://developers.google.com/maps/documentation/places/web-service) - Place data
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [@t3-oss/env-nextjs](https://github.com/t3-oss/env-nextjs) - Type-safe environment variables
+- [next-swagger-doc](https://github.com/atomicpages/next-swagger-doc) - OpenAPI documentation
+- [Swagger UI](https://swagger.io/tools/swagger-ui/) - Interactive API documentation
 
 ## Getting Started
 
@@ -57,6 +60,30 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## API Documentation
+
+The API is documented using OpenAPI (Swagger) specification. You can access the interactive API documentation at:
+
+```
+http://localhost:3000/api-docs
+```
+
+This documentation provides:
+
+- Detailed information about all available endpoints
+- Request parameters and their types
+- Response schemas
+- Example requests and responses
+- Interactive "Try it out" functionality to test the API directly from the browser
+
+The API specification is also available in JSON format at:
+
+```
+http://localhost:3000/api/docs
+```
+
+This can be imported into API client tools like Postman or used by other applications to generate client code.
 
 ## API Routes
 
@@ -100,11 +127,15 @@ web/
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   │   ├── docs/
+│   │   │   │   └── route.ts
 │   │   │   ├── places/
 │   │   │   │   ├── nearby/
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── details/
 │   │   │   │       └── route.ts
+│   │   ├── api-docs/
+│   │   │   └── page.tsx
 │   │   ├── components/
 │   │   │   └── PlacesSearch.tsx
 │   │   ├── utils/
@@ -112,8 +143,11 @@ web/
 │   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   └── page.tsx
+│   ├── lib/
+│   │   └── swagger.ts
 │   ├── types/
-│   │   └── google-places.ts
+│   │   ├── google-places.ts
+│   │   └── swagger-ui-react.d.ts
 │   └── env.ts
 ├── public/
 ├── .env.local
