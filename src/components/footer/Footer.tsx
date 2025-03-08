@@ -12,6 +12,12 @@ export function Footer() {
           </div>
           <div className="flex space-x-6">
             <Link
+              href="/about"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              About
+            </Link>
+            <Link
               href="/privacy-policy"
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
             >
