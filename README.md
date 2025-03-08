@@ -1,5 +1,10 @@
 # Emoji Map Web App
 
+<div align="center">
+  <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin-bottom: 20px;" />
+  <h3>Find places on a map with emoji markers</h3>
+</div>
+
 A Next.js web application that displays places on a map using emoji markers, similar to the iOS app. This web app uses the Google Places API to fetch location data and display it on an interactive map.
 
 ## Features
@@ -22,6 +27,8 @@ A Next.js web application that displays places on a map using emoji markers, sim
 - [@t3-oss/env-nextjs](https://github.com/t3-oss/env-nextjs) - Type-safe environment variables
 - [next-swagger-doc](https://github.com/atomicpages/next-swagger-doc) - OpenAPI documentation
 - [Swagger UI](https://swagger.io/tools/swagger-ui/) - Interactive API documentation
+- [Vitest](https://vitest.dev/) - Testing framework
+- [MSW](https://mswjs.io/) - API mocking for tests
 
 ## Getting Started
 
@@ -60,6 +67,28 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Available Scripts
+
+```bash
+# Development
+pnpm dev           # Start the development server
+pnpm build         # Build the application for production
+pnpm start         # Start the production server
+
+# Code Quality
+pnpm lint          # Run ESLint to check for issues
+pnpm lint:fix      # Run ESLint and automatically fix issues
+pnpm format        # Run Prettier to format all files
+pnpm format:check  # Check if files are properly formatted
+pnpm precheck      # Run format, lint:fix, and type checking
+
+# Testing
+pnpm test          # Run all tests
+pnpm test:watch    # Run tests in watch mode
+pnpm test:ui       # Run tests with UI
+pnpm test:coverage # Run tests with coverage report
+```
 
 ## API Documentation
 
@@ -129,6 +158,8 @@ web/
 │   │   ├── api/
 │   │   │   ├── docs/
 │   │   │   │   └── route.ts
+│   │   │   ├── health/
+│   │   │   │   └── route.ts
 │   │   │   ├── places/
 │   │   │   │   ├── nearby/
 │   │   │   │   │   └── route.ts
@@ -136,24 +167,82 @@ web/
 │   │   │   │       └── route.ts
 │   │   ├── api-docs/
 │   │   │   └── page.tsx
-│   │   ├── components/
-│   │   │   └── PlacesSearch.tsx
-│   │   ├── utils/
-│   │   │   └── googlePlacesService.ts
-│   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   └── page.tsx
+│   ├── components/
+│   │   ├── nav/
+│   │   ├── ui/
+│   │   └── providers/
+│   ├── constants/
 │   ├── lib/
 │   │   └── swagger.ts
+│   ├── test/
+│   │   ├── api/
+│   │   │   ├── health/
+│   │   │   ├── places/
+│   │   ├── examples/
+│   │   ├── mocks/
+│   │   ├── setup.ts
+│   │   └── utils.tsx
 │   ├── types/
 │   │   ├── google-places.ts
-│   │   └── swagger-ui-react.d.ts
+│   │   └── nav-items.ts
 │   └── env.ts
 ├── public/
 ├── .env.local
 ├── next.config.ts
+├── vitest.config.ts
+├── eslint.config.mjs
+├── tailwind.config.ts
 └── package.json
 ```
+
+## Testing
+
+This project uses Vitest for unit and API testing. The test setup includes:
+
+- Unit tests for React components
+- API route tests for direct testing of API handlers
+- Integration tests using MSW (Mock Service Worker) for API mocking
+- Test utilities for common testing patterns
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with UI
+pnpm test:ui
+
+# Run tests with coverage
+pnpm test:coverage
+```
+
+### Test Structure
+
+- `src/test/setup.ts`: Global test setup and utilities
+- `src/test/utils.tsx`: React testing utilities
+- `src/test/api/`: API route tests
+- `src/test/examples/`: Example tests for reference
+- `src/test/mocks/`: Mock data and services
+
+### API Tests
+
+The API tests cover:
+
+- Health endpoint (`/api/health`)
+- Places nearby endpoint (`/api/places/nearby`)
+- Place details endpoint (`/api/places/details`)
+
+Each API route is tested for:
+- Success cases with valid parameters
+- Error handling for missing parameters
+- Error handling for API errors
+- Edge cases specific to each endpoint
 
 ## License
 

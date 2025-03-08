@@ -1,5 +1,6 @@
 import { env } from '@/src/env';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // Define the response types based on the iOS app models
 interface Photo {

@@ -11,4 +11,10 @@ export const navItems: NavItem[] = [
     href: '/api-docs',
     target: false,
   },
+  {
+    label: 'Privacy',
+    href: '/privacy-policy',
+    target: false,
+    hidden: true,
+  },
 ];

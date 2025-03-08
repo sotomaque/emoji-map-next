@@ -1,5 +1,5 @@
 declare module 'swagger-ui-react' {
-  import { ComponentType } from 'react';
+  import type { ComponentType } from 'react';
 
   interface SwaggerUIProps {
     spec: Record<string, unknown>;
