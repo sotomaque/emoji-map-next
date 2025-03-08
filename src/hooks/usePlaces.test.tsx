@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { usePlaces, useCurrentLocation } from '../../hooks/usePlaces';
-import * as placesService from '../../services/places';
+import { usePlaces, useCurrentLocation } from './usePlaces';
+import * as placesService from '../services/places';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 // Mock the places service
-vi.mock('../../services/places', () => ({
+vi.mock('../services/places', () => ({
   fetchPlaces: vi.fn(),
   placesToMapDataPoints: vi.fn(),
   categories: [

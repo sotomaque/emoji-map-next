@@ -5,8 +5,8 @@ import {
   categories,
   categoryEmojis,
   categoryTypes,
-} from '@/src/services/places';
-import type { Place, PlacesParams } from '@/src/services/places';
+} from './places';
+import type { Place, PlacesParams } from './places';
 
 // Mock fetch
 global.fetch = vi.fn();
