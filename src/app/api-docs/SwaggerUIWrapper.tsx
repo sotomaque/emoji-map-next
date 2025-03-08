@@ -40,7 +40,6 @@ const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ spec }) => {
     };
   }, []);
 
-
   return (
     <div
       className={`swagger-ui-container ${resolvedTheme === 'dark' ? 'swagger-dark-theme' : ''}`}

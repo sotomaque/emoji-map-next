@@ -29,4 +29,4 @@ export async function GET() {
     message: 'API is running',
     timestamp: new Date().toISOString(),
   });
-} 
+}

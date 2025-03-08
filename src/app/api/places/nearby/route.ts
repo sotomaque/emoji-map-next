@@ -92,10 +92,10 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
     const keywordsParam = searchParams.get('keywords') || '';
     const openNow = searchParams.get('openNow') === 'true';
-    
+
     // Parse keywords into an array
-    const keywords = keywordsParam.split(',').filter(k => k.trim() !== '');
-    
+    const keywords = keywordsParam.split(',').filter((k) => k.trim() !== '');
+
     // Validate required parameters
     if (!location) {
       return NextResponse.json(
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     const allResults: ExtendedPlaceResult[] = [];
 
     // Make a request for each keyword
-    for (const keyword of keywords.length > 0 ? keywords : [""]) {
+    for (const keyword of keywords.length > 0 ? keywords : ['']) {
       const params = new URLSearchParams({
         location,
         radius,
@@ -135,13 +135,17 @@ export async function GET(request: NextRequest) {
       // Make the request to Google Places API
       const url = `${baseUrl}?${params.toString()}`;
       console.log(`Making request for keyword "${keyword}":`, url);
-      
+
       const response = await fetch(url);
       const data: GooglePlacesResponse = await response.json();
 
       // Check for API errors
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        console.error(`API Error for keyword "${keyword}":`, data.status, data.error_message);
+        console.error(
+          `API Error for keyword "${keyword}":`,
+          data.status,
+          data.error_message
+        );
         continue; // Skip this keyword if there's an error, but continue with others
       }
 
@@ -149,10 +153,10 @@ export async function GET(request: NextRequest) {
       for (const result of data.results) {
         if (!uniquePlaceIds.has(result.place_id)) {
           uniquePlaceIds.add(result.place_id);
-          
+
           // Store the keyword that found this place
           (result as ExtendedPlaceResult).sourceKeyword = keyword;
-          
+
           allResults.push(result as ExtendedPlaceResult);
         }
       }
@@ -163,7 +167,7 @@ export async function GET(request: NextRequest) {
     const places: Place[] = allResults.map((result: ExtendedPlaceResult) => {
       // Use the keyword that found this place as its category
       const bestCategory = result.sourceKeyword || keywords[0] || type;
-      
+
       return {
         placeId: result.place_id,
         name: result.name,
@@ -179,7 +183,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log(`Returning ${places.length} unique places from ${keywords.length} keywords`);
+    console.log(
+      `Returning ${places.length} unique places from ${keywords.length} keywords`
+    );
     return NextResponse.json({ places });
   } catch (error) {
     console.error('Error fetching nearby places:', error);

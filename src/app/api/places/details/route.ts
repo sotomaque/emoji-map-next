@@ -122,11 +122,12 @@ export async function GET(request: NextRequest) {
     // Transform the reviews to match the iOS app's expected format
     // The iOS app expects an array of tuples in the format [(author: String, text: String, rating: Int)]
     // In JSON, we'll represent this as an array of objects with specific keys
-    const reviews = data.result.reviews?.map((review) => ({
-      author: review.author_name,
-      text: review.text,
-      rating: Math.round(review.rating) // Ensure rating is an integer as expected by iOS
-    })) || [];
+    const reviews =
+      data.result.reviews?.map((review) => ({
+        author: review.author_name,
+        text: review.text,
+        rating: Math.round(review.rating), // Ensure rating is an integer as expected by iOS
+      })) || [];
 
     // Create the place details object that matches the iOS PlaceDetails model
     const placeDetails: PlaceDetails = {
