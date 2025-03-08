@@ -66,7 +66,7 @@ export default function PrivacyPolicy() {
           <p>
             Emoji Map uses the Google Places API to provide location-based services. When you use these features,
             your data is also subject to Google&apos;s privacy policies. We encourage you to review
-            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline"> Google&apos;s Privacy Policy</a>.
+            <Link href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline"> Google&apos;s Privacy Policy</Link>.
           </p>
         </section>
 

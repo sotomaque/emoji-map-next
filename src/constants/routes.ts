@@ -7,6 +7,11 @@ export const navItems: NavItem[] = [
     target: false,
   },
   {
+    label: 'App',
+    href: '/app',
+    target: true,
+  },
+  {
     label: 'About',
     href: '/about',
     target: false,
