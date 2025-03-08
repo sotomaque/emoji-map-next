@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import SwaggerUIWrapper from './SwaggerUIWrapper';
 import { ErrorBoundary } from '@/src/components/error-boundary/ErrorBoundary';
-import LoadingDocs from './LoadingDocs';
+import { LoadingDocs } from './LoadingDocs';
 
 export default function ApiDocs() {
   const [spec, setSpec] = useState<Record<string, unknown> | null>(null);
@@ -70,11 +70,7 @@ export default function ApiDocs() {
   }
 
   if (isLoading || !spec) {
-    return (
-      <>
-        <LoadingDocs />
-      </>
-    );
+    return <LoadingDocs />;
   }
 
   return (

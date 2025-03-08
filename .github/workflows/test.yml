@@ -1,0 +1,34 @@
+name: Precheck
+on:
+  pull_request: # Runs only when a merge request is open
+  push:
+    branches:
+      - main # Also runs on merges to main
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false # Let pnpm be detected automatically
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.5.1
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run Unit Tests
+        run: pnpm test

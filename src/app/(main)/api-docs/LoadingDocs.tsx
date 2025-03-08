@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LoadingDocs: React.FC = () => {
+export const LoadingDocs: React.FC = () => {
   return (
     <div className='swagger-container pt-4 animate-pulse'>
       {/* Information Container */}
@@ -100,5 +100,3 @@ const LoadingDocs: React.FC = () => {
     </div>
   );
 };
-
-export default LoadingDocs;

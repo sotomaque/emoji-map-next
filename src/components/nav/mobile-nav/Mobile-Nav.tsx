@@ -18,7 +18,6 @@ import type { NavItem } from '@/src/types/nav-items';
 import { isNavItemActive } from '@/src/utils/nav/is-nav-item-active';
 import { Logo } from '../logo/Logo';
 
-
 function NavLink({
   href,
   label,
