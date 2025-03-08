@@ -180,6 +180,6 @@ export const getApiDocs = () => {
       },
     },
   });
-  
+
   return spec;
 };
