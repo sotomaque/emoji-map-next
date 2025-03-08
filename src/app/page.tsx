@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -8,7 +9,17 @@ export default function Home() {
       <div className='flex-1 grid grid-rows-[1fr_auto] items-center justify-items-center p-8 pb-20 gap-16 sm:p-20'>
         <main className='flex flex-col gap-8 items-center sm:items-start'>
           <div className='flex flex-col items-center gap-4 text-center'>
-            <h1 className='text-4xl font-bold'>Emoji Map</h1>
+            <div className='flex flex-col items-center'>
+              <Image
+                src="/logo-blur.png"
+                alt="Emoji Map Logo"
+                width={150}
+                height={150}
+                className="mb-4 rounded-xl drop-shadow-lg"
+                priority
+              />
+              <h1 className='text-4xl font-bold'>Emoji Map</h1>
+            </div>
             <p className='text-xl text-gray-600 dark:text-gray-400 max-w-md'>
               Find places on a map with emoji markers
             </p>

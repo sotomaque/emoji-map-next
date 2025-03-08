@@ -18,8 +18,6 @@ import type { NavItem } from '@/src/types/nav-items';
 import { isNavItemActive } from '@/src/utils/nav/is-nav-item-active';
 import { Logo } from '../logo/Logo';
 
-// Always use white for the logo in the mobile nav
-const logoColor = '#fff';
 
 function NavLink({
   href,
@@ -112,7 +110,7 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
       <SheetContent className='bg-[#34409b] text-white'>
         <SheetHeader>
           <div className='mr-6 ml-auto'>
-            <Logo color={logoColor} />
+            <Logo />
           </div>
           <div className='sr-only'>
             <SheetTitle>Main Navigation</SheetTitle>
@@ -122,30 +120,32 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
         <nav className='pt-10 pb-20'>
           <div className='container'>
             <ul className='list-none text-left space-y-3'>
-              {navItems.map((navItem, index) => {
-                const isActive = isNavItemActive(navItem.href, path);
+              {navItems
+                .filter((navItem) => !navItem.hidden)
+                .map((navItem, index) => {
+                  const isActive = isNavItemActive(navItem.href, path);
 
-                return (
-                  <li key={`${navItem.label}-${index}`}>
-                    {/* If no children, render Link directly */}
-                    {navItem.children ? (
-                      <NavItemWithChildren
-                        navItem={navItem}
-                        path={path}
-                        onClick={() => setOpen(false)}
-                      />
-                    ) : (
-                      <NavLink
-                        href={navItem.href}
-                        label={navItem.label}
-                        isActive={isActive}
-                        target={navItem.target}
-                        onClick={() => setOpen(false)}
-                      />
-                    )}
-                  </li>
-                );
-              })}
+                  return (
+                    <li key={`${navItem.label}-${index}`}>
+                      {/* If no children, render Link directly */}
+                      {navItem.children ? (
+                        <NavItemWithChildren
+                          navItem={navItem}
+                          path={path}
+                          onClick={() => setOpen(false)}
+                        />
+                      ) : (
+                        <NavLink
+                          href={navItem.href}
+                          label={navItem.label}
+                          isActive={isActive}
+                          target={navItem.target}
+                          onClick={() => setOpen(false)}
+                        />
+                      )}
+                    </li>
+                  );
+                })}
             </ul>
           </div>
         </nav>

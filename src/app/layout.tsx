@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
 import { Header } from '../components/nav/header/Header';
+import { Footer } from '../components/footer/Footer';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '../lib/utils';
 import { env } from '../env';
@@ -33,7 +34,7 @@ export default function RootLayout({
       <link rel='icon' href='/favicon.ico' />
       <body
         className={cn(
-          'min-h-screen bg-background font-sans antialiased overscroll-none',
+          'min-h-screen bg-background font-sans antialiased overscroll-none flex flex-col',
           fontSans.variable
         )}
       >
@@ -44,7 +45,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Header />
-          <main className='max-w-full overflow-hidden'>{children}</main>
+          <main className='max-w-full overflow-hidden flex-grow'>{children}</main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
