@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       bounds,
       type,
       keywords,
-      openNow
+      openNow,
     });
 
     // Validate required parameters
@@ -141,18 +141,22 @@ export async function GET(request: NextRequest) {
     const BATCH_SIZE = 3; // Process keywords in batches of 3
     const keywordsToUse = keywords.length > 0 ? keywords : [''];
     const keywordBatches: string[][] = [];
-    
+
     // Create batches of keywords
     for (let i = 0; i < keywordsToUse.length; i += BATCH_SIZE) {
       keywordBatches.push(keywordsToUse.slice(i, i + BATCH_SIZE));
     }
-    
-    console.log(`[API] Processing ${keywordsToUse.length} keywords in ${keywordBatches.length} batches`);
+
+    console.log(
+      `[API] Processing ${keywordsToUse.length} keywords in ${keywordBatches.length} batches`
+    );
 
     // Process each batch of keywords
     for (const batch of keywordBatches) {
-      console.log(`[API] Processing batch of keywords: ${batch.join(', ') || '(type only)'}`);
-      
+      console.log(
+        `[API] Processing batch of keywords: ${batch.join(', ') || '(type only)'}`
+      );
+
       // Make a request for each keyword in the batch
       const batchPromises = batch.map(async (keyword: string) => {
         const params = new URLSearchParams({
@@ -165,11 +169,14 @@ export async function GET(request: NextRequest) {
         // Add bounds if provided (this will override radius)
         if (bounds) {
           // Validate bounds format: should be "lat1,lng1|lat2,lng2"
-          const boundsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?\|-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+          const boundsRegex =
+            /^-?\d+(\.\d+)?,-?\d+(\.\d+)?\|-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
           if (boundsRegex.test(bounds)) {
             params.append('bounds', bounds);
           } else {
-            console.warn(`[API] Invalid bounds format: ${bounds}, using radius instead`);
+            console.warn(
+              `[API] Invalid bounds format: ${bounds}, using radius instead`
+            );
           }
         }
 
@@ -179,7 +186,10 @@ export async function GET(request: NextRequest) {
 
         // Make the request to Google Places API
         const url = `${baseUrl}?${params.toString()}`;
-        console.log(`[API] Request ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`, url);
+        console.log(
+          `[API] Request ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`,
+          url
+        );
 
         try {
           const response = await fetch(url);
@@ -196,13 +206,18 @@ export async function GET(request: NextRequest) {
           }
 
           // Log the number of results for this keyword
-          console.log(`[API] Received ${data.results?.length || 0} results ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}`);
+          console.log(
+            `[API] Received ${data.results?.length || 0} results ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}`
+          );
 
           // Return the results with the keyword that found them
-          return data.results.map(result => ({
-            ...result,
-            sourceKeyword: keyword
-          } as ExtendedPlaceResult));
+          return data.results.map(
+            (result) =>
+              ({
+                ...result,
+                sourceKeyword: keyword,
+              }) as ExtendedPlaceResult
+          );
         } catch (error) {
           console.error(`[API] Fetch error for keyword "${keyword}":`, error);
           // Propagate the error instead of returning an empty array
@@ -212,7 +227,7 @@ export async function GET(request: NextRequest) {
 
       // Wait for all requests in this batch to complete
       const batchResults = await Promise.all(batchPromises);
-      
+
       // Add results to our collection, avoiding duplicates
       for (const results of batchResults) {
         for (const result of results) {

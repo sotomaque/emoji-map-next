@@ -10,7 +10,7 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "precheck": "prettier --write . && next lint --fix && tsc --noEmit",
+    "precheck": "prettier --write . && next lint --fix && tsc --noEmit && vitest run",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

@@ -9,7 +9,11 @@ interface EmojiMarkerProps {
   onClick: () => void;
 }
 
-export default function EmojiMarker({ position, emoji, onClick }: EmojiMarkerProps) {
+export default function EmojiMarker({
+  position,
+  emoji,
+  onClick,
+}: EmojiMarkerProps) {
   return (
     <OverlayView
       position={position}
@@ -20,7 +24,7 @@ export default function EmojiMarker({ position, emoji, onClick }: EmojiMarkerPro
       })}
     >
       <div
-        className="emoji-marker"
+        className='emoji-marker'
         onClick={onClick}
         style={{
           cursor: 'pointer',
@@ -40,4 +44,4 @@ export default function EmojiMarker({ position, emoji, onClick }: EmojiMarkerPro
       </div>
     </OverlayView>
   );
-} 
+}

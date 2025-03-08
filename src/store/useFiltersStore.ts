@@ -45,7 +45,10 @@ export interface FiltersState {
   setMinimumRating: (rating: number | null) => void;
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
   setViewportCenter: (center: { lat: number; lng: number }) => void;
-  setViewportBounds: (bounds: { ne: { lat: number; lng: number }; sw: { lat: number; lng: number } }) => void;
+  setViewportBounds: (bounds: {
+    ne: { lat: number; lng: number };
+    sw: { lat: number; lng: number };
+  }) => void;
   setViewportZoom: (zoom: number) => void;
   resetFilters: () => void;
 }
@@ -61,7 +64,7 @@ const migrate = (persistedState: unknown, version: number) => {
       openNow: state.openNow || false,
       priceLevel: state.priceLevel || [1, 2, 3, 4],
       minimumRating: state.minimumRating || null,
-      isAllCategoriesMode: state.selectedCategories?.length === 0
+      isAllCategoriesMode: state.selectedCategories?.length === 0,
     };
   }
   return persistedState;
@@ -80,7 +83,7 @@ export const useFiltersStore = create<FiltersState>()(
         viewport: {
           center: null,
           bounds: null,
-          zoom: 14
+          zoom: 14,
         },
         isAllCategoriesMode: true, // Default to true since selectedCategories is empty
 
@@ -88,80 +91,97 @@ export const useFiltersStore = create<FiltersState>()(
         getAllCategoryKeywords: () => allCategoryNames,
 
         setSelectedCategories: (categories) => {
-          console.log('[FiltersStore] setSelectedCategories called with:', categories);
+          console.log(
+            '[FiltersStore] setSelectedCategories called with:',
+            categories
+          );
           set((state) => {
             state.selectedCategories = categories;
             // Update isAllCategoriesMode based on the new categories
             state.isAllCategoriesMode = categories.length === 0;
           });
         },
-        
+
         toggleCategory: (category) => {
           console.log('[FiltersStore] toggleCategory called with:', category);
-          
+
           set((state) => {
-            console.log('[FiltersStore] Current selectedCategories:', state.selectedCategories);
-            
+            console.log(
+              '[FiltersStore] Current selectedCategories:',
+              state.selectedCategories
+            );
+
             // If category is already selected, remove it
             if (state.selectedCategories.includes(category)) {
               console.log('[FiltersStore] Removing category:', category);
-              state.selectedCategories = state.selectedCategories.filter((c: string) => c !== category);
+              state.selectedCategories = state.selectedCategories.filter(
+                (c: string) => c !== category
+              );
             } else {
               // Otherwise, add it
               console.log('[FiltersStore] Adding category:', category);
               state.selectedCategories.push(category);
             }
-            
+
             // Update isAllCategoriesMode based on the new selectedCategories
             state.isAllCategoriesMode = state.selectedCategories.length === 0;
           });
         },
-        
-        setShowFavoritesOnly: (show) => set((state) => {
-          state.showFavoritesOnly = show;
-        }),
-        
-        setOpenNow: (openNow) => set((state) => {
-          state.openNow = openNow;
-        }),
-        
-        setPriceLevel: (priceLevel) => set((state) => {
-          state.priceLevel = priceLevel;
-        }),
-        
-        setMinimumRating: (rating) => set((state) => {
-          state.minimumRating = rating;
-        }),
-        
-        setUserLocation: (location) => set((state) => {
-          state.userLocation = location;
-          // Also update the viewport center if it's not set yet
-          if (!state.viewport.center && location) {
-            state.viewport.center = location;
-          }
-        }),
 
-        setViewportCenter: (center) => set((state) => {
-          state.viewport.center = center;
-        }),
+        setShowFavoritesOnly: (show) =>
+          set((state) => {
+            state.showFavoritesOnly = show;
+          }),
 
-        setViewportBounds: (bounds) => set((state) => {
-          state.viewport.bounds = bounds;
-        }),
+        setOpenNow: (openNow) =>
+          set((state) => {
+            state.openNow = openNow;
+          }),
 
-        setViewportZoom: (zoom) => set((state) => {
-          state.viewport.zoom = zoom;
-        }),
-        
-        resetFilters: () => set((state) => {
-          state.selectedCategories = [];
-          state.showFavoritesOnly = false;
-          state.openNow = false;
-          state.priceLevel = [1, 2, 3, 4];
-          state.minimumRating = null;
-          state.isAllCategoriesMode = true;
-          // Don't reset viewport or user location
-        })
+        setPriceLevel: (priceLevel) =>
+          set((state) => {
+            state.priceLevel = priceLevel;
+          }),
+
+        setMinimumRating: (rating) =>
+          set((state) => {
+            state.minimumRating = rating;
+          }),
+
+        setUserLocation: (location) =>
+          set((state) => {
+            state.userLocation = location;
+            // Also update the viewport center if it's not set yet
+            if (!state.viewport.center && location) {
+              state.viewport.center = location;
+            }
+          }),
+
+        setViewportCenter: (center) =>
+          set((state) => {
+            state.viewport.center = center;
+          }),
+
+        setViewportBounds: (bounds) =>
+          set((state) => {
+            state.viewport.bounds = bounds;
+          }),
+
+        setViewportZoom: (zoom) =>
+          set((state) => {
+            state.viewport.zoom = zoom;
+          }),
+
+        resetFilters: () =>
+          set((state) => {
+            state.selectedCategories = [];
+            state.showFavoritesOnly = false;
+            state.openNow = false;
+            state.priceLevel = [1, 2, 3, 4];
+            state.minimumRating = null;
+            state.isAllCategoriesMode = true;
+            // Don't reset viewport or user location
+          }),
       })),
       {
         name: 'emoji-map-filters',
@@ -182,4 +202,4 @@ export const useFiltersStore = create<FiltersState>()(
       name: 'EmojiMapFiltersStore',
     }
   )
-); 
+);
