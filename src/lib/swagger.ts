@@ -1,6 +1,29 @@
 import { createSwaggerSpec } from 'next-swagger-doc';
+import { env } from '../env';
 
 export const getApiDocs = () => {
+  // Determine if we're in production based on environment variable
+  const isProduction = env.NODE_ENV === 'production';
+
+  // Define servers based on environment
+  const servers = isProduction
+    ? [
+        {
+          url: 'https://emoji-map-next.vercel.app',
+          description: 'Production server',
+        },
+      ]
+    : [
+        {
+          url: 'http://localhost:3000',
+          description: 'Local development server',
+        },
+        {
+          url: 'https://emoji-map-next.vercel.app',
+          description: 'Production server',
+        },
+      ];
+
   const spec = createSwaggerSpec({
     apiFolder: 'src/app/api',
     definition: {
@@ -14,16 +37,7 @@ export const getApiDocs = () => {
           email: 'support@example.com',
         },
       },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Local development server',
-        },
-        {
-          url: 'https://emoji-map.vercel.app',
-          description: 'Production server',
-        },
-      ],
+      servers,
       tags: [
         {
           name: 'places',
@@ -86,35 +100,71 @@ export const getApiDocs = () => {
           },
           PlaceDetails: {
             type: 'object',
-            properties: {
-              photos: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                  description: 'URL to a photo of the place',
-                },
-              },
-              reviews: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    author: {
+            description: 'Detailed information about a place',
+            allOf: [
+              { $ref: '#/components/schemas/Place' },
+              {
+                type: 'object',
+                properties: {
+                  formattedAddress: {
+                    type: 'string',
+                    description: 'Formatted address of the place',
+                  },
+                  formattedPhoneNumber: {
+                    type: 'string',
+                    description: 'Formatted phone number',
+                    nullable: true,
+                  },
+                  website: {
+                    type: 'string',
+                    description: 'Website URL',
+                    nullable: true,
+                  },
+                  openingHours: {
+                    type: 'array',
+                    description: 'Opening hours for each day of the week',
+                    items: {
                       type: 'string',
-                      description: 'Name of the reviewer',
                     },
-                    text: {
+                    nullable: true,
+                  },
+                  photos: {
+                    type: 'array',
+                    items: {
                       type: 'string',
-                      description: 'Review text',
+                      description: 'URL to a photo of the place',
                     },
-                    rating: {
-                      type: 'integer',
-                      description: 'Rating given by the reviewer',
+                    nullable: true,
+                  },
+                  reviews: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        author: {
+                          type: 'string',
+                          description: 'Name of the reviewer',
+                        },
+                        text: {
+                          type: 'string',
+                          description: 'Review text',
+                        },
+                        rating: {
+                          type: 'integer',
+                          description: 'Rating given by the reviewer',
+                        },
+                        time: {
+                          type: 'string',
+                          format: 'date-time',
+                          description: 'Time of the review',
+                        },
+                      },
                     },
+                    nullable: true,
                   },
                 },
               },
-            },
+            ],
           },
           Error: {
             type: 'object',
