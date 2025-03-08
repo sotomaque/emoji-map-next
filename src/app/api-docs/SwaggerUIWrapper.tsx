@@ -40,6 +40,7 @@ const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ spec }) => {
     };
   }, []);
 
+
   return (
     <div
       className={`swagger-ui-container ${resolvedTheme === 'dark' ? 'swagger-dark-theme' : ''}`}
@@ -51,6 +52,9 @@ const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ spec }) => {
         displayRequestDuration={true}
         filter={true}
         deepLinking={true}
+        supportedSubmitMethods={['get', 'post', 'put', 'delete', 'patch']}
+        tryItOutEnabled={true}
+        persistAuthorization={true}
       />
     </div>
   );
