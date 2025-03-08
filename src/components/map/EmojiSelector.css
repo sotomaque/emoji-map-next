@@ -1,0 +1,108 @@
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.emoji-selector-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px 0;
+  transition: transform 0.3s ease;
+}
+
+.dark .emoji-selector-container {
+  background-color: rgba(17, 24, 39, 0.95);
+}
+
+.emoji-selector-scroll {
+  display: flex;
+  overflow-x: auto;
+  padding: 0 16px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.emoji-selector-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.emoji-selector-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+.emoji-selector-button {
+  transition: all 0.2s ease;
+}
+
+.emoji-selector-button:hover {
+  transform: scale(1.05);
+}
+
+.emoji-selector-button:active {
+  transform: scale(0.95);
+}
+
+.emoji-selector-button.active {
+  transform: scale(1.1);
+}
+
+.emoji-selector-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.emoji-selector-category {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  margin: 0 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.emoji-selector-category.selected {
+  background-color: #3b82f6;
+  color: white;
+  transform: scale(1.1);
+}
+
+.emoji-selector-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 44px;
+  margin: 0 4px;
+  border-radius: 22px;
+  transition: all 0.2s ease;
+}
+
+.emoji-selector-all.selected {
+  background-color: #3b82f6;
+  color: white;
+  transform: scale(1.05);
+}
+
+.emoji-selector-shuffle {
+  animation: spin 0.5s ease-in-out;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

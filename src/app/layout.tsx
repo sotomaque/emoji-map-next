@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
-import { Header } from '../components/nav/header/Header';
-import { Footer } from '../components/footer/Footer';
+import { QueryProvider } from '../components/providers/QueryProvider';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '../lib/utils';
 import { env } from '../env';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const isProduction = env.NEXT_PUBLIC_SITE_ENV === 'production';
 
@@ -44,9 +44,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          <main className='max-w-full overflow-hidden flex-grow'>{children}</main>
-          <Footer />
+          <QueryProvider>
+            <ReactQueryDevtools initialIsOpen={false} />
+            {children}
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -226,7 +226,7 @@ describe('Nearby Places API Route', () => {
     // Create a mock request
     const request = new NextRequest(
       new URL(
-        'http://localhost:3000/api/places/nearby?location=37.7749,-122.4194&type=restaurant'
+        'http://localhost:3000/api/places/nearby?location=40.7128,-74.0060&type=restaurant'
       )
     );
 

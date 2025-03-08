@@ -11,12 +11,14 @@ export default function Home() {
           <div className='flex flex-col items-center gap-4 text-center'>
             <div className='flex flex-col items-center'>
               <Image
-                src="/logo.png"
-                alt="Emoji Map Logo"
+                src='/logo.png'
+                alt='Emoji Map Logo'
                 width={150}
                 height={150}
-                className="mb-4 rounded-xl shadow-md"
-                style={{ filter: 'drop-shadow(0 0 8px rgba(52, 64, 155, 0.3))' }}
+                className='mb-4 rounded-xl shadow-md'
+                style={{
+                  filter: 'drop-shadow(0 0 8px rgba(52, 64, 155, 0.3))',
+                }}
                 priority
               />
               <h1 className='text-4xl font-bold'>Emoji Map</h1>
