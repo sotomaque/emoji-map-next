@@ -1,8 +1,7 @@
 import { createSwaggerSpec } from 'next-swagger-doc';
-import { env } from '../env';
+import { env } from '@/src/env';
 
 export const getApiDocs = () => {
-  // Determine if we're in production based on environment variable
   const isProduction = env.NODE_ENV === 'production';
 
   // Define servers based on environment
@@ -24,8 +23,10 @@ export const getApiDocs = () => {
         },
       ];
 
+  // Create the OpenAPI spec
   const spec = createSwaggerSpec({
     apiFolder: 'src/app/api',
+    schemaFolders: ['src/app/api'],
     definition: {
       openapi: '3.0.0',
       info: {
@@ -179,5 +180,6 @@ export const getApiDocs = () => {
       },
     },
   });
+  
   return spec;
 };
