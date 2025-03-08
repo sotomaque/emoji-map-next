@@ -6,6 +6,12 @@ import type {
 } from '@/src/types/google-places';
 import { env } from '@/src/env';
 
+// Extend the PlaceResult interface to include the types property
+interface ExtendedPlaceResult extends PlaceResult {
+  types?: string[];
+  sourceKeyword?: string;
+}
+
 /**
  * @swagger
  * /api/places/nearby:
@@ -37,20 +43,13 @@ import { env } from '@/src/env';
  *         schema:
  *           type: string
  *           example: "restaurant"
- *       - name: keyword
+ *       - name: keywords
  *         in: query
- *         description: Specific keyword to search for
+ *         description: Comma-separated list of keywords to search for
  *         required: false
  *         schema:
  *           type: string
- *           example: "burger"
- *       - name: category
- *         in: query
- *         description: Category name to assign to results
- *         required: false
- *         schema:
- *           type: string
- *           example: "burger"
+ *           example: "burger,fast food"
  *       - name: openNow
  *         in: query
  *         description: Set to "true" to only show places that are currently open
@@ -91,10 +90,12 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location');
     const radius = searchParams.get('radius') || '5000';
     const type = searchParams.get('type');
-    const keyword = searchParams.get('keyword');
+    const keywordsParam = searchParams.get('keywords') || '';
     const openNow = searchParams.get('openNow') === 'true';
-    const category = searchParams.get('category') || '';
-
+    
+    // Parse keywords into an array
+    const keywords = keywordsParam.split(',').filter(k => k.trim() !== '');
+    
     // Validate required parameters
     if (!location) {
       return NextResponse.json(
@@ -114,45 +115,71 @@ export async function GET(request: NextRequest) {
     const apiKey = env.GOOGLE_PLACES_API_KEY;
     const baseUrl = env.GOOGLE_PLACES_URL;
 
-    const params = new URLSearchParams({
-      location,
-      radius,
-      type,
-      key: apiKey,
-    });
+    // Create a Set to store unique place IDs to avoid duplicates
+    const uniquePlaceIds = new Set<string>();
+    const allResults: ExtendedPlaceResult[] = [];
 
-    // Add optional parameters if provided
-    if (keyword) params.append('keyword', keyword);
-    if (openNow) params.append('opennow', 'true');
+    // Make a request for each keyword
+    for (const keyword of keywords.length > 0 ? keywords : [""]) {
+      const params = new URLSearchParams({
+        location,
+        radius,
+        type,
+        key: apiKey,
+      });
 
-    // Make the request to Google Places API
-    const response = await fetch(`${baseUrl}?${params.toString()}`);
-    const data: GooglePlacesResponse = await response.json();
+      // Add optional parameters if provided
+      if (keyword) params.append('keyword', keyword);
+      if (openNow) params.append('opennow', 'true');
 
-    // Check for API errors
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      return NextResponse.json(
-        { error: data.error_message || `API Error: ${data.status}` },
-        { status: 500 }
-      );
+      // Make the request to Google Places API
+      const url = `${baseUrl}?${params.toString()}`;
+      console.log(`Making request for keyword "${keyword}":`, url);
+      
+      const response = await fetch(url);
+      const data: GooglePlacesResponse = await response.json();
+
+      // Check for API errors
+      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+        console.error(`API Error for keyword "${keyword}":`, data.status, data.error_message);
+        continue; // Skip this keyword if there's an error, but continue with others
+      }
+
+      // Add results to our collection, avoiding duplicates
+      for (const result of data.results) {
+        if (!uniquePlaceIds.has(result.place_id)) {
+          uniquePlaceIds.add(result.place_id);
+          
+          // Store the keyword that found this place
+          (result as ExtendedPlaceResult).sourceKeyword = keyword;
+          
+          allResults.push(result as ExtendedPlaceResult);
+        }
+      }
     }
 
     // Transform the results to match our Place model
     // This matches the iOS Place model structure
-    const places: Place[] = data.results.map((result: PlaceResult) => ({
-      placeId: result.place_id,
-      name: result.name,
-      coordinate: {
-        latitude: result.geometry.location.lat,
-        longitude: result.geometry.location.lng,
-      },
-      category: category, // Use the provided category
-      description: result.vicinity || 'No description available',
-      priceLevel: result.price_level || null,
-      openNow: result.opening_hours?.open_now || null,
-      rating: result.rating || null,
-    }));
+    const places: Place[] = allResults.map((result: ExtendedPlaceResult) => {
+      // Use the keyword that found this place as its category
+      let bestCategory = result.sourceKeyword || keywords[0] || type;
+      
+      return {
+        placeId: result.place_id,
+        name: result.name,
+        coordinate: {
+          latitude: result.geometry.location.lat,
+          longitude: result.geometry.location.lng,
+        },
+        category: bestCategory,
+        description: result.vicinity || 'No description available',
+        priceLevel: result.price_level || null,
+        openNow: result.opening_hours?.open_now || null,
+        rating: result.rating || null,
+      };
+    });
 
+    console.log(`Returning ${places.length} unique places from ${keywords.length} keywords`);
     return NextResponse.json({ places });
   } catch (error) {
     console.error('Error fetching nearby places:', error);
