@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
     // This matches the iOS Place model structure
     const places: Place[] = allResults.map((result: ExtendedPlaceResult) => {
       // Use the keyword that found this place as its category
-      let bestCategory = result.sourceKeyword || keywords[0] || type;
+      const bestCategory = result.sourceKeyword || keywords[0] || type;
       
       return {
         placeId: result.place_id,
