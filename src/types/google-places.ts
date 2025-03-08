@@ -32,7 +32,7 @@ export interface GooglePlacesResponse {
   error_message?: string;
 }
 
-// Our transformed Place model
+// Our transformed Place model - matches the iOS app's Place model
 export interface Place {
   placeId: string;
   name: string;
@@ -42,7 +42,7 @@ export interface Place {
   };
   category: string;
   description: string;
-  priceLevel?: number;
-  openNow?: boolean;
-  rating?: number;
+  priceLevel?: number | null;
+  openNow?: boolean | null;
+  rating?: number | null;
 }
