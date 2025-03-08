@@ -138,6 +138,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the results to match our Place model
+    // This matches the iOS Place model structure
     const places: Place[] = data.results.map((result: PlaceResult) => ({
       placeId: result.place_id,
       name: result.name,
@@ -146,10 +147,10 @@ export async function GET(request: NextRequest) {
         longitude: result.geometry.location.lng,
       },
       category: category, // Use the provided category
-      description: result.vicinity,
-      priceLevel: result.price_level,
-      openNow: result.opening_hours?.open_now,
-      rating: result.rating,
+      description: result.vicinity || 'No description available',
+      priceLevel: result.price_level || null,
+      openNow: result.opening_hours?.open_now || null,
+      rating: result.rating || null,
     }));
 
     return NextResponse.json({ places });
