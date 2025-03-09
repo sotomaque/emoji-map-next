@@ -23,6 +23,7 @@ export interface PlaceResult {
   price_level?: number;
   opening_hours?: OpeningHours;
   rating?: number;
+  types?: string[]; // Array of place types (e.g., "restaurant", "food", etc.)
 }
 
 // Google Places API response

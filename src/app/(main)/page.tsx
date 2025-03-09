@@ -11,7 +11,7 @@ export default function Home() {
           <div className='flex flex-col items-center gap-4 text-center'>
             <div className='flex flex-col items-center'>
               <Image
-                src='/logo.png'
+                src='/logo-blur.png'
                 alt='Emoji Map Logo'
                 width={150}
                 height={150}

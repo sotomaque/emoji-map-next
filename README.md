@@ -1,7 +1,7 @@
 # Emoji Map Web App
 
 <div align="center">
-  <img src="public/logo.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin-bottom: 20px;" />
+  <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin-bottom: 20px;" />
   <h3>Find places on a map with emoji markers</h3>
   
   <div style="margin-top: 20px;">
@@ -28,6 +28,9 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - 🔄 State management with Zustand for filters and preferences
 - 📊 Marker clustering for improved map performance
 - 🧪 Comprehensive test suite with 95%+ coverage
+- 🚀 Redis caching for improved API performance
+- 🔐 User authentication with Clerk
+- 🗄️ PostgreSQL database with Prisma ORM
 
 ## Tech Stack
 
@@ -44,19 +47,20 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Vitest](https://vitest.dev/) - Testing framework
 - [MSW](https://mswjs.io/) - API mocking for tests
 - [React Query](https://tanstack.com/query/latest) - Data fetching and caching
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and pnpm
-- Google Maps API key with Places API enabled
+- [Upstash Redis](https://upstash.com/) - Serverless Redis for caching
+- [Supabase](https://supabase.com/) - PostgreSQL database
+- [Prisma](https://www.prisma.io/) - ORM for database access
+- [Clerk](https://clerk.com/) - User authentication
 
 ### Environment Variables
 
 Create a `.env.local` file in the root of the web directory with the following variables:
 
 ```
+# Site Environment
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_ENV=development
+
 # Google Maps API Key (for client-side use)
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
 
@@ -70,21 +74,27 @@ GOOGLE_PLACES_PHOTO_URL=https://maps.googleapis.com/maps/api/place/photo
 
 # Optional: Mapbox token if using Mapbox maps
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+CLERK_SIGNING_SECRET=your_clerk_signing_secret
+
+# Database - Supabase
+POSTGRES_URL=your_postgres_url
+POSTGRES_PRISMA_URL=your_postgres_prisma_url
+SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+POSTGRES_URL_NON_POOLING=your_postgres_url_non_pooling
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+POSTGRES_USER=your_postgres_user
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+POSTGRES_PASSWORD=your_postgres_password
+
+# Upstash Redis (for caching)
+KV_REST_API_URL=your_upstash_redis_url
+KV_REST_API_TOKEN=your_upstash_redis_token
 ```
-
-> **Note:** The application uses type-safe environment variables with `@t3-oss/env-nextjs`. If any required environment variables are missing, the build will fail with a clear error message.
-
-### Installation
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run the development server
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### Available Scripts
 
@@ -142,15 +152,15 @@ Fetches nearby places based on location and category.
 
 - `location` (required): Latitude and longitude in format "lat,lng"
 - `radius` (optional): Search radius in meters (default: 5000)
+- `bounds` (optional): Bounds in format "lat1,lng1|lat2,lng2"
 - `type` (required): Google Places type (e.g., "restaurant", "cafe")
-- `keyword` (optional): Specific keyword to search for
-- `category` (optional): Category name to assign to results
+- `keywords` (optional): Comma-separated list of keywords to search for
 - `openNow` (optional): Set to "true" to only show places that are currently open
 
 **Example:**
 
 ```
-/api/places/nearby?location=37.7749,-122.4194&radius=5000&type=restaurant&keyword=burger&category=burger&openNow=true
+/api/places/nearby?location=37.7749,-122.4194&radius=5000&type=restaurant&keywords=burger,pizza&openNow=true
 ```
 
 ### `/api/places/details`
@@ -183,7 +193,9 @@ web/
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── details/
 │   │   │   │       └── route.ts
-│   │   ├── api-docs/
+│   │   │   ├── webhooks/
+│   │   │   │   └── route.ts
+│   │   │   ├── api-docs/
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
 │   │   └── page.tsx
@@ -203,11 +215,19 @@ web/
 │   ├── store/
 │   │   └── useFiltersStore.ts
 │   ├── lib/
-│   │   └── swagger.ts
-│   ├── test/
+│   │   ├── swagger.ts
+│   │   ├── db.ts
+│   │   ├── redis.ts
+│   │   └── user-service.ts
+│   ├── utils/
+│   │   └── redis/
+│   │       ├── cache-utils.ts
+│   │       └── cache-utils.test.ts
+│   ├── __tests__/
 │   │   ├── api/
 │   │   │   ├── health/
 │   │   │   ├── places/
+│   │   │   └── webhooks/
 │   │   ├── services/
 │   │   │   ├── places.test.ts
 │   │   │   └── hooks.test.tsx
@@ -221,6 +241,8 @@ web/
 │   │   ├── google-places.ts
 │   │   └── nav-items.ts
 │   └── env.ts
+├── prisma/
+│   └── schema.prisma
 ├── public/
 ├── .env.local
 ├── next.config.ts
@@ -230,84 +252,66 @@ web/
 └── package.json
 ```
 
-## Testing
+## Architecture
 
-This project uses Vitest for unit and API testing. The test setup includes:
+The application follows a modern Next.js architecture with the following key components:
 
-- Unit tests for React components
-- API route tests for direct testing of API handlers
-- Integration tests using MSW (Mock Service Worker) for API mocking
-- Test utilities for common testing patterns
-- Service tests for data fetching and transformation
-- Hook tests for custom React hooks
-- Store tests for Zustand state management
-
-### Running Tests
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with UI
-pnpm test:ui
-
-# Run tests with coverage
-pnpm test:coverage
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           Client Browser                            │
+└───────────────────────────────────┬─────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                           Next.js App Router                        │
+├─────────────────┬─────────────────┬────────────────┬────────────────┤
+│  React Components│    Zustand Store  │  React Query   │  Tailwind CSS  │
+└─────────────────┴─────────────────┴────────────────┴────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                           Next.js API Routes                        │
+├─────────────────┬─────────────────┬────────────────┬────────────────┤
+│  /api/places    │  /api/webhooks  │  /api/health   │  /api/docs     │
+└─────────────────┴─────────────────┴────────────────┴────────────────┘
+                                    │
+                 ┌─────────────────┬┴┬─────────────────┐
+                 │                 │ │                 │
+                 ▼                 ▼ ▼                 ▼
+┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
+│ Google Places API │  │   Upstash Redis   │  │  PostgreSQL DB    │
+└───────────────────┘  └───────────────────┘  └───────────────────┘
+                                                        ▲
+                                                        │
+                                              ┌───────────────────┐
+                                              │  Clerk Auth       │
+                                              └───────────────────┘
 ```
 
-### Test Structure
+### Frontend
 
-- `src/test/setup.ts`: Global test setup and utilities
-- `src/test/utils.tsx`: React testing utilities
-- `src/test/api/`: API route tests
-- `src/test/services/`: Service and hook tests
-- `src/test/store/`: State management tests
-- `src/test/examples/`: Example tests for reference
-- `src/test/mocks/`: Mock data and services
+- **React Components**: UI components for the map, markers, and user interface
+- **Zustand Store**: Global state management for filters and user preferences
+- **React Query**: Data fetching and client-side caching
+- **Tailwind CSS**: Utility-first CSS framework for styling
 
-### API Tests
+### Backend
 
-The API tests cover:
+- **Next.js API Routes**: Server-side API endpoints
+- **Google Places API**: External API for location data
+- **Redis Caching**: Performance optimization for API requests
+- **Prisma ORM**: Database access layer
+- **PostgreSQL**: Relational database for user data
+- **Clerk Authentication**: User authentication and management
 
-- Health endpoint (`/api/health`)
-- Places nearby endpoint (`/api/places/nearby`)
-- Place details endpoint (`/api/places/details`)
+### Caching Strategy
 
-Each API route is tested for:
+The application implements a sophisticated caching strategy for Google Places API requests:
 
-- Success cases with valid parameters
-- Error handling for missing parameters
-- Error handling for API errors
-- Edge cases specific to each endpoint
+1. **Cache Key Generation**: Cache keys are based on location and radius
+2. **Coordinate Normalization**: Coordinates are rounded to 2 decimal places (~1.11km precision)
+3. **Radius Normalization**: Radius values are normalized to reduce unique cache keys
+4. **Client-Side Filtering**: Cached results are filtered by type, openNow, and keywords
+5. **Cache Expiration**: Cache entries expire after 7 days
 
-### Service and Hook Tests
-
-The service and hook tests cover:
-
-- Places service for fetching and transforming data
-- Custom hooks for data fetching and geolocation
-- Error handling and edge cases
-- React Query integration
-
-### State Management Tests
-
-The state management tests cover:
-
-- Zustand store initialization
-- Action creators and reducers
-- State updates and selectors
-- Integration with React components
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- Emoji Map iOS app for the original concept
-- Google Maps and Places API for location data
-- Next.js team for the amazing framework
-- React Query and Zustand for state management solutions
+This approach significantly reduces the number of requests to the Google Places API, improving performance and reducing costs.

@@ -30,8 +30,20 @@ export const env = createEnv({
     CLERK_SECRET_KEY: z.string().min(1),
     CLERK_SIGNING_SECRET: z.string().min(1),
 
-    // PLANETSCALE (PRISMA)
-    DATABASE_URL: z.string().min(1),
+    // SUPABASE
+    POSTGRES_URL: z.string().min(1),
+    POSTGRES_PRISMA_URL: z.string().min(1),
+    SUPABASE_URL: z.string().min(1),
+    POSTGRES_URL_NON_POOLING: z.string().min(1),
+    SUPABASE_JWT_SECRET: z.string().min(1),
+    POSTGRES_USER: z.string().min(1),
+    POSTGRES_PASSWORD: z.string().min(1),
+
+    // UPSTASH
+    KV_URL: z.string().min(1),
+    KV_REST_API_READ_ONLY_TOKEN: z.string().min(1),
+    KV_REST_API_TOKEN: z.string().min(1),
+    KV_REST_API_URL: z.string().min(1),
   },
 
   /**
@@ -49,6 +61,10 @@ export const env = createEnv({
 
     // CLERK
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
+
+    // SUPABASE
+    NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   },
 
   /**
@@ -75,8 +91,22 @@ export const env = createEnv({
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 
-    // DATABASE
-    DATABASE_URL: process.env.DATABASE_URL,
+    // SUPABASE
+    POSTGRES_URL: process.env.POSTGRES_URL,
+    POSTGRES_PRISMA_URL: process.env.POSTGRES_PRISMA_URL,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    POSTGRES_URL_NON_POOLING: process.env.POSTGRES_URL_NON_POOLING,
+    SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+    POSTGRES_USER: process.env.POSTGRES_USER,
+    POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+
+    // UPSTASH
+    KV_URL: process.env.KV_URL,
+    KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
+    KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
+    KV_REST_API_URL: process.env.KV_REST_API_URL,
   },
 
   /**

@@ -6,10 +6,15 @@ import type {
   PlaceResult,
 } from '@/types/google-places';
 import { env } from '@/env';
+import {
+  redis,
+  CACHE_EXPIRATION_TIME,
+  generatePlacesCacheKey,
+} from '@/lib/redis';
+import { roundCoordinate } from '@/utils/redis/cache-utils';
 
-// Extend the PlaceResult interface to include the types property
+// Extend the PlaceResult interface to include the sourceKeyword property
 interface ExtendedPlaceResult extends PlaceResult {
-  types?: string[];
   sourceKeyword?: string;
 }
 
@@ -129,114 +134,240 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build the Google Places API URL using type-safe environment variables
-    const apiKey = env.GOOGLE_PLACES_API_KEY;
-    const baseUrl = env.GOOGLE_PLACES_URL;
+    // Generate a cache key based only on the location and radius
+    const cacheKey = generatePlacesCacheKey({
+      location,
+      radius: radius || undefined,
+    });
 
-    // Create a Set to store unique place IDs to avoid duplicates
-    const uniquePlaceIds = new Set<string>();
-    const allResults: ExtendedPlaceResult[] = [];
+    // Try to get data from cache first
+    const cachedData = await redis.get<ExtendedPlaceResult[]>(cacheKey);
 
-    // If we have many keywords, batch them to reduce the number of API calls
-    const BATCH_SIZE = 3; // Process keywords in batches of 3
-    const keywordsToUse = keywords.length > 0 ? keywords : [''];
-    const keywordBatches: string[][] = [];
+    let allResults: ExtendedPlaceResult[] = [];
+    let fromCache = false;
 
-    // Create batches of keywords
-    for (let i = 0; i < keywordsToUse.length; i += BATCH_SIZE) {
-      keywordBatches.push(keywordsToUse.slice(i, i + BATCH_SIZE));
-    }
+    if (cachedData) {
+      console.log(`[API] Cache hit for key: ${cacheKey}`);
 
-    console.log(
-      `[API] Processing ${keywordsToUse.length} keywords in ${keywordBatches.length} batches`
-    );
-
-    // Process each batch of keywords
-    for (const batch of keywordBatches) {
-      console.log(
-        `[API] Processing batch of keywords: ${batch.join(', ') || '(type only)'}`
-      );
-
-      // Make a request for each keyword in the batch
-      const batchPromises = batch.map(async (keyword: string) => {
-        const params = new URLSearchParams({
-          location,
-          radius,
-          type,
-          key: apiKey,
-        });
-
-        // Add bounds if provided (this will override radius)
+      // Filter cached results by bounds (if provided), type, and openNow
+      allResults = cachedData.filter((result) => {
+        // Check if the result is within the bounds (if provided)
+        let withinBounds = true;
         if (bounds) {
-          // Validate bounds format: should be "lat1,lng1|lat2,lng2"
+          // Parse bounds format: "lat1,lng1|lat2,lng2"
           const boundsRegex =
-            /^-?\d+(\.\d+)?,-?\d+(\.\d+)?\|-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
-          if (boundsRegex.test(bounds)) {
-            params.append('bounds', bounds);
-          } else {
-            console.warn(
-              `[API] Invalid bounds format: ${bounds}, using radius instead`
-            );
+            /^(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)\|(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)$/;
+          const boundsMatch = bounds.match(boundsRegex);
+
+          if (boundsMatch) {
+            // Extract coordinates using indices instead of destructuring
+            const southWestLat = roundCoordinate(parseFloat(boundsMatch[1]));
+            const southWestLng = roundCoordinate(parseFloat(boundsMatch[3]));
+            const northEastLat = roundCoordinate(parseFloat(boundsMatch[5]));
+            const northEastLng = roundCoordinate(parseFloat(boundsMatch[7]));
+
+            const southWest = { lat: southWestLat, lng: southWestLng };
+            const northEast = { lat: northEastLat, lng: northEastLng };
+
+            // Round the location coordinates for consistent comparison
+            const location = {
+              lat: roundCoordinate(result.geometry.location.lat),
+              lng: roundCoordinate(result.geometry.location.lng),
+            };
+
+            // Check if the location is within the bounds
+            withinBounds =
+              location.lat >= southWest.lat &&
+              location.lat <= northEast.lat &&
+              location.lng >= southWest.lng &&
+              location.lng <= northEast.lng;
           }
         }
 
-        // Add optional parameters if provided
-        if (keyword) params.append('keyword', keyword);
-        if (openNow) params.append('opennow', 'true');
+        // Check if the result matches the requested type
+        const matchesType = result.types?.includes(type || '') || false;
 
-        // Make the request to Google Places API
-        const url = `${baseUrl}?${params.toString()}`;
-        console.log(
-          `[API] Request ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`,
-          url
-        );
+        // Check if the result matches the openNow filter (if specified)
+        const matchesOpenNow =
+          !openNow || result.opening_hours?.open_now === true;
 
-        try {
-          const response = await fetch(url);
-          const data: GooglePlacesResponse = await response.json();
-
-          // Check for API errors
-          if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-            console.error(
-              `[API] Error ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`,
-              data.status,
-              data.error_message
-            );
-            return []; // Return empty array for this keyword if there's an error
-          }
-
-          // Log the number of results for this keyword
-          console.log(
-            `[API] Received ${data.results?.length || 0} results ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}`
-          );
-
-          // Return the results with the keyword that found them
-          return data.results.map(
-            (result) =>
-              ({
-                ...result,
-                sourceKeyword: keyword,
-              }) as ExtendedPlaceResult
-          );
-        } catch (error) {
-          console.error(`[API] Fetch error for keyword "${keyword}":`, error);
-          // Propagate the error instead of returning an empty array
-          throw error;
-        }
+        return withinBounds && matchesType && matchesOpenNow;
       });
 
-      // Wait for all requests in this batch to complete
-      const batchResults = await Promise.all(batchPromises);
+      console.log(
+        `[API] After bounds, type, and openNow filtering: ${allResults.length} results from ${cachedData.length} cached items`
+      );
 
-      // Add results to our collection, avoiding duplicates
-      for (const results of batchResults) {
-        for (const result of results) {
-          if (!uniquePlaceIds.has(result.place_id)) {
-            uniquePlaceIds.add(result.place_id);
-            allResults.push(result);
+      // If we don't have any results after filtering, we need to fetch from the API
+      if (allResults.length === 0) {
+        console.log(
+          `[API] No matching results in cache for bounds: ${bounds}, type: ${type}, openNow: ${openNow}, fetching from API`
+        );
+        fromCache = false;
+      } else {
+        fromCache = true;
+      }
+    }
+
+    // If we don't have cached data or no matching results after filtering, fetch from the API
+    if (!cachedData || allResults.length === 0) {
+      console.log(
+        `[API] ${cachedData ? 'No matching results in cache' : 'Cache miss'}, fetching from Google Places API`
+      );
+
+      // Build the Google Places API URL using type-safe environment variables
+      const apiKey = env.GOOGLE_PLACES_API_KEY;
+      const baseUrl = env.GOOGLE_PLACES_URL;
+
+      // Create a Set to store unique place IDs to avoid duplicates
+      const uniquePlaceIds = new Set<string>();
+
+      // If we have many keywords, batch them to reduce the number of API calls
+      const BATCH_SIZE = 3; // Process keywords in batches of 3
+      const keywordsToUse = keywords.length > 0 ? keywords : [''];
+      const keywordBatches: string[][] = [];
+
+      // Create batches of keywords
+      for (let i = 0; i < keywordsToUse.length; i += BATCH_SIZE) {
+        keywordBatches.push(keywordsToUse.slice(i, i + BATCH_SIZE));
+      }
+
+      console.log(
+        `[API] Processing ${keywordsToUse.length} keywords in ${keywordBatches.length} batches`
+      );
+
+      // Process each batch of keywords
+      for (const batch of keywordBatches) {
+        console.log(
+          `[API] Processing batch of keywords: ${batch.join(', ') || '(type only)'}`
+        );
+
+        // Make a request for each keyword in the batch
+        const batchPromises = batch.map(async (keyword: string) => {
+          const params = new URLSearchParams({
+            location,
+            radius,
+            type,
+            key: apiKey,
+          });
+
+          // Add bounds if provided (this will override radius)
+          if (bounds) {
+            // Validate bounds format: should be "lat1,lng1|lat2,lng2"
+            const boundsRegex =
+              /^-?\d+(\.\d+)?,-?\d+(\.\d+)?\|-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+            if (boundsRegex.test(bounds)) {
+              params.append('bounds', bounds);
+            } else {
+              console.warn(
+                `[API] Invalid bounds format: ${bounds}, using radius instead`
+              );
+            }
+          }
+
+          // Add optional parameters if provided
+          if (keyword) params.append('keyword', keyword);
+          if (openNow) params.append('opennow', 'true');
+
+          // Make the request to Google Places API
+          const url = `${baseUrl}?${params.toString()}`;
+          console.log(
+            `[API] Request ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`,
+            url
+          );
+
+          try {
+            const response = await fetch(url);
+            const data: GooglePlacesResponse = await response.json();
+
+            // Check for API errors
+            if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+              console.error(
+                `[API] Error ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}:`,
+                data.status,
+                data.error_message
+              );
+              return []; // Return empty array for this keyword if there's an error
+            }
+
+            // Log the number of results for this keyword
+            console.log(
+              `[API] Received ${data.results?.length || 0} results ${keyword ? 'for keyword "' + keyword + '"' : '(type only)'}`
+            );
+
+            // Return the results with the keyword that found them
+            return data.results.map(
+              (result) =>
+                ({
+                  ...result,
+                  sourceKeyword: keyword,
+                  // Ensure types is included in the result
+                  types: result.types || [],
+                }) as ExtendedPlaceResult
+            );
+          } catch (error) {
+            console.error(`[API] Fetch error for keyword "${keyword}":`, error);
+            // Propagate the error instead of returning an empty array
+            throw error;
+          }
+        });
+
+        // Wait for all requests in this batch to complete
+        const batchResults = await Promise.all(batchPromises);
+
+        // Add results to our collection, avoiding duplicates
+        for (const results of batchResults) {
+          for (const result of results) {
+            if (!uniquePlaceIds.has(result.place_id)) {
+              uniquePlaceIds.add(result.place_id);
+              allResults.push(result);
+            }
           }
         }
       }
+
+      // Cache the results for future use (7 days)
+      if (allResults.length > 0) {
+        console.log(
+          `[API] Caching ${allResults.length} results with key: ${cacheKey}`
+        );
+        await redis.set(cacheKey, allResults, { ex: CACHE_EXPIRATION_TIME });
+      }
+    }
+
+    // If we have keywords and the data came from cache, filter the results by keywords
+    if (fromCache && keywords.length > 0) {
+      console.log(
+        `[API] Filtering cached results by keywords: ${keywords.join(', ')}`
+      );
+
+      // Create a Set of unique place IDs that match any of the keywords
+      const matchingPlaceIds = new Set<string>();
+
+      // For each result, check if it matches any of the keywords
+      for (const result of allResults) {
+        // Check if the place name or vicinity contains any of the keywords
+        const placeText =
+          `${result.name} ${result.vicinity || ''}`.toLowerCase();
+
+        // Check if any keyword matches
+        const matchesKeyword = keywords.some((keyword) =>
+          placeText.includes(keyword.toLowerCase())
+        );
+
+        if (matchesKeyword) {
+          matchingPlaceIds.add(result.place_id);
+        }
+      }
+
+      // Filter the results to only include places that match the keywords
+      allResults = allResults.filter((result) =>
+        matchingPlaceIds.has(result.place_id)
+      );
+
+      console.log(
+        `[API] After keyword filtering: ${allResults.length} results`
+      );
     }
 
     // Transform the results to match our Place model
@@ -261,9 +392,12 @@ export async function GET(request: NextRequest) {
     });
 
     console.log(
-      `Returning ${places.length} unique places from ${keywords.length} keywords`
+      `[API] Returning ${places.length} unique places ${fromCache ? 'from cache' : 'from API'}`
     );
-    return NextResponse.json({ places });
+    return NextResponse.json({
+      places,
+      source: fromCache ? 'cache' : 'api',
+    });
   } catch (error) {
     console.error('Error fetching nearby places:', error);
     return NextResponse.json(
