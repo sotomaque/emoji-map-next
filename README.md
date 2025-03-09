@@ -52,6 +52,8 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Prisma](https://www.prisma.io/) - ORM for database access
 - [Clerk](https://clerk.com/) - User authentication
 
+## Getting Started
+
 ### Environment Variables
 
 Create a `.env.local` file in the root of the web directory with the following variables:
@@ -103,6 +105,7 @@ KV_REST_API_TOKEN=your_upstash_redis_token
 pnpm dev           # Start the development server
 pnpm build         # Build the application for production
 pnpm start         # Start the production server
+pnpm postinstall   # Generate Prisma client (runs automatically after install)
 
 # Code Quality
 pnpm lint          # Run ESLint to check for issues
@@ -116,6 +119,12 @@ pnpm test          # Run all tests
 pnpm test:watch    # Run tests in watch mode
 pnpm test:ui       # Run tests with UI
 pnpm test:coverage # Run tests with coverage report
+
+# Database
+pnpm db:generate   # Generate Prisma client
+pnpm db:push       # Push schema changes to the database
+pnpm db:studio     # Open Prisma Studio to manage the database
+pnpm db:seed       # Seed the database with initial data
 ```
 
 ## API Documentation
@@ -163,6 +172,15 @@ Fetches nearby places based on location and category.
 /api/places/nearby?location=37.7749,-122.4194&radius=5000&type=restaurant&keywords=burger,pizza&openNow=true
 ```
 
+**Caching:**
+
+This endpoint implements Redis caching to improve performance and reduce API calls to Google Places:
+
+- Results are cached based on location and radius
+- Coordinates are rounded to 2 decimal places (~1.11km precision)
+- Radius values are normalized to reduce unique cache keys
+- Cache entries expire after 7 days
+
 ### `/api/places/details`
 
 Fetches details for a specific place.
@@ -177,6 +195,29 @@ Fetches details for a specific place.
 /api/places/details?placeId=ChIJN1t_tDeuEmsRUsoyG83frY4
 ```
 
+**Caching:**
+
+This endpoint implements Redis caching to improve performance and reduce API calls to Google Places:
+
+- Results are cached based on placeId
+- Cache entries expire after 1 hour
+- The response includes a `source` field indicating whether the data came from the cache or the API
+
+### `/api/webhooks`
+
+Webhook endpoint for Clerk authentication events.
+
+**Purpose:**
+
+- Receives webhook events from Clerk when user data changes
+- Synchronizes user data with the PostgreSQL database via Prisma
+- Handles user creation, updates, and deletion events
+
+**Security:**
+
+- Validates webhook requests using Clerk's signing secret
+- Rejects requests without valid Svix headers
+
 ## Project Structure
 
 ```
@@ -185,71 +226,33 @@ web/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── docs/
-│   │   │   │   └── route.ts
 │   │   │   ├── health/
-│   │   │   │   └── route.ts
 │   │   │   ├── places/
 │   │   │   │   ├── nearby/
-│   │   │   │   │   └── route.ts
 │   │   │   │   └── details/
-│   │   │   │       └── route.ts
 │   │   │   ├── webhooks/
-│   │   │   │   └── route.ts
-│   │   │   ├── api-docs/
-│   │   │   └── page.tsx
+│   │   │   └── api-docs/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/
 │   │   ├── map/
-│   │   │   ├── GoogleMap.tsx
-│   │   │   └── EmojiMarker.tsx
 │   │   ├── nav/
 │   │   ├── ui/
 │   │   └── providers/
 │   ├── constants/
 │   ├── hooks/
-│   │   ├── usePlaces.ts
-│   │   └── useCurrentLocation.ts
 │   ├── services/
-│   │   └── places.ts
 │   ├── store/
-│   │   └── useFiltersStore.ts
 │   ├── lib/
-│   │   ├── swagger.ts
-│   │   ├── db.ts
-│   │   ├── redis.ts
-│   │   └── user-service.ts
 │   ├── utils/
-│   │   └── redis/
-│   │       ├── cache-utils.ts
-│   │       └── cache-utils.test.ts
 │   ├── __tests__/
-│   │   ├── api/
-│   │   │   ├── health/
-│   │   │   ├── places/
-│   │   │   └── webhooks/
-│   │   ├── services/
-│   │   │   ├── places.test.ts
-│   │   │   └── hooks.test.tsx
-│   │   ├── store/
-│   │   │   └── useFiltersStore.test.ts
-│   │   ├── examples/
-│   │   ├── mocks/
-│   │   ├── setup.ts
-│   │   └── utils.tsx
 │   ├── types/
-│   │   ├── google-places.ts
-│   │   └── nav-items.ts
 │   └── env.ts
 ├── prisma/
 │   └── schema.prisma
 ├── public/
 ├── .env.local
-├── next.config.ts
-├── vitest.config.ts
-├── eslint.config.mjs
-├── tailwind.config.ts
-└── package.json
+└── various config files
 ```
 
 ## Architecture
@@ -265,7 +268,7 @@ The application follows a modern Next.js architecture with the following key com
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           Next.js App Router                        │
 ├─────────────────┬─────────────────┬────────────────┬────────────────┤
-│  React Components│    Zustand Store  │  React Query   │  Tailwind CSS  │
+│ React Components│  Zustand Store  │  React Query   │   TailwindCSS  │
 └─────────────────┴─────────────────┴────────────────┴────────────────┘
                                     │
                                     ▼
@@ -275,14 +278,14 @@ The application follows a modern Next.js architecture with the following key com
 │  /api/places    │  /api/webhooks  │  /api/health   │  /api/docs     │
 └─────────────────┴─────────────────┴────────────────┴────────────────┘
                                     │
-                 ┌─────────────────┬┴┬─────────────────┐
-                 │                 │ │                 │
-                 ▼                 ▼ ▼                 ▼
-┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
-│ Google Places API │  │   Upstash Redis   │  │  PostgreSQL DB    │
-└───────────────────┘  └───────────────────┘  └───────────────────┘
-                                                        ▲
-                                                        │
+                 ┌──────────────────┬─────────────────┐
+                 │                  │                 │
+                 ▼                  ▼                 ▼
+┌───────────────────┐   ┌───────────────────┐  ┌───────────────────┐
+│ Google Places API │   │   Upstash Redis   │  │  PostgreSQL DB    │
+└───────────────────┘   └───────────────────┘  └───────────────────┘
+                                                       ▲
+                                                       │
                                               ┌───────────────────┐
                                               │  Clerk Auth       │
                                               └───────────────────┘
@@ -298,20 +301,86 @@ The application follows a modern Next.js architecture with the following key com
 ### Backend
 
 - **Next.js API Routes**: Server-side API endpoints
-- **Google Places API**: External API for location data
-- **Redis Caching**: Performance optimization for API requests
-- **Prisma ORM**: Database access layer
-- **PostgreSQL**: Relational database for user data
-- **Clerk Authentication**: User authentication and management
 
-### Caching Strategy
+  - `/api/places/nearby`: Fetches nearby places with Redis caching (7-day expiration)
+  - `/api/places/details`: Fetches place details with Redis caching (1-hour expiration)
+  - `/api/webhooks`: Processes Clerk webhook events for user data synchronization
+  - `/api/health`: Health check endpoint for monitoring
+  - `/api/docs`: OpenAPI documentation endpoint
 
-The application implements a sophisticated caching strategy for Google Places API requests:
+- **External Services**:
+  - **Google Places API**: Provides location data for places
+  - **Upstash Redis**: Serverless Redis for caching API responses
+  - **PostgreSQL Database**: Stores user data and other persistent information
+  - **Clerk Authentication**: Manages user authentication and profile data
 
-1. **Cache Key Generation**: Cache keys are based on location and radius
-2. **Coordinate Normalization**: Coordinates are rounded to 2 decimal places (~1.11km precision)
-3. **Radius Normalization**: Radius values are normalized to reduce unique cache keys
-4. **Client-Side Filtering**: Cached results are filtered by type, openNow, and keywords
-5. **Cache Expiration**: Cache entries expire after 7 days
+### Data Flow
 
-This approach significantly reduces the number of requests to the Google Places API, improving performance and reducing costs.
+1. **User Authentication**:
+
+   - User authenticates via Clerk
+   - Clerk sends webhook events to `/api/webhooks`
+   - User data is synchronized with PostgreSQL database
+
+2. **Place Search**:
+
+   - Client requests nearby places from `/api/places/nearby`
+   - API checks Redis cache for matching data
+   - If cache hit, returns filtered data from cache
+   - If cache miss, fetches from Google Places API and caches the result
+   - Results are returned to the client
+
+3. **Place Details**:
+   - Client requests place details from `/api/places/details`
+   - API checks Redis cache for matching data
+   - If cache hit, returns data from cache
+   - If cache miss, fetches from Google Places API and caches the result
+   - Results are returned to the client
+
+## Database
+
+The application uses PostgreSQL as the database, with Prisma as the ORM. The database schema is defined in `prisma/schema.prisma`.
+
+### Database Schema
+
+The database includes the following models:
+
+- **User**: Stores user information synchronized with Clerk authentication
+- **PlaceCache**: Stores cached Google Places API responses
+
+### Migrations
+
+For production environments, it's recommended to use Prisma Migrate to manage database migrations:
+
+```bash
+# Create a new migration
+npx prisma migrate dev --name <migration-name>
+
+# Apply migrations in production
+npx prisma migrate deploy
+```
+
+## Authentication
+
+The application uses Clerk for authentication and user management. Clerk provides a complete authentication solution with features like:
+
+- Social login (Google, GitHub, etc.)
+- Email/password authentication
+- Multi-factor authentication
+- User profile management
+- Session management
+
+### Authentication Flow
+
+1. Users sign in using Clerk's authentication components
+2. Clerk issues a JWT token upon successful authentication
+3. The token is used to authenticate API requests
+4. User data is synchronized with the PostgreSQL database via webhooks
+
+When user data changes in Clerk (e.g., a user signs up, updates their profile, or is deleted), Clerk sends webhook events to the application. The application processes these events and updates the PostgreSQL database accordingly.
+
+Webhook requests are secured using Svix headers, which include:
+
+- `svix-id`: A unique identifier for the webhook event
+- `svix-timestamp`: The time the webhook was sent
+- `svix-signature`: A signature that verifies the webhook came from Clerk

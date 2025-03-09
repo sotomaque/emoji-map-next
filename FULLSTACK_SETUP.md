@@ -7,7 +7,7 @@ This guide explains how to set up the full stack authentication feature using Cl
 The full stack authentication feature consists of:
 
 1. **Clerk Authentication**: Used for user authentication in both the web and iOS apps
-2. **Database Integration**: PostgreSQL database (via Supabase, PlanetScale, or Railway) to store user data
+2. **Database Integration**: PostgreSQL database (via Supabase) to store user data
 3. **Webhook Integration**: Syncs user data between Clerk and our database
 
 ## Web Setup

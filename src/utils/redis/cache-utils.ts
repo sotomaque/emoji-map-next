@@ -82,3 +82,15 @@ export function generatePlacesCacheKey(params: {
   // Create a deterministic key based only on the location and radius
   return `places:${normalizedLocation}:${normalizedRadius}`;
 }
+
+/**
+ * Generate a cache key for the place details API
+ * We only cache based on placeId
+ */
+export function generatePlaceDetailsCacheKey(placeId: string | null): string {
+  if (!placeId) {
+    throw new Error('PlaceId is required for generating a cache key');
+  }
+  
+  return `place-details:${placeId}`;
+}
