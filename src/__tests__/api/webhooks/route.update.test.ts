@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST } from '@/app/api/webhooks/clerk/route';
+import { POST } from '@/app/api/webhooks/route';
 import { prisma } from '@/lib/db';
 import userUpdateFixture from '@/__fixtures__/clerk/webhooks/user/update.json';
 
