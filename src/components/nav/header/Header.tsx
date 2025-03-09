@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Logo } from '../logo/Logo';
 import { DesktopNav } from '../desktop-nav/Desktop-Nav';
 import { ModeToggle } from '../mode-toggle/Mode-Toggle';
-import { navItems } from '@/src/constants/routes';
+import { navItems } from '@/constants/routes';
 import { MobileNav } from '../mobile-nav/Mobile-Nav';
 
 export function Header() {

@@ -1,44 +1,24 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState, useCallback, useEffect } from 'react';
-import { useFiltersStore } from '@/src/store/useFiltersStore';
-import { usePlaces, useCurrentLocation } from '@/src/hooks/usePlaces';
-import type { MapDataPoint } from '@/src/services/places';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useFiltersStore } from '@/store/useFiltersStore';
+import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
+import type { MapDataPoint } from '@/services/places';
+import EmojiSelectorSkeleton from '@/components/map/EmojiSelectorSkeleton';
+import MapSkeleton from '@/components/map/MapSkeleton';
+import { useMarkerStore, type Viewport } from '@/store/markerStore';
 
 // Dynamically import the EmojiSelector component with no SSR
-const EmojiSelector = dynamic(
-  () => import('@/src/components/map/EmojiSelector'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className='h-32 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex items-center justify-center'>
-        <div className='animate-pulse flex space-x-4'>
-          <div className='rounded-full bg-gray-200 dark:bg-gray-700 h-10 w-10'></div>
-          <div className='flex-1 space-y-2 py-1'>
-            <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4'></div>
-            <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2'></div>
-          </div>
-        </div>
-      </div>
-    ),
-  }
-);
+const EmojiSelector = dynamic(() => import('@/components/map/EmojiSelector'), {
+  ssr: false,
+  loading: () => <EmojiSelectorSkeleton />,
+});
 
 // Dynamically import the GoogleMap component with no SSR
-const GoogleMap = dynamic(() => import('@/src/components/map/GoogleMap'), {
+const GoogleMap = dynamic(() => import('@/components/map/GoogleMap'), {
   ssr: false,
-  loading: () => (
-    <div className='flex-grow flex items-center justify-center bg-gray-100 dark:bg-gray-900'>
-      <div className='text-center'>
-        <div className='text-6xl mb-4 animate-bounce'>🗺️</div>
-        <h2 className='text-2xl font-semibold mb-2'>Loading Map...</h2>
-        <p className='text-gray-600 dark:text-gray-400'>
-          Preparing your emoji map experience
-        </p>
-      </div>
-    </div>
-  ),
+  loading: () => <MapSkeleton />,
 });
 
 export default function AppPage() {
@@ -52,7 +32,7 @@ export default function AppPage() {
     priceLevel,
     minimumRating,
     userLocation,
-    viewport,
+    viewport: zustandViewport,
     setUserLocation,
     setViewportCenter,
     setViewportBounds,
@@ -81,59 +61,271 @@ export default function AppPage() {
     : selectedCategories;
 
   // Use viewport center for API request if available, otherwise use user location
-  const searchLocation = viewport.center || userLocation;
+  const searchLocation = zustandViewport.center || userLocation;
 
-  // Create a refetch trigger that changes when relevant filters change
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
+  // Refs for debounce timeouts
+  const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const centerChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update refetch trigger when filters change
-  useEffect(() => {
-    // Use a debounce to prevent too many API calls
-    const timer = setTimeout(() => {
-      if (searchLocation) {
-        setRefetchTrigger((prev) => prev + 1);
-      }
-    }, 500); // 500ms debounce
+  // Track if we're currently panning the map
+  const isPanningRef = useRef(false);
 
-    return () => clearTimeout(timer);
-  }, [
-    categoriesToUse,
-    openNow,
-    priceLevel,
-    minimumRating,
-    searchLocation,
-    viewport.bounds,
-  ]);
+  // Create a persistent marker cache to track which markers have already been rendered
+  // const markerCacheRef = useRef(new Map<string, MapDataPoint>());
+
+  // Track the previous viewport for comparison
+  // const prevViewportRef = useRef({...});
 
   // Fetch places based on filters and viewport
-  const {
-    data,
-    isLoading: isLoadingPlaces,
-    refetch,
-  } = usePlaces({
+  const { isLoading: isLoadingPlaces, refetch } = usePlaces({
     latitude: searchLocation?.lat || 0,
     longitude: searchLocation?.lng || 0,
     radius: 5000, // 5km
-    bounds: viewport.bounds || undefined,
+    bounds: zustandViewport.bounds || undefined,
     categories: categoriesToUse,
     openNow,
     priceLevel,
     minimumRating: minimumRating || undefined,
-    refetchTrigger, // Add refetch trigger to query key
   });
 
-  // Filter markers based on favorites if needed
-  const markers = showFavoritesOnly
-    ? (data?.mapDataPoints || []).filter((marker) =>
-        favoriteMarkerIds.has(marker.id)
-      )
-    : data?.mapDataPoints || [];
+  // Get marker store functions - only destructure what we need
+  const {
+    visibleMarkers: markers,
+    newMarkerIds,
+    isTransitioning,
+    setMarkers,
+    setCurrentViewport,
+    setIsTransitioning,
+    hasViewportCached,
+    getMarkersForViewport,
+    clearCache,
+  } = useMarkerStore();
+
+  // Convert Zustand viewport to our Viewport type
+  const currentViewport: Viewport = useMemo(
+    () => ({
+      center: zustandViewport.center,
+      bounds: zustandViewport.bounds,
+      zoom: zustandViewport.zoom,
+    }),
+    [zustandViewport]
+  );
+
+  // Handle map bounds changed
+  const handleBoundsChanged = useCallback(
+    (bounds: google.maps.LatLngBounds | null) => {
+      if (!bounds) return;
+
+      // Clear any existing timeout
+      if (boundsChangeTimeoutRef.current) {
+        clearTimeout(boundsChangeTimeoutRef.current);
+      }
+
+      // Set panning flag
+      isPanningRef.current = true;
+
+      // Convert Google Maps bounds to the format expected by the store
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+
+      const newBounds = {
+        ne: { lat: ne.lat(), lng: ne.lng() },
+        sw: { lat: sw.lat(), lng: sw.lng() },
+      };
+
+      // Update the viewport in Zustand
+      setViewportBounds(newBounds);
+
+      // Create a new viewport object
+      const newViewport: Viewport = {
+        center: zustandViewport.center,
+        bounds: newBounds,
+        zoom: zustandViewport.zoom,
+      };
+
+      // Update the current viewport in the marker store
+      setCurrentViewport(newViewport);
+
+      // Debounce the API call to prevent too many requests while panning
+      boundsChangeTimeoutRef.current = setTimeout(() => {
+        isPanningRef.current = false;
+        console.log('[AppPage] Bounds change debounce complete');
+
+        // Check if we already have markers for this viewport
+        if (hasViewportCached(newViewport)) {
+          console.log('[AppPage] Using cached markers for this viewport');
+          // No need to fetch, just use the cached markers
+          const cachedMarkers = getMarkersForViewport(newViewport);
+
+          // Apply any filters if needed
+          const filteredMarkers = showFavoritesOnly
+            ? cachedMarkers.filter((marker) => favoriteMarkerIds.has(marker.id))
+            : cachedMarkers;
+
+          // Update visible markers
+          setMarkers(filteredMarkers, newViewport);
+        } else {
+          console.log('[AppPage] Fetching new markers for this viewport');
+          // Trigger refetch with transition
+          handleRefetchWithTransition(newViewport);
+        }
+      }, 500); // 500ms debounce
+    },
+    [
+      zustandViewport,
+      setViewportBounds,
+      setCurrentViewport,
+      hasViewportCached,
+      getMarkersForViewport,
+      showFavoritesOnly,
+      favoriteMarkerIds,
+      setMarkers,
+    ]
+  );
+
+  // Handle map center changed
+  const handleCenterChanged = useCallback(
+    (center: { lat: number; lng: number }) => {
+      // Only update center if we're not already panning
+      // This prevents duplicate API calls since bounds change also fires
+      if (isPanningRef.current) {
+        console.log('[AppPage] Skipping center change during active panning');
+        return;
+      }
+
+      // Update viewport center in Zustand
+      setViewportCenter(center);
+
+      // Create a new viewport object
+      const newViewport: Viewport = {
+        center,
+        bounds: zustandViewport.bounds,
+        zoom: zustandViewport.zoom,
+      };
+
+      // Update the current viewport in the marker store
+      setCurrentViewport(newViewport);
+
+      // Clear any existing timeout
+      if (centerChangeTimeoutRef.current) {
+        clearTimeout(centerChangeTimeoutRef.current);
+      }
+
+      // Debounce the API call
+      centerChangeTimeoutRef.current = setTimeout(() => {
+        console.log('[AppPage] Center change debounce complete');
+
+        // Check if we already have markers for this viewport
+        if (hasViewportCached(newViewport)) {
+          console.log('[AppPage] Using cached markers for this viewport');
+          // No need to fetch, just use the cached markers
+          const cachedMarkers = getMarkersForViewport(newViewport);
+
+          // Apply any filters if needed
+          const filteredMarkers = showFavoritesOnly
+            ? cachedMarkers.filter((marker) => favoriteMarkerIds.has(marker.id))
+            : cachedMarkers;
+
+          // Update visible markers
+          setMarkers(filteredMarkers, newViewport);
+        } else {
+          console.log('[AppPage] Fetching new markers for this viewport');
+          // Trigger refetch with transition
+          handleRefetchWithTransition(newViewport);
+        }
+      }, 500); // 500ms debounce
+    },
+    [
+      zustandViewport,
+      setViewportCenter,
+      setCurrentViewport,
+      hasViewportCached,
+      getMarkersForViewport,
+      showFavoritesOnly,
+      favoriteMarkerIds,
+      setMarkers,
+    ]
+  );
+
+  // Handle map zoom changed
+  const handleZoomChanged = useCallback(
+    (zoom: number) => {
+      console.log('[AppPage] Zoom changed:', zoom);
+
+      // Update viewport zoom in Zustand
+      setViewportZoom(zoom);
+
+      // Create a new viewport object
+      const newViewport: Viewport = {
+        center: zustandViewport.center,
+        bounds: zustandViewport.bounds,
+        zoom,
+      };
+
+      // Update the current viewport in the marker store
+      setCurrentViewport(newViewport);
+
+      // We don't trigger a refetch here as the bounds change will handle that
+    },
+    [zustandViewport, setViewportZoom, setCurrentViewport]
+  );
+
+  // Handle refetch with transition state
+  const handleRefetchWithTransition = useCallback(
+    async (viewport: Viewport) => {
+      if (!searchLocation) return;
+
+      // Set transitioning state to true
+      setIsTransitioning(true);
+
+      try {
+        // Refetch data
+        const result = await refetch();
+        console.log('[AppPage] Data refetched successfully');
+
+        // If we have data, update the marker store
+        if (result.data && result.data.mapDataPoints) {
+          // Apply any filters if needed
+          const filteredMarkers = showFavoritesOnly
+            ? result.data.mapDataPoints.filter((marker) =>
+                favoriteMarkerIds.has(marker.id)
+              )
+            : result.data.mapDataPoints;
+
+          // Update the marker store
+          setMarkers(filteredMarkers, viewport);
+        }
+
+        // Add a small delay before removing transition state
+        // This gives time for the new markers to prepare for animation
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 100);
+      } catch (error) {
+        console.error('[AppPage] Error refetching data:', error);
+        setIsTransitioning(false);
+      }
+    },
+    [
+      searchLocation,
+      refetch,
+      showFavoritesOnly,
+      favoriteMarkerIds,
+      setMarkers,
+      setIsTransitioning,
+    ]
+  );
 
   // Handle shuffle click (refetch data)
   const handleShuffleClick = useCallback(() => {
-    console.log('Shuffling places...');
-    refetch();
-  }, [refetch]);
+    console.log('Shuffle clicked');
+
+    // Clear the marker cache
+    clearCache();
+
+    // Trigger a refetch with transition
+    handleRefetchWithTransition(currentViewport);
+  }, [clearCache, handleRefetchWithTransition, currentViewport]);
 
   // Handle map click
   const handleMapClick = useCallback(() => {
@@ -156,66 +348,20 @@ export default function AppPage() {
     });
   }, []);
 
-  // Handle bounds changed
-  const handleBoundsChanged = useCallback(
-    (bounds: google.maps.LatLngBounds | null) => {
-      if (bounds) {
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-
-        const newBounds = {
-          ne: { lat: ne.lat(), lng: ne.lng() },
-          sw: { lat: sw.lat(), lng: sw.lng() },
-        };
-
-        // Only update if the bounds have changed significantly
-        if (
-          !viewport.bounds ||
-          Math.abs(newBounds.ne.lat - viewport.bounds.ne.lat) > 0.001 ||
-          Math.abs(newBounds.ne.lng - viewport.bounds.ne.lng) > 0.001 ||
-          Math.abs(newBounds.sw.lat - viewport.bounds.sw.lat) > 0.001 ||
-          Math.abs(newBounds.sw.lng - viewport.bounds.sw.lng) > 0.001
-        ) {
-          setViewportBounds(newBounds);
-          console.log('[AppPage] Map bounds changed:', newBounds);
-        }
-      }
-    },
-    [viewport.bounds, setViewportBounds]
-  );
-
-  // Handle center changed
-  const handleCenterChanged = useCallback(
-    (center: { lat: number; lng: number }) => {
-      // Only update if the center has changed significantly
-      if (
-        !viewport.center ||
-        Math.abs(center.lat - viewport.center.lat) > 0.001 ||
-        Math.abs(center.lng - viewport.center.lng) > 0.001
-      ) {
-        setViewportCenter(center);
-        console.log('[AppPage] Map center changed:', center);
-      }
-    },
-    [viewport.center, setViewportCenter]
-  );
-
-  // Handle zoom changed
-  const handleZoomChanged = useCallback(
-    (zoom: number) => {
-      if (zoom !== viewport.zoom) {
-        setViewportZoom(zoom);
-        console.log('[AppPage] Map zoom changed:', zoom);
-      }
-    },
-    [viewport.zoom, setViewportZoom]
-  );
-
   // Loading state
   const isLoading = isLoadingLocation || isLoadingPlaces;
 
   return (
     <div className='flex flex-col h-screen'>
+      <div className='flex justify-center'>
+        <div className='absolute top-0 z-50 py-4'>
+          <EmojiSelector
+            onShuffleClick={handleShuffleClick}
+            isLoading={isLoading}
+          />
+        </div>
+      </div>
+
       <div className='flex-grow relative'>
         <GoogleMap
           markers={markers}
@@ -225,13 +371,9 @@ export default function AppPage() {
           onCenterChanged={handleCenterChanged}
           onZoomChanged={handleZoomChanged}
           initialCenter={userLocation || undefined}
-          initialZoom={viewport.zoom}
-        />
-      </div>
-      <div className='h-32 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800'>
-        <EmojiSelector
-          onShuffleClick={handleShuffleClick}
-          isLoading={isLoading}
+          initialZoom={zustandViewport.zoom}
+          isTransitioning={isTransitioning}
+          newMarkerIds={newMarkerIds}
         />
       </div>
     </div>

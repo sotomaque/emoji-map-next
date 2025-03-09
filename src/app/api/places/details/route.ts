@@ -1,4 +1,4 @@
-import { env } from '@/src/env';
+import { env } from '@/env';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

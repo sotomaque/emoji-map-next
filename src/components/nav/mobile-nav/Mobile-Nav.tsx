@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/src/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { TextAlignRightIcon } from '@radix-ui/react-icons';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -11,12 +11,12 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/src/components/ui/sheet';
-import { cn } from '@/src/lib/utils';
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import type { NavItem } from '@/src/types/nav-items';
-import { isNavItemActive } from '@/src/utils/nav/is-nav-item-active';
 import { Logo } from '../logo/Logo';
+import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
+import type { NavItem } from '@/types/nav-items';
 
 function NavLink({
   href,

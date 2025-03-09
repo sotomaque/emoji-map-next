@@ -23,6 +23,15 @@ const eslintConfig = [
         },
       ],
     },
+    ignores: [
+      '**/*.config.mjs',
+      './node_modules',
+      './dist',
+      './coverage',
+      './build',
+      './public',
+      './next',
+    ],
   },
 ];
 

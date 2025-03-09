@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import SwaggerUIWrapper from './SwaggerUIWrapper';
-import { ErrorBoundary } from '@/src/components/error-boundary/ErrorBoundary';
+import { ErrorBoundary } from '@/components/error-boundary/ErrorBoundary';
 import { LoadingDocs } from './LoadingDocs';
 
 export default function ApiDocs() {

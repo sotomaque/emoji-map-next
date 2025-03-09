@@ -110,3 +110,31 @@
     transform: rotate(360deg);
   }
 }
+
+/* Add marker animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.emoji-marker {
+  animation-name: fadeIn;
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+/* Prevent marker flashing */
+.emoji-marker-container {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  animation-name: fadeIn;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}

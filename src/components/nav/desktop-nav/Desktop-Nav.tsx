@@ -1,7 +1,7 @@
 'use client';
 
-import type { NavItem } from '@/src/types/nav-items';
-import { isNavItemActive } from '@/src/utils/nav/is-nav-item-active';
+import type { NavItem } from '@/types/nav-items';
+import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';

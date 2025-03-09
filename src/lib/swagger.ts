@@ -1,5 +1,5 @@
 import { createSwaggerSpec } from 'next-swagger-doc';
-import { env } from '@/src/env';
+import { env } from '@/env';
 
 export const getApiDocs = () => {
   const isProduction = env.NODE_ENV === 'production';
