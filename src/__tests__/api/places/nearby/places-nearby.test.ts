@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { GET } from '../../../../app/api/places/nearby/route';
 
 // Mock the environment variables and Next.js modules
-vi.mock('@/src/env', () => {
+vi.mock('@/env', () => {
   return {
     env: {
       GOOGLE_PLACES_API_KEY: 'test-api-key',

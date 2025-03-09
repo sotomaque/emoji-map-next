@@ -1,0 +1,132 @@
+{
+  "data": {
+    "backup_code_enabled": false,
+    "banned": false,
+    "create_organization_enabled": true,
+    "created_at": 1741475612067,
+    "delete_self_enabled": true,
+    "email_addresses": [
+      {
+        "created_at": 1741475612052,
+        "email_address": "test@gmail.com",
+        "id": "idn_test_id",
+        "linked_to": [
+          {
+            "id": "idn_apple_id",
+            "type": "oauth_apple"
+          },
+          {
+            "id": "idn_google_id",
+            "type": "oauth_google"
+          }
+        ],
+        "matches_sso_connection": false,
+        "object": "email_address",
+        "reserved": false,
+        "updated_at": 1741475612083,
+        "verification": {
+          "attempts": null,
+          "expire_at": null,
+          "status": "verified",
+          "strategy": "from_oauth_apple"
+        }
+      }
+    ],
+    "enterprise_accounts": [],
+    "external_accounts": [
+      {
+        "approved_scopes": "email https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid profile",
+        "avatar_url": "https://lh3.googleusercontent.com/a/google-url",
+        "created_at": 1741478578431,
+        "email_address": "test@gmail.com",
+        "external_account_id": "eac_external_account_id",
+        "family_name": "last_name",
+        "first_name": "first_name",
+        "given_name": "first_name",
+        "google_id": "google_id",
+        "id": "idn_id",
+        "identification_id": "idn_identification_id",
+        "image_url": "https://img.clerk.com/profile_image",
+        "label": null,
+        "last_name": "last_name",
+        "object": "google_account",
+        "picture": "https://lh3.googleusercontent.com/a/google",
+        "provider": "oauth_google",
+        "provider_user_id": "user_id",
+        "public_metadata": {},
+        "updated_at": 1741478589189,
+        "username": null,
+        "verification": {
+          "attempts": null,
+          "expire_at": 1741479178422,
+          "status": "verified",
+          "strategy": "oauth_google"
+        }
+      },
+      {
+        "approved_scopes": "email name",
+        "avatar_url": "",
+        "created_at": 1741475612044,
+        "email_address": "test@gmail.com",
+        "first_name": "",
+        "id": "eac_id",
+        "identification_id": "idn_id",
+        "label": null,
+        "last_name": "",
+        "object": "external_account",
+        "provider": "oauth_apple",
+        "provider_user_id": "000592.user.id",
+        "public_metadata": {},
+        "updated_at": 1741475612044,
+        "username": null,
+        "verification": {
+          "attempts": null,
+          "expire_at": 1741476175449,
+          "status": "verified",
+          "strategy": "oauth_apple"
+        }
+      }
+    ],
+    "external_id": null,
+    "first_name": null,
+    "has_image": true,
+    "id": "user_id",
+    "image_url": "https://img.clerk.com/profile_image_url",
+    "last_active_at": 1741475612066,
+    "last_name": null,
+    "last_sign_in_at": 1741475612072,
+    "legal_accepted_at": null,
+    "locked": false,
+    "lockout_expires_in_seconds": null,
+    "mfa_disabled_at": null,
+    "mfa_enabled_at": null,
+    "object": "user",
+    "passkeys": [],
+    "password_enabled": false,
+    "phone_numbers": [],
+    "primary_email_address_id": "idn_email_id",
+    "primary_phone_number_id": null,
+    "primary_web3_wallet_id": null,
+    "private_metadata": {},
+    "profile_image_url": "https://www.gravatar.com/avatar?d=mp",
+    "public_metadata": {},
+    "saml_accounts": [],
+    "totp_enabled": false,
+    "two_factor_enabled": false,
+    "unsafe_metadata": {},
+    "updated_at": 1741478589199,
+    "username": null,
+    "verification_attempts_remaining": 100,
+    "web3_wallets": []
+  },
+  "event_attributes": {
+    "http_request": {
+      "client_ip": "",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+    }
+  },
+  "instance_id": "ins_2u36WaBDCv4rcJTYIrvK75VNv56",
+  "object": "event",
+  "timestamp": 1741478589207,
+  "type": "user.updated"
+}

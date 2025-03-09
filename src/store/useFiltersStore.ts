@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { categories } from '@/src/services/places';
+import { categories } from '@/services/places';
 
 // Extract all category names from the categories data
 const allCategoryNames = categories.map(([, name]) => name);

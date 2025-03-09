@@ -133,7 +133,6 @@ export async function fetchPlaces(
 // Function to convert places to map data points
 export function placesToMapDataPoints(places: Place[]): MapDataPoint[] {
   return places.map((place) => {
-    console.log('place', place);
     // Get the emoji for the category, or use a default
     const emoji = categoryEmojis[place.category] || '📍';
 

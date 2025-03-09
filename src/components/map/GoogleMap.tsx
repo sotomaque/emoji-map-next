@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, InfoWindow } from '@react-google-maps/api';
-import { env } from '@/src/env';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { env } from '@/env';
 import EmojiMarker from './EmojiMarker';
+import { useTheme } from 'next-themes';
 
 // Define the center type
 interface LatLngLiteral {
@@ -19,7 +20,6 @@ const mapOptions: google.maps.MapOptions = {
   mapTypeControl: false,
   fullscreenControl: false,
   clickableIcons: false,
-  panControl: false,
   styles: [
     {
       featureType: 'poi',
@@ -28,6 +28,85 @@ const mapOptions: google.maps.MapOptions = {
     },
   ],
 };
+
+const darkModeMapOptions = [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+{ elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+{ elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+{
+  featureType: "administrative.locality",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#d59563" }],
+},
+{
+  featureType: "poi",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#d59563" }],
+},
+{
+  featureType: "poi.park",
+  elementType: "geometry",
+  stylers: [{ color: "#263c3f" }],
+},
+{
+  featureType: "poi.park",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#6b9a76" }],
+},
+{
+  featureType: "road",
+  elementType: "geometry",
+  stylers: [{ color: "#38414e" }],
+},
+{
+  featureType: "road",
+  elementType: "geometry.stroke",
+  stylers: [{ color: "#212a37" }],
+},
+{
+  featureType: "road",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#9ca5b3" }],
+},
+{
+  featureType: "road.highway",
+  elementType: "geometry",
+  stylers: [{ color: "#746855" }],
+},
+{
+  featureType: "road.highway",
+  elementType: "geometry.stroke",
+  stylers: [{ color: "#1f2835" }],
+},
+{
+  featureType: "road.highway",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#f3d19c" }],
+},
+{
+  featureType: "transit",
+  elementType: "geometry",
+  stylers: [{ color: "#2f3948" }],
+},
+{
+  featureType: "transit.station",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#d59563" }],
+},
+{
+  featureType: "water",
+  elementType: "geometry",
+  stylers: [{ color: "#17263c" }],
+},
+{
+  featureType: "water",
+  elementType: "labels.text.fill",
+  stylers: [{ color: "#515c6d" }],
+},
+{
+  featureType: "water",
+  elementType: "labels.text.stroke",
+  stylers: [{ color: "#17263c" }],
+},]
 
 // Define the marker type
 interface MarkerData {
@@ -50,6 +129,8 @@ interface GoogleMapComponentProps {
   onZoomChanged?: (zoom: number) => void;
   initialCenter?: LatLngLiteral;
   initialZoom?: number;
+  isTransitioning?: boolean;
+  newMarkerIds?: Set<string>;
 }
 
 const defaultCenter = { lat: 37.7749, lng: -122.4194 }; // San Francisco
@@ -64,7 +145,12 @@ export default function GoogleMapComponent({
   onZoomChanged,
   initialCenter = defaultCenter,
   initialZoom = defaultZoom,
+  isTransitioning = false,
+  newMarkerIds = new Set<string>(),
 }: GoogleMapComponentProps) {
+  // Theme
+  const { theme } = useTheme();
+
   // Load the Google Maps JavaScript API
   const apiKey = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
@@ -85,9 +171,8 @@ export default function GoogleMapComponent({
   });
 
   // State for the map
-  const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
-  const [center, setCenter] = useState<LatLngLiteral>(initialCenter);
-  const [zoom, setZoom] = useState<number>(initialZoom);
+  const [center] = useState<LatLngLiteral>(initialCenter);
+  const [zoom] = useState<number>(initialZoom);
 
   // Refs for the map
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -103,38 +188,18 @@ export default function GoogleMapComponent({
   }, []);
 
   // Handle map click
-  const handleMapClick = useCallback(
-    (event: google.maps.MapMouseEvent) => {
-      if (onMapClick && event.latLng) {
-        onMapClick(event);
-      }
-      // Close info window when clicking on the map
-      setSelectedMarker(null);
-    },
-    [onMapClick]
-  );
-
-  // Handle marker click
-  const handleMarkerClick = useCallback(
-    (marker: MarkerData) => {
-      setSelectedMarker(marker);
-      if (onMarkerClick) {
-        onMarkerClick(marker);
-      }
-    },
-    [onMarkerClick]
-  );
+  const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
+    if (onMapClick && event.latLng) {
+      onMapClick(event);
+    }
+  }, [onMapClick]);
 
   // Handle bounds changed
   const handleBoundsChanged = useCallback(() => {
     if (mapRef.current && onBoundsChanged) {
-      // Only call onBoundsChanged when the map is idle to prevent too many updates
       const bounds = mapRef.current.getBounds();
       if (bounds) {
-        // Use requestAnimationFrame to throttle updates
-        requestAnimationFrame(() => {
-          onBoundsChanged(bounds);
-        });
+        onBoundsChanged(bounds);
       }
     }
   }, [onBoundsChanged]);
@@ -145,60 +210,62 @@ export default function GoogleMapComponent({
       const newCenter = mapRef.current.getCenter();
       if (newCenter) {
         const centerObj = { lat: newCenter.lat(), lng: newCenter.lng() };
-        // Only update local state if it's different from the current center
-        // to prevent infinite loops
-        if (
-          Math.abs(centerObj.lat - center.lat) > 0.0001 ||
-          Math.abs(centerObj.lng - center.lng) > 0.0001
-        ) {
-          // Use requestAnimationFrame to throttle updates
-          requestAnimationFrame(() => {
-            setCenter(centerObj);
-            onCenterChanged(centerObj);
-          });
-        }
+        onCenterChanged(centerObj);
       }
     }
-  }, [onCenterChanged, center]);
+  }, [onCenterChanged]);
 
   // Handle zoom changed
   const handleZoomChanged = useCallback(() => {
     if (mapRef.current && onZoomChanged) {
       const newZoom = mapRef.current.getZoom();
-      if (newZoom && newZoom !== zoom) {
-        // Use requestAnimationFrame to throttle updates
-        requestAnimationFrame(() => {
-          setZoom(newZoom);
-          onZoomChanged(newZoom);
-        });
+      if (newZoom) {
+        onZoomChanged(newZoom);
       }
     }
-  }, [onZoomChanged, zoom]);
+  }, [onZoomChanged]);
 
-  // Helper function to render price level
-  const renderPriceLevel = (priceLevel?: number) => {
-    if (!priceLevel) return null;
+  const themedMapOptions = useMemo(() => {
+    if (theme !== 'dark') {
+      return mapOptions;
+    }
 
-    return (
-      <div className='info-window-price'>
-        {Array.from({ length: priceLevel }).map((_, i) => (
-          <span key={i}>$</span>
-        ))}
-      </div>
-    );
-  };
+    return {
+      ...mapOptions,
+      styles: [...mapOptions?.styles || [], ...darkModeMapOptions],
+    }
+  }, [theme]);
 
-  // Helper function to render rating
-  const renderRating = (rating?: number) => {
-    if (!rating) return null;
+  // Memoize markers to prevent unnecessary re-renders
+  const memoizedMarkers = useMemo(() => {
+    console.log('[GoogleMap] Rendering markers:', markers.length);
+    console.log('[GoogleMap] New markers count:', newMarkerIds.size);
+    console.log('[GoogleMap] isTransitioning:', isTransitioning);
 
-    return (
-      <div className='info-window-rating'>
-        <span>{rating.toFixed(1)}</span>
-        <span>★</span>
-      </div>
-    );
-  };
+    if (!markers || markers.length === 0) {
+      console.log('[GoogleMap] No markers to render');
+      return [];
+    }
+
+    // Render all markers, with special handling for new ones
+    return markers.map((marker) => {
+      const isNewMarker = newMarkerIds.has(marker.id);
+      const delay = isNewMarker ? Math.min(Array.from(newMarkerIds).indexOf(marker.id) * 20, 500) : 0;
+
+      console.log(`[GoogleMap] Rendering marker ${marker.id} (${marker.emoji}), isNew: ${isNewMarker}, delay: ${delay}ms`);
+
+      return (
+        <EmojiMarker
+          key={marker.id}
+          position={marker.position}
+          emoji={marker.emoji}
+          onClick={() => onMarkerClick?.(marker)}
+          isNew={isNewMarker}
+          delay={delay}
+        />
+      );
+    });
+  }, [markers, onMarkerClick, newMarkerIds]);
 
   // Render loading state
   if (loadError) {
@@ -236,7 +303,7 @@ export default function GoogleMapComponent({
         mapContainerStyle={{ width: '100%', height: '100%' }}
         center={center}
         zoom={zoom}
-        options={mapOptions}
+        options={themedMapOptions}
         onLoad={onLoad}
         onUnmount={onUnmount}
         onClick={handleMapClick}
@@ -244,44 +311,8 @@ export default function GoogleMapComponent({
         onCenterChanged={handleCenterChanged}
         onZoomChanged={handleZoomChanged}
       >
-        {/* Render markers */}
-        {markers.map((marker) => (
-          <EmojiMarker
-            key={marker.id}
-            position={marker.position}
-            emoji={marker.emoji}
-            onClick={() => handleMarkerClick(marker)}
-          />
-        ))}
-
-        {/* Render info window for selected marker */}
-        {selectedMarker && (
-          <InfoWindow
-            position={selectedMarker.position}
-            onCloseClick={() => setSelectedMarker(null)}
-          >
-            <div className='info-window'>
-              <h3 className='info-window-title'>{selectedMarker.title}</h3>
-
-              <div className='info-window-category'>
-                <span className='info-window-emoji'>
-                  {selectedMarker.emoji}
-                </span>
-                <span>{selectedMarker.category || 'Place'}</span>
-              </div>
-
-              {renderRating(selectedMarker.rating)}
-              {renderPriceLevel(selectedMarker.priceLevel)}
-
-              {selectedMarker.openNow !== undefined &&
-                (selectedMarker.openNow ? (
-                  <div className='info-window-open'>Open now</div>
-                ) : (
-                  <div className='info-window-closed'>Closed</div>
-                ))}
-            </div>
-          </InfoWindow>
-        )}
+        {/* Render memoized markers */}
+        {memoizedMarkers}
       </GoogleMap>
     </div>
   );

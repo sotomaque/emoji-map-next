@@ -23,8 +23,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './'),
-      '@/src': resolve(__dirname, './src'),
+      '@': resolve(__dirname, './src'),
+      '@/app': resolve(__dirname, './src/app'),
+      '@/lib': resolve(__dirname, './src/lib'),
+      '@/components': resolve(__dirname, './src/components'),
+      '@/utils': resolve(__dirname, './src/utils'),
+      '@/__fixtures__': resolve(__dirname, './src/__fixtures__'),
+      '@/env': resolve(__dirname, './src/env'),
     },
   },
 });

@@ -4,8 +4,8 @@ import type {
   Place,
   GooglePlacesResponse,
   PlaceResult,
-} from '@/src/types/google-places';
-import { env } from '@/src/env';
+} from '@/types/google-places';
+import { env } from '@/env';
 
 // Extend the PlaceResult interface to include the types property
 interface ExtendedPlaceResult extends PlaceResult {
