@@ -58,11 +58,8 @@ export function ShimmerContainer({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn('animate-pulse', className)}
-      {...props}
-    >
+    <div className={cn('animate-pulse', className)} {...props}>
       {children}
     </div>
   );
-} 
+}

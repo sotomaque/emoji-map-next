@@ -29,84 +29,86 @@ const mapOptions: google.maps.MapOptions = {
   ],
 };
 
-const darkModeMapOptions = [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-{ elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-{ elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-{
-  featureType: "administrative.locality",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#d59563" }],
-},
-{
-  featureType: "poi",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#d59563" }],
-},
-{
-  featureType: "poi.park",
-  elementType: "geometry",
-  stylers: [{ color: "#263c3f" }],
-},
-{
-  featureType: "poi.park",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#6b9a76" }],
-},
-{
-  featureType: "road",
-  elementType: "geometry",
-  stylers: [{ color: "#38414e" }],
-},
-{
-  featureType: "road",
-  elementType: "geometry.stroke",
-  stylers: [{ color: "#212a37" }],
-},
-{
-  featureType: "road",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#9ca5b3" }],
-},
-{
-  featureType: "road.highway",
-  elementType: "geometry",
-  stylers: [{ color: "#746855" }],
-},
-{
-  featureType: "road.highway",
-  elementType: "geometry.stroke",
-  stylers: [{ color: "#1f2835" }],
-},
-{
-  featureType: "road.highway",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#f3d19c" }],
-},
-{
-  featureType: "transit",
-  elementType: "geometry",
-  stylers: [{ color: "#2f3948" }],
-},
-{
-  featureType: "transit.station",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#d59563" }],
-},
-{
-  featureType: "water",
-  elementType: "geometry",
-  stylers: [{ color: "#17263c" }],
-},
-{
-  featureType: "water",
-  elementType: "labels.text.fill",
-  stylers: [{ color: "#515c6d" }],
-},
-{
-  featureType: "water",
-  elementType: "labels.text.stroke",
-  stylers: [{ color: "#17263c" }],
-},]
+const darkModeMapOptions = [
+  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+  {
+    featureType: 'administrative.locality',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d59563' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d59563' }],
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'geometry',
+    stylers: [{ color: '#263c3f' }],
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#6b9a76' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#38414e' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#212a37' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#9ca5b3' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#746855' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#1f2835' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#f3d19c' }],
+  },
+  {
+    featureType: 'transit',
+    elementType: 'geometry',
+    stylers: [{ color: '#2f3948' }],
+  },
+  {
+    featureType: 'transit.station',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d59563' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#17263c' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#515c6d' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#17263c' }],
+  },
+];
 
 // Define the marker type
 interface MarkerData {
@@ -188,11 +190,14 @@ export default function GoogleMapComponent({
   }, []);
 
   // Handle map click
-  const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
-    if (onMapClick && event.latLng) {
-      onMapClick(event);
-    }
-  }, [onMapClick]);
+  const handleMapClick = useCallback(
+    (event: google.maps.MapMouseEvent) => {
+      if (onMapClick && event.latLng) {
+        onMapClick(event);
+      }
+    },
+    [onMapClick]
+  );
 
   // Handle bounds changed
   const handleBoundsChanged = useCallback(() => {
@@ -232,8 +237,8 @@ export default function GoogleMapComponent({
 
     return {
       ...mapOptions,
-      styles: [...mapOptions?.styles || [], ...darkModeMapOptions],
-    }
+      styles: [...(mapOptions?.styles || []), ...darkModeMapOptions],
+    };
   }, [theme]);
 
   // Memoize markers to prevent unnecessary re-renders
@@ -250,9 +255,13 @@ export default function GoogleMapComponent({
     // Render all markers, with special handling for new ones
     return markers.map((marker) => {
       const isNewMarker = newMarkerIds.has(marker.id);
-      const delay = isNewMarker ? Math.min(Array.from(newMarkerIds).indexOf(marker.id) * 20, 500) : 0;
+      const delay = isNewMarker
+        ? Math.min(Array.from(newMarkerIds).indexOf(marker.id) * 20, 500)
+        : 0;
 
-      console.log(`[GoogleMap] Rendering marker ${marker.id} (${marker.emoji}), isNew: ${isNewMarker}, delay: ${delay}ms`);
+      console.log(
+        `[GoogleMap] Rendering marker ${marker.id} (${marker.emoji}), isNew: ${isNewMarker}, delay: ${delay}ms`
+      );
 
       return (
         <EmojiMarker
