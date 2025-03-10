@@ -14,6 +14,7 @@ import {
 } from '@/store/markerStore';
 import { useGateValue } from '@statsig/react-bindings';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
+import { useRouter } from 'next/navigation';
 
 // Dynamically import the EmojiSelector component with no SSR
 const EmojiSelector = dynamic(
@@ -30,13 +31,29 @@ const GoogleMap = dynamic(() => import('@/components/map/map'), {
   loading: () => <MapSkeleton />,
 });
 
+// Main page component that handles feature flag check
 export default function AppPage() {
+  const router = useRouter();
   const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
 
+  // Use useEffect for client-side redirects
+  useEffect(() => {
+    if (!IS_APP_ENABLED) {
+      router.push('/');
+    }
+  }, [IS_APP_ENABLED, router]);
+
+  // If app is not enabled, render nothing or a loading state
   if (!IS_APP_ENABLED) {
-    window.location.href = '/';
+    return null;
   }
 
+  // If app is enabled, render the app content
+  return <AppContent />;
+}
+
+// Separate component for app content to avoid conditional hook calls
+function AppContent() {
   // Get filters from Zustand store
   const {
     selectedCategories,
