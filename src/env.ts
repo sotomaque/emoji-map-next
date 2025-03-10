@@ -12,6 +12,10 @@ export const env = createEnv({
       .string()
       .url()
       .default('https://maps.googleapis.com/maps/api/place/nearbysearch/json'),
+    GOOGLE_PLACES_V2_URL: z
+      .string()
+      .url()
+      .default('https://places.googleapis.com/v1/places:searchText'),
     GOOGLE_PLACES_DETAILS_URL: z
       .string()
       .url()
@@ -78,6 +82,7 @@ export const env = createEnv({
     // GOOGLE PLACES
     GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
     GOOGLE_PLACES_URL: process.env.GOOGLE_PLACES_URL,
+    GOOGLE_PLACES_V2_URL: process.env.GOOGLE_PLACES_V2_URL,
     GOOGLE_PLACES_DETAILS_URL: process.env.GOOGLE_PLACES_DETAILS_URL,
     GOOGLE_PLACES_PHOTO_URL: process.env.GOOGLE_PLACES_PHOTO_URL,
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:

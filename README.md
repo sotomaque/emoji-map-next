@@ -31,6 +31,8 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - 🚀 Redis caching for improved API performance
 - 🔐 User authentication with Clerk
 - 🗄️ PostgreSQL database with Prisma ORM
+- 🔄 Git hooks with Husky for code quality checks
+- 🚦 Feature flags with Statsig
 
 ## Tech Stack
 
@@ -51,6 +53,8 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Supabase](https://supabase.com/) - PostgreSQL database
 - [Prisma](https://www.prisma.io/) - ORM for database access
 - [Clerk](https://clerk.com/) - User authentication
+- [Husky](https://typicode.github.io/husky/) - Git hooks for code quality
+- [Statsig](https://statsig.com/) - Feature flags and experimentation
 
 ## Getting Started
 
@@ -63,19 +67,15 @@ Create a `.env.local` file in the root of the web directory with the following v
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SITE_ENV=development
 
-# Google Maps API Key (for client-side use)
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-
-# Google Places API Key (for server-side use)
+# Google Places API
 GOOGLE_PLACES_API_KEY=your_api_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
 
 # Google Places API URLs
 GOOGLE_PLACES_URL=https://maps.googleapis.com/maps/api/place/nearbysearch/json
+GOOGLE_PLACES_V2_URL=https://places.googleapis.com/v1/places:searchText
 GOOGLE_PLACES_DETAILS_URL=https://maps.googleapis.com/maps/api/place/details/json
 GOOGLE_PLACES_PHOTO_URL=https://maps.googleapis.com/maps/api/place/photo
-
-# Optional: Mapbox token if using Mapbox maps
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
@@ -94,8 +94,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
 
 # Upstash Redis (for caching)
-KV_REST_API_URL=your_upstash_redis_url
+KV_URL=your_upstash_redis_url
+KV_REST_API_READ_ONLY_TOKEN=your_upstash_read_only_token
 KV_REST_API_TOKEN=your_upstash_redis_token
+KV_REST_API_URL=your_upstash_redis_url
+
+# Statsig (Feature Flags)
+EXPERIMENTATION_CONFIG_ITEM_KEY=your_statsig_config_key
+NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
+STATSIG_SERVER_API_KEY=your_statsig_server_key
 ```
 
 ### Available Scripts
@@ -106,6 +113,7 @@ pnpm dev           # Start the development server
 pnpm build         # Build the application for production
 pnpm start         # Start the production server
 pnpm postinstall   # Generate Prisma client (runs automatically after install)
+pnpm prepare       # Set up Husky git hooks (runs automatically after install)
 
 # Code Quality
 pnpm lint          # Run ESLint to check for issues
@@ -126,6 +134,52 @@ pnpm db:push       # Push schema changes to the database
 pnpm db:studio     # Open Prisma Studio to manage the database
 pnpm db:seed       # Seed the database with initial data
 ```
+
+## Git Hooks
+
+This project uses Husky to manage Git hooks for ensuring code quality. The following hooks are configured:
+
+### pre-push
+
+The `pre-push` hook runs before pushing changes to the remote repository and performs the following checks:
+
+1. **Precheck**: Runs formatting, linting, type checking, and tests to ensure code quality.
+2. **Build**: Builds the project to ensure it compiles successfully.
+
+If any of these checks fail, the push will be aborted, and you'll need to fix the issues before pushing again.
+
+To bypass the hooks in rare cases (not recommended), you can use:
+
+```bash
+git push --no-verify
+```
+
+For more information about the Git hooks, see the [.husky/README.md](.husky/README.md) file.
+
+## Navigation System
+
+The application uses a robust navigation system with active state detection for highlighting the current section in the navigation menu.
+
+### Active State Detection
+
+The navigation system includes a utility function `isNavItemActive` that determines whether a navigation item should be highlighted based on the current path:
+
+```typescript
+export function isNavItemActive(href: string, path: string | null | undefined) {
+  // Handle null or undefined path
+  if (!path) {
+    return href === '/';
+  }
+  return href === '/' ? path === '/' : path.startsWith(href);
+}
+```
+
+This function:
+- Handles null or undefined paths by defaulting to the home page
+- For the home page (`/`), only returns true if the path is exactly `/`
+- For other pages, returns true if the current path starts with the navigation item's href
+
+This approach ensures that navigation items are correctly highlighted even in nested routes and handles edge cases like null paths that might occur during hydration.
 
 ## API Documentation
 

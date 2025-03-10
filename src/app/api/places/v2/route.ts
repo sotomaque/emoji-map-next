@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
 
     // Build the Google Places API URL
     const apiKey = env.GOOGLE_PLACES_API_KEY;
-    const baseUrl = 'https://places.googleapis.com/v1/places:searchText';
+    const baseUrl = env.GOOGLE_PLACES_V2_URL;
 
     // Prepare the request body
     const requestBody: PlacesSearchTextRequest = {
