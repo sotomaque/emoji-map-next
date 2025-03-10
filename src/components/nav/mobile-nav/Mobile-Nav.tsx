@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Logo } from '../logo/logo';
 import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 import type { NavItem } from '@/types/nav-items';
+import { useNavItems } from '@/hooks/useNavItems';
 
 function NavLink({
   href,
@@ -51,12 +52,27 @@ function NavItemWithChildren({
   navItem,
   path,
   onClick,
+  shouldShowNavItem,
 }: {
   navItem: NavItem;
   path: string;
   onClick: () => void;
+  shouldShowNavItem: (item: NavItem) => boolean;
 }) {
   const isActive = isNavItemActive(navItem.href, path);
+  const filteredChildren = navItem.children?.filter(shouldShowNavItem) || [];
+
+  if (filteredChildren.length === 0) {
+    return (
+      <NavLink
+        href={navItem.href}
+        label={navItem.label}
+        isActive={isActive}
+        target={navItem.target}
+        onClick={onClick}
+      />
+    );
+  }
 
   return (
     <details className='group'>
@@ -68,9 +84,9 @@ function NavItemWithChildren({
       >
         {navItem.label}
       </summary>
-      {navItem.children && (
+      {filteredChildren.length > 0 && (
         <ul className='pl-4 mt-2 space-y-2 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-in-out group-open:max-h-screen group-open:opacity-100'>
-          {navItem.children.map((child, index) => (
+          {filteredChildren.map((child, index) => (
             <li
               key={`${child.label}-${index}`}
               className='child-item'
@@ -94,6 +110,8 @@ function NavItemWithChildren({
 export function MobileNav({ navItems }: { navItems: NavItem[] }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
+  const { shouldShowNavItem, filterNavItems } = useNavItems();
+  const filteredNavItems = filterNavItems(navItems);
 
   return (
     <Sheet onOpenChange={setOpen} open={open}>
@@ -119,32 +137,31 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
         <nav className='pt-10 pb-20'>
           <div className='container'>
             <ul className='list-none text-left space-y-3'>
-              {navItems
-                .filter((navItem) => !navItem.hidden)
-                .map((navItem, index) => {
-                  const isActive = isNavItemActive(navItem.href, path);
+              {filteredNavItems.map((navItem, index) => {
+                const isActive = isNavItemActive(navItem.href, path);
 
-                  return (
-                    <li key={`${navItem.label}-${index}`}>
-                      {/* If no children, render Link directly */}
-                      {navItem.children ? (
-                        <NavItemWithChildren
-                          navItem={navItem}
-                          path={path}
-                          onClick={() => setOpen(false)}
-                        />
-                      ) : (
-                        <NavLink
-                          href={navItem.href}
-                          label={navItem.label}
-                          isActive={isActive}
-                          target={navItem.target}
-                          onClick={() => setOpen(false)}
-                        />
-                      )}
-                    </li>
-                  );
-                })}
+                return (
+                  <li key={`${navItem.label}-${index}`}>
+                    {/* If no children, render Link directly */}
+                    {navItem.children ? (
+                      <NavItemWithChildren
+                        navItem={navItem}
+                        path={path}
+                        onClick={() => setOpen(false)}
+                        shouldShowNavItem={shouldShowNavItem}
+                      />
+                    ) : (
+                      <NavLink
+                        href={navItem.href}
+                        label={navItem.label}
+                        isActive={isActive}
+                        target={navItem.target}
+                        onClick={() => setOpen(false)}
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </nav>

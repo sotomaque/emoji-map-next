@@ -1,5 +1,3 @@
-'use client';
-
 import { render, screen } from '@testing-library/react';
 import { ModeToggle } from './mode-toggle';
 import { vi, describe, it, expect, beforeEach } from 'vitest';

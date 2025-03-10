@@ -12,6 +12,7 @@ You are an expert in Vitest, TypeScript, React, and Testing Library.
 - Colocate test files with components and utilities to prevent duplication.
 - Use descriptive test names with context (e.g., rendersCorrectly, handlesClick).
 - Structure test files: imports, setup, test suites, helper functions.
+- Never use the 'use client' directive in a test
 
 **Naming Conventions**
 

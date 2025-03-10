@@ -10,6 +10,7 @@ export const navItems: NavItem[] = [
     label: 'App',
     href: '/app',
     target: true,
+    featureFlag: 'ENABLE_APP',
   },
   {
     label: 'About',

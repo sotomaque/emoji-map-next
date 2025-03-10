@@ -1,15 +1,76 @@
 import { render, screen } from '@testing-library/react';
 import { Footer } from './footer';
-import { navItems } from '@/constants/routes';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import * as navigation from 'next/navigation';
+import * as navHooks from '@/hooks/useNavItems';
+import type { NavItem } from '@/types/nav-items';
 
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn().mockReturnValue('/'),
 }));
 
+// Mock the useNavItems hook
+vi.mock('@/hooks/useNavItems', () => ({
+  useNavItems: vi.fn(),
+}));
+
+// Mock the constants/routes module
+vi.mock('@/constants/routes', () => {
+  const mockNavItems: NavItem[] = [
+    {
+      label: 'Home',
+      href: '/',
+      target: false,
+    },
+    {
+      label: 'About',
+      href: '/about',
+      target: false,
+    },
+    {
+      label: 'External',
+      href: 'https://example.com',
+      target: true,
+    },
+    {
+      label: 'Hidden',
+      href: '/hidden',
+      target: false,
+      hidden: true,
+    },
+    {
+      label: 'App',
+      href: '/app',
+      target: true,
+      featureFlag: 'ENABLE_APP',
+    },
+  ];
+
+  return {
+    navItems: mockNavItems,
+  };
+});
+
 describe('Footer', () => {
+  // Mock implementation of shouldShowNavItem
+  const mockShouldShowNavItem = (item: NavItem) => {
+    if (item.hidden) return false;
+    if (item.featureFlag === 'ENABLE_APP') return false;
+    return true;
+  };
+
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
+
+    // Setup default mock implementation
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: mockShouldShowNavItem,
+      filterNavItems: (items: NavItem[]) => items.filter(mockShouldShowNavItem),
+    });
+  });
+
   it('renders the copyright text', () => {
     render(<Footer />);
 
@@ -19,21 +80,25 @@ describe('Footer', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all navigation items', () => {
+  it('renders visible navigation items', () => {
     render(<Footer />);
 
-    // Check that all nav items are rendered
-    navItems.forEach((item) => {
-      const link = screen.getByText(item.label);
-      expect(link).toBeInTheDocument();
-      expect(link).toHaveAttribute('href', item.href);
+    // Visible items should be rendered
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('About')).toBeInTheDocument();
+    expect(screen.getByText('External')).toBeInTheDocument();
 
-      // Check if external links have the correct attributes
-      if (item.target) {
-        expect(link).toHaveAttribute('target', '_blank');
-        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-      }
-    });
+    // Hidden items should not be rendered
+    expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
+
+    // Feature flagged items should not be rendered
+    expect(screen.queryByText('App')).not.toBeInTheDocument();
+
+    // Check that links have the correct attributes
+    const externalLink = screen.getByText('External');
+    expect(externalLink).toHaveAttribute('href', 'https://example.com');
+    expect(externalLink).toHaveAttribute('target', '_blank');
+    expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('applies active styles to the current path', () => {
@@ -54,5 +119,21 @@ describe('Footer', () => {
     expect(homeLink).not.toHaveClass(
       'text-gray-900 dark:text-gray-100 font-medium'
     );
+  });
+
+  it('shows feature flagged items when enabled', () => {
+    // Mock the useNavItems hook to enable the App feature flag
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: (item: NavItem) => {
+        if (item.hidden) return false;
+        return true; // All feature flags enabled
+      },
+      filterNavItems: (items: NavItem[]) => items.filter(item => !item.hidden),
+    });
+
+    render(<Footer />);
+
+    // App should now be rendered
+    expect(screen.getByText('App')).toBeInTheDocument();
   });
 });

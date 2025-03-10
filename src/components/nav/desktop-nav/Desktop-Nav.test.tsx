@@ -1,14 +1,18 @@
-'use client';
-
 import { render, screen } from '@testing-library/react';
 import { DesktopNav } from './desktop-nav';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { NavItem } from '@/types/nav-items';
 import * as navigation from 'next/navigation';
+import * as navHooks from '@/hooks/useNavItems';
 
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn().mockReturnValue('/'),
+}));
+
+// Mock the useNavItems hook
+vi.mock('@/hooks/useNavItems', () => ({
+  useNavItems: vi.fn(),
 }));
 
 // Mock the lucide-react icons
@@ -54,9 +58,47 @@ describe('DesktopNav', () => {
           href: '/parent/child2',
           target: true,
         },
+        {
+          label: 'Hidden Child',
+          href: '/parent/hidden',
+          target: false,
+          hidden: true,
+        },
       ],
     },
+    {
+      label: 'App',
+      href: '/app',
+      target: true,
+      featureFlag: 'ENABLE_APP',
+    },
   ];
+
+  // Mock implementation of shouldShowNavItem
+  const mockShouldShowNavItem = (item: NavItem) => {
+    if (item.hidden) return false;
+    if (item.featureFlag === 'ENABLE_APP') return false;
+    return true;
+  };
+
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
+
+    // Setup default mock implementation
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: mockShouldShowNavItem,
+      filterNavItems: (items: NavItem[]) => items.filter(mockShouldShowNavItem).map(item => {
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter(mockShouldShowNavItem)
+          };
+        }
+        return item;
+      }),
+    });
+  });
 
   it('renders visible navigation items', () => {
     render(<DesktopNav navItems={mockNavItems} />);
@@ -69,6 +111,9 @@ describe('DesktopNav', () => {
 
     // Hidden items should not be rendered
     expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
+
+    // Feature flagged items should not be rendered
+    expect(screen.queryByText('App')).not.toBeInTheDocument();
   });
 
   it('applies active styles to the current path', () => {
@@ -109,5 +154,32 @@ describe('DesktopNav', () => {
     // Should contain child links
     expect(screen.getByText('Child 1')).toBeInTheDocument();
     expect(screen.getByText('Child 2')).toBeInTheDocument();
+
+    // Hidden child should not be rendered
+    expect(screen.queryByText('Hidden Child')).not.toBeInTheDocument();
+  });
+
+  it('shows feature flagged items when enabled', () => {
+    // Mock the useNavItems hook to enable the App feature flag
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: (item: NavItem) => {
+        if (item.hidden) return false;
+        return true; // All feature flags enabled
+      },
+      filterNavItems: (items: NavItem[]) => items.filter(item => !item.hidden).map(item => {
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter(child => !child.hidden)
+          };
+        }
+        return item;
+      }),
+    });
+
+    render(<DesktopNav navItems={mockNavItems} />);
+
+    // App should now be rendered
+    expect(screen.getByText('App')).toBeInTheDocument();
   });
 });

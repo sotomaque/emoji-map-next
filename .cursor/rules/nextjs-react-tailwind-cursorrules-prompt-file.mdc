@@ -16,8 +16,10 @@ alwaysApply: true
 - Naming Conventions
 
   - All components should go in src/components and be named like new-component.tsx
-  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Use lowercase with dashes for directories and components (e.g., components/auth-wizard).
   - Favor named exports for components.
+  - Do not use barrel exports
+  
 
 - TypeScript Usage
 
