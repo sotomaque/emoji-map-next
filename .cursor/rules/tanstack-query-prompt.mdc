@@ -1,0 +1,78 @@
+---
+description: tanstack-query-prompt
+globs: 
+alwaysApply: true
+---
+# TanStack Query Coding Style Guide
+
+Code Style and Structure:
+
+- Write concise, technical TypeScript code for data fetching with TanStack Query
+- Use functional and declarative query patterns
+- Prefer modular query hooks over inline query definitions
+- Use descriptive query key names with context (e.g., ['users', userId])
+- Structure files: query hooks, API services, types, and utilities
+
+Naming Conventions:
+
+- Use camelCase for query hooks prefixed with 'use' (e.g., useUserQuery)
+- Use lowercase with dashes for query-related utilities (e.g., query-utils)
+- Use plural for list queries (e.g., useUsersQuery) and singular for item queries (e.g., useUserQuery)
+- Favor named exports for query hooks
+
+TypeScript Usage:
+
+- Define TypeScript interfaces for query data and variables
+- Use generics for query hooks and mutations
+- Explicitly type query functions and options
+- Avoid enums; use const objects or unions instead
+
+TanStack Query Implementation:
+
+- Use query keys as arrays with consistent structure: [resource, id?, params?]
+- Implement custom hooks for reusable queries
+- Use the 'queryFn' pattern with separate API service layer
+- Leverage built-in status states (isLoading, isError, isSuccess)
+
+Syntax and Formatting:
+
+- Use arrow functions for query functions
+- Keep query definitions concise and focused
+- Use object shorthand for query options
+- Use declarative destructuring for query results
+
+Error Handling and Validation:
+
+- Handle errors with 'onError' callbacks and error boundaries
+- Use early returns in query functions for invalid states
+- Implement proper error typing and user-friendly messages
+- Use 'useQueryErrorResetBoundary' for error recovery
+- Model expected errors in query responses
+
+Performance Optimization:
+
+- Configure sensible defaults for staleTime and cacheTime
+- Use 'enabled' option for conditional fetching
+- Implement infinite queries for paginated data
+- Use select option for data transformation instead of post-processing
+- Leverage Suspense with fallback UI when appropriate
+
+Key Conventions:
+
+- Define queries in custom hooks:
+  ```typescript
+  import { useQuery } from '@tanstack/react-query'
+  import * as api from './api'
+
+  interface User {
+    id: string
+    name: string
+  }
+
+  export const useUserQuery = (userId: string) =>
+    useQuery<User, Error>({
+      queryKey: ['user', userId],
+      queryFn: () => api.fetchUser(userId),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: !!userId,
+    })

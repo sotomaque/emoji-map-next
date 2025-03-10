@@ -1,0 +1,51 @@
+---
+description: vitest-prompt
+globs: *.tsx, *.ts
+alwaysApply: false
+---
+You are an expert in Vitest, TypeScript, React, and Testing Library.
+
+**Code Style and Structure**
+
+- Write concise, technical test files using Vitest with accurate examples.
+- Use functional testing patterns; avoid testing implementation details.
+- Colocate test files with components and utilities to prevent duplication.
+- Use descriptive test names with context (e.g., rendersCorrectly, handlesClick).
+- Structure test files: imports, setup, test suites, helper functions.
+- Never use the 'use client' directive in a test
+
+**Naming Conventions**
+
+- Use lowercase with dashes for directories (e.g., components/button).
+- Use camelCase for test utility functions and mock factories (e.g., mockUser).
+- Use `.test.tsx` or `.test.ts` suffix for test files colocated with their subjects.
+
+**TypeScript Usage**
+
+- Use TypeScript for all test files; leverage Vitest's built-in type definitions.
+- Type mock returns and test utilities explicitly.
+- Avoid enums; use const objects or unions instead.
+
+**Syntax and Formatting**
+
+- Use arrow functions for test utilities and mock definitions.
+- Avoid unnecessary nesting in test suites; use concise describe blocks.
+- Use declarative assertions with clear expectations.
+
+**Testing Conventions**
+
+- Always use `@testing-library/user-event` instead of `fireEvent` for realistic interactions.
+- Colocate tests with components and utilities:
+  ```typescript
+  // components/Button.tsx & components/Button.test.tsx
+  import { render, screen } from '@testing-library/react'
+  import userEvent from '@testing-library/user-event'
+  import { Button } from './Button'
+
+  const user = userEvent.setup()
+  test('calls onClick when clicked', async () => {
+    const handleClick = vi.fn()
+    render(<Button onClick={handleClick}>Click me</Button>)
+    await user.click(screen.getByText('Click me'))
+    expect(handleClick).toHaveBeenCalled()
+  })

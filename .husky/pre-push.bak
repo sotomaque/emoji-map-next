@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🧪 Running precheck (format, lint, type check)..."
+pnpm precheck || { echo "❌ Precheck failed. Please fix the issues before pushing."; exit 1; }
+
+echo "🏗️ Building the project..."
+pnpm build || { echo "❌ Build failed. Please fix the issues before pushing."; exit 1; }
+
+echo "✅ All checks passed! Pushing to remote..." 

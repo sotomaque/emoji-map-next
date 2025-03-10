@@ -35,15 +35,26 @@ const getViewportKey = (viewport: Viewport): string => {
   return `${ne.lat.toFixed(3)},${ne.lng.toFixed(3)}_${sw.lat.toFixed(3)},${sw.lng.toFixed(3)}_${zoom}`;
 };
 
+// Define filter criteria type
+export interface FilterCriteria {
+  categories: string[];
+  isAllCategoriesMode: boolean;
+  showFavoritesOnly: boolean;
+  favoriteIds: Set<string>;
+  openNow: boolean;
+  priceLevel: number[];
+  minimumRating: number | null;
+}
+
 // Define the store type
 interface MarkerStore {
   // All markers by ID
   markers: Map<string, MapDataPoint>;
 
-  // Markers by viewport key
+  // Markers by viewport key (unfiltered)
   viewportMarkers: Map<string, Set<string>>;
 
-  // Currently visible markers
+  // Currently visible markers (filtered)
   visibleMarkers: MapDataPoint[];
 
   // New markers that should be animated
@@ -62,6 +73,10 @@ interface MarkerStore {
   setIsTransitioning: (isTransitioning: boolean) => void;
   hasViewportCached: (viewport: Viewport) => boolean;
   getMarkersForViewport: (viewport: Viewport) => MapDataPoint[];
+  filterMarkers: (
+    viewport: Viewport,
+    filterCriteria: FilterCriteria
+  ) => MapDataPoint[];
   clearCache: () => void;
 }
 
@@ -159,6 +174,59 @@ export const useMarkerStore = create<MarkerStore>()(
         `[MarkerStore] Retrieved ${markers.length} markers for viewport ${viewportKey}`
       );
       return markers;
+    },
+
+    filterMarkers: (
+      viewport: Viewport,
+      filterCriteria: FilterCriteria
+    ): MapDataPoint[] => {
+      // Get all markers for the viewport
+      const allMarkers = get().getMarkersForViewport(viewport);
+
+      // Apply filters
+      return allMarkers.filter((marker) => {
+        // Filter by favorites if enabled
+        if (
+          filterCriteria.showFavoritesOnly &&
+          !filterCriteria.favoriteIds.has(marker.id)
+        ) {
+          return false;
+        }
+
+        // Filter by category if not in "All" mode
+        if (
+          !filterCriteria.isAllCategoriesMode &&
+          marker.category &&
+          !filterCriteria.categories.includes(marker.category)
+        ) {
+          return false;
+        }
+
+        // Filter by open now
+        if (filterCriteria.openNow && marker.openNow === false) {
+          return false;
+        }
+
+        // Filter by price level
+        if (
+          marker.priceLevel !== undefined &&
+          !filterCriteria.priceLevel.includes(marker.priceLevel)
+        ) {
+          return false;
+        }
+
+        // Filter by minimum rating
+        if (
+          filterCriteria.minimumRating !== null &&
+          (marker.rating === undefined ||
+            marker.rating < filterCriteria.minimumRating)
+        ) {
+          return false;
+        }
+
+        // Marker passed all filters
+        return true;
+      });
     },
 
     clearCache: () => {

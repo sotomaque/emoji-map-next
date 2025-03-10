@@ -1,6 +1,8 @@
-import type { Config } from 'tailwindcss';
 import { fontFamily } from 'tailwindcss/defaultTheme';
 import plugin from 'tailwindcss/plugin';
+import tailwindcssAnimate from 'tailwindcss-animate';
+
+import type { Config } from 'tailwindcss';
 
 const config = {
   darkMode: ['class'],
@@ -98,7 +100,7 @@ const config = {
     },
   },
   plugins: [
-    require('tailwindcss-animate'),
+    tailwindcssAnimate,
     plugin(function ({ addBase, addComponents }) {
       addComponents({
         '.container': {

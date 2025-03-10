@@ -1,7 +1,11 @@
-import { env } from '@/env';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { redis, PLACE_DETAILS_CACHE_EXPIRATION_TIME, generatePlaceDetailsCacheKey } from '@/lib/redis';
+import { env } from '@/env';
+import {
+  redis,
+  PLACE_DETAILS_CACHE_EXPIRATION_TIME,
+  generatePlaceDetailsCacheKey,
+} from '@/lib/redis';
 
 // Define the response types based on the iOS app models
 interface Photo {
@@ -97,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     // Try to get data from cache first
     const cachedData = await redis.get<PlaceDetails>(cacheKey);
-    
+
     let placeDetails: PlaceDetails;
     let fromCache = false;
 
@@ -106,8 +110,10 @@ export async function GET(request: NextRequest) {
       placeDetails = cachedData;
       fromCache = true;
     } else {
-      console.log(`[API] Cache miss for place details: ${placeId}, fetching from Google Places API`);
-      
+      console.log(
+        `[API] Cache miss for place details: ${placeId}, fetching from Google Places API`
+      );
+
       // Build the Google Places API URL using type-safe environment variables
       const apiKey = env.GOOGLE_PLACES_API_KEY;
       const baseUrl = env.GOOGLE_PLACES_DETAILS_URL;
@@ -157,12 +163,14 @@ export async function GET(request: NextRequest) {
 
       // Cache the results for future use (1 hour)
       console.log(`[API] Caching place details for: ${placeId}`);
-      await redis.set(cacheKey, placeDetails, { ex: PLACE_DETAILS_CACHE_EXPIRATION_TIME });
+      await redis.set(cacheKey, placeDetails, {
+        ex: PLACE_DETAILS_CACHE_EXPIRATION_TIME,
+      });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       placeDetails,
-      source: fromCache ? 'cache' : 'api'
+      source: fromCache ? 'cache' : 'api',
     });
   } catch (error) {
     console.error('Error fetching place details:', error);

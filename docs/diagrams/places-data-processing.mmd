@@ -1,0 +1,45 @@
+flowchart LR
+    %% Places Data Processing Diagram
+    %% Shows how place data is processed from API to client
+    
+    %% Define styles
+    classDef input fill:#f9f,stroke:#333,stroke-width:2px
+    classDef process fill:#bbf,stroke:#333,stroke-width:1px
+    classDef output fill:#bfb,stroke:#333,stroke-width:1px
+    classDef utility fill:#ffd,stroke:#333,stroke-width:1px
+    
+    %% Input data
+    A[Google Places API Response]:::input --> B[processPlaces Function]:::process
+    
+    %% Main processing steps
+    subgraph "Data Processing Pipeline"
+        direction TB
+        B --> C[Filter by Categories]:::process
+        C --> D[Match Keywords]:::process
+        D --> E[Create Simplified Places]:::process
+    end
+    
+    %% Output destinations
+    E --> F[Cache Results]:::output
+    E --> G[Return to Client]:::output
+    
+    %% Utility functions
+    subgraph "Utility Functions"
+        direction TB
+        H[findMatchingKeyword]:::utility --> |Used by| D
+        I[createSimplifiedPlace]:::utility --> |Used by| E
+    end
+    
+    %% Add data transformation examples
+    subgraph "Data Transformation"
+        direction TB
+        J["Google Place Object<br>(Complex)"]:::input --> |Transform| K["Simplified Place<br>(Client-friendly)"]:::output
+    end
+    
+    %% Add a note about the transformation
+    note["Transformation reduces data size by ~70%<br>and normalizes structure for client use"]
+    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
+    
+    %% Connect the transformation to the main flow
+    J -.-> A
+    K -.-> G 

@@ -10,6 +10,7 @@ export const navItems: NavItem[] = [
     label: 'App',
     href: '/app',
     target: true,
+    featureFlag: 'ENABLE_APP',
   },
   {
     label: 'About',
@@ -25,6 +26,18 @@ export const navItems: NavItem[] = [
     label: 'Privacy',
     href: '/privacy-policy',
     target: false,
+    hidden: true,
+  },
+  {
+    label: 'iOS GitHub',
+    href: 'https://github.com/sotomaque/emoji-map',
+    target: true,
+    hidden: true,
+  },
+  {
+    label: 'Web App GitHub',
+    href: 'https://github.com/sotomaque/emoji-map-next',
+    target: true,
     hidden: true,
   },
 ];

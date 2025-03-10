@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { devtools } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { categories } from '@/services/places';
 
@@ -10,20 +9,49 @@ const allCategoryNames = categories.map(([, name]) => name);
 // Current store version
 const STORE_VERSION = 1;
 
+/**
+ * Helper function for development-only logging
+ *
+ * @param {string} message - The message to log
+ * @param {unknown} [data] - Optional data to log with the message
+ */
+const logDev = (message: string, data?: unknown) => {
+  if (process.env.NODE_ENV === 'development') {
+    if (data) {
+      console.log(`[FiltersStore] ${message}`, data);
+    } else {
+      console.log(`[FiltersStore] ${message}`);
+    }
+  }
+};
+
+/**
+ * Filters State Interface
+ *
+ * Defines the state and actions for the filters store used to filter map markers
+ *
+ * @interface FiltersState
+ */
 export interface FiltersState {
-  // Selected categories (empty array means "All")
+  /** Selected categories (empty array means "All") */
   selectedCategories: string[];
-  // Show only favorites
+
+  /** Show only favorites */
   showFavoritesOnly: boolean;
-  // Open now filter
+
+  /** Open now filter */
   openNow: boolean;
-  // Price level filter (1-4)
+
+  /** Price level filter (1-4) */
   priceLevel: number[];
-  // Minimum rating (1-5)
+
+  /** Minimum rating (1-5) */
   minimumRating: number | null;
-  // User location
+
+  /** User location */
   userLocation: { lat: number; lng: number } | null;
-  // Map viewport
+
+  /** Map viewport */
   viewport: {
     center: { lat: number; lng: number } | null;
     bounds: {
@@ -32,28 +60,57 @@ export interface FiltersState {
     } | null;
     zoom: number;
   };
-  // Computed value for "All" mode
+
+  /** Computed value for "All" mode */
   isAllCategoriesMode: boolean;
-  // Get all category keywords for API requests
+
+  /** Get all category keywords for API requests */
   getAllCategoryKeywords: () => string[];
-  // Actions
+
+  /** Set selected categories */
   setSelectedCategories: (categories: string[]) => void;
+
+  /** Toggle a category selection */
   toggleCategory: (category: string) => void;
+
+  /** Set show favorites only filter */
   setShowFavoritesOnly: (show: boolean) => void;
+
+  /** Set open now filter */
   setOpenNow: (openNow: boolean) => void;
+
+  /** Set price level filter */
   setPriceLevel: (priceLevel: number[]) => void;
+
+  /** Set minimum rating filter */
   setMinimumRating: (rating: number | null) => void;
+
+  /** Set user location */
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
+
+  /** Set viewport center */
   setViewportCenter: (center: { lat: number; lng: number }) => void;
+
+  /** Set viewport bounds */
   setViewportBounds: (bounds: {
     ne: { lat: number; lng: number };
     sw: { lat: number; lng: number };
   }) => void;
+
+  /** Set viewport zoom */
   setViewportZoom: (zoom: number) => void;
+
+  /** Reset all filters to default values */
   resetFilters: () => void;
 }
 
-// Migration function to handle store version changes
+/**
+ * Migration function to handle store version changes
+ *
+ * @param {unknown} persistedState - The persisted state from localStorage
+ * @param {number} version - The version of the persisted state
+ * @returns {unknown} The migrated state
+ */
 const migrate = (persistedState: unknown, version: number) => {
   if (version === 0) {
     // Migration from version 0 to 1
@@ -70,6 +127,12 @@ const migrate = (persistedState: unknown, version: number) => {
   return persistedState;
 };
 
+/**
+ * Filters Store
+ *
+ * Zustand store for managing map filters state with persistence and dev tools
+ * Uses Immer for immutable state updates
+ */
 export const useFiltersStore = create<FiltersState>()(
   devtools(
     persist(
@@ -91,10 +154,7 @@ export const useFiltersStore = create<FiltersState>()(
         getAllCategoryKeywords: () => allCategoryNames,
 
         setSelectedCategories: (categories) => {
-          console.log(
-            '[FiltersStore] setSelectedCategories called with:',
-            categories
-          );
+          logDev('setSelectedCategories called with:', categories);
           set((state) => {
             state.selectedCategories = categories;
             // Update isAllCategoriesMode based on the new categories
@@ -103,28 +163,25 @@ export const useFiltersStore = create<FiltersState>()(
         },
 
         toggleCategory: (category) => {
-          console.log('[FiltersStore] toggleCategory called with:', category);
+          logDev('toggleCategory called with:', category);
 
           set((state) => {
-            console.log(
-              '[FiltersStore] Current selectedCategories:',
-              state.selectedCategories
-            );
+            logDev('Current selectedCategories:', state.selectedCategories);
 
             // If category is already selected, remove it
             if (state.selectedCategories.includes(category)) {
-              console.log('[FiltersStore] Removing category:', category);
+              logDev('Removing category:', category);
               state.selectedCategories = state.selectedCategories.filter(
                 (c: string) => c !== category
               );
-            } else {
-              // Otherwise, add it
-              console.log('[FiltersStore] Adding category:', category);
-              state.selectedCategories.push(category);
+              state.isAllCategoriesMode = state.selectedCategories.length === 0;
+              return;
             }
 
-            // Update isAllCategoriesMode based on the new selectedCategories
-            state.isAllCategoriesMode = state.selectedCategories.length === 0;
+            // Otherwise, add it
+            logDev('Adding category:', category);
+            state.selectedCategories.push(category);
+            state.isAllCategoriesMode = false;
           });
         },
 
@@ -151,8 +208,8 @@ export const useFiltersStore = create<FiltersState>()(
         setUserLocation: (location) =>
           set((state) => {
             state.userLocation = location;
-            // Also update the viewport center if it's not set yet
-            if (!state.viewport.center && location) {
+            // Only update the viewport center when user location changes if center is null
+            if (location && state.viewport.center === null) {
               state.viewport.center = location;
             }
           }),

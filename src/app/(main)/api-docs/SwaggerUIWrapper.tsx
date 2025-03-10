@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import 'swagger-ui-react/swagger-ui.css';
 import { useTheme } from 'next-themes';
 
-// Dynamically import SwaggerUI to avoid SSR issues
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+// Dynamically import SwaggerUI to avoid build issues with lodash-es
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
+  ssr: false,
+  loading: () => <div className='p-8 text-center'>Loading Swagger UI...</div>,
+});
 
 interface SwaggerUIWrapperProps {
   spec: Record<string, unknown>;
@@ -15,48 +18,41 @@ interface SwaggerUIWrapperProps {
 // Create a wrapper component to handle the warnings
 const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ spec }) => {
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Effect for mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Suppress console warnings in development
   useEffect(() => {
-    // Save original console.error
-    const originalError = console.error;
-
-    // Replace console.error to filter out the specific warning
-    console.error = (...args: unknown[]) => {
-      // Filter out the UNSAFE_componentWillReceiveProps warning
+    const originalConsoleWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
       if (
         typeof args[0] === 'string' &&
-        args[0].includes('UNSAFE_componentWillReceiveProps') &&
-        args[0].includes('strict mode')
+        (args[0].includes('componentWillReceiveProps') ||
+          args[0].includes('componentWillMount') ||
+          args[0].includes('componentWillUpdate'))
       ) {
         return;
       }
-
-      // Pass through other errors
-      originalError(...args);
+      originalConsoleWarn(...args);
     };
 
-    // Restore original console.error on cleanup
     return () => {
-      console.error = originalError;
+      console.warn = originalConsoleWarn;
     };
   }, []);
 
+  // Render loading state if not mounted
+  if (!mounted) {
+    return <div className='p-8 text-center'>Loading Swagger UI...</div>;
+  }
+
   return (
-    <div
-      className={`swagger-ui-container ${resolvedTheme === 'dark' ? 'swagger-dark-theme' : ''}`}
-    >
-      <SwaggerUI
-        spec={spec}
-        docExpansion='list'
-        defaultModelsExpandDepth={5}
-        displayRequestDuration={true}
-        filter={true}
-        deepLinking={true}
-        supportedSubmitMethods={['get', 'post', 'put', 'delete', 'patch']}
-        tryItOutEnabled={true}
-        persistAuthorization={true}
-      />
+    <div className={resolvedTheme === 'dark' ? 'swagger-ui-dark' : ''}>
+      <SwaggerUI spec={spec} />
     </div>
   );
 };

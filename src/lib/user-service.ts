@@ -1,6 +1,6 @@
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from './db';
 import type { User } from '@prisma/client';
-import { currentUser } from '@clerk/nextjs/server';
 
 /**
  * Get a user by their Clerk ID

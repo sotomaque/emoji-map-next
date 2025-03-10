@@ -1,0 +1,44 @@
+sequenceDiagram
+    %% Places API Flow Diagram
+    %% Shows the sequence of operations when fetching places
+    
+    %% Define participants with styling
+    participant Client as 🌐 Client
+    participant API as 🔄 Next.js API Route
+    participant Cache as 💾 Redis Cache
+    participant Google as 🔍 Google Places API
+    
+    %% Add styling
+    autonumber
+    
+    %% Request flow
+    Client->>+API: GET /api/places/nearby/places-new
+    Note over API: Process request parameters<br/>(location, radius, keywords)
+    
+    %% Cache check
+    API->>+Cache: Check cache for results
+    
+    %% Conditional flow based on cache
+    alt Cache hit
+        Cache-->>-API: Return cached results
+        API-->>-Client: Return processed places (from cache)
+        Note right of Client: Fast response (< 100ms)
+    else Cache miss
+        Cache-->>-API: No cached data
+        API->>+Google: Fetch from Google Places API
+        Note over Google: Search for places<br/>based on parameters
+        Google-->>-API: Return places data
+        
+        rect rgb(240, 248, 255)
+            Note over API: Data Processing
+            API->>API: Process places with utility functions
+            Note over API: findMatchingKeyword()<br/>createSimplifiedPlace()
+        end
+        
+        API->>Cache: Store results in cache (TTL: 7 days)
+        API-->>-Client: Return processed places (from API)
+        Note right of Client: Slower response (300-800ms)
+    end
+    
+    %% Add a note about caching
+    Note over Cache: Cache key format:<br/>places:{location}:{radius}:{keywords} 

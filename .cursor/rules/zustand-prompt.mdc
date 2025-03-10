@@ -1,0 +1,88 @@
+---
+description: zustand-prompt
+globs: 
+alwaysApply: true
+---
+# Zustand Coding Style Guide
+
+Code Style and Structure:
+
+- Write concise, technical TypeScript code with Zustand stores
+- Use functional programming patterns for state management
+- Create modular store slices instead of single monolithic stores
+- Use descriptive store names with state context (e.g., useAuthStore, useCartStore)
+- Structure files: store definition, selectors, types, and related utilities
+
+Naming Conventions:
+
+- Use camelCase for store names prefixed with 'use' (e.g., useUserStore)
+- Use lowercase with dashes for store-related utilities (e.g., store-utils)
+- Favor named exports for store hooks and selectors
+
+TypeScript Usage:
+
+- Define TypeScript interfaces for store state and actions
+- Type selectors and store updates explicitly
+- Use interfaces for store shape definition
+- Avoid enums; use maps or const objects instead
+
+Zustand Implementation:
+
+- Always implement Immer middleware for complex state updates
+- Use devtools middleware for debugging in development
+- Implement persist middleware for state persistence
+- Version stores using persist middleware options
+- Create computed properties using selectors
+
+Syntax and Formatting:
+
+- Use arrow functions for store creation and actions
+- Keep store definitions concise and focused
+- Group related state and actions together
+- Use object destructuring in selectors
+
+Store Management:
+
+- Unit test stores using Jest or Vitest
+- Test initial state, actions, and computed properties
+- Implement versioned stores with migration strategies
+- Use early returns in action handlers
+- Keep actions pure and predictable
+
+Performance Optimization:
+
+- Use selectors for computed properties instead of inline calculations
+- Minimize re-renders with specific state subscriptions
+- Implement memoized selectors for expensive computations
+- Split large stores into logical domains
+
+Key Conventions:
+
+- Always include Immer middleware for nested updates:
+  ```typescript
+  import { create } from 'zustand'
+  import { immer } from 'zustand/middleware/immer'
+  import { devtools, persist } from 'zustand/middleware'
+
+  interface State {
+    count: number
+    increment: () => void
+  }
+
+  export const useCounterStore = create<State>()(
+    devtools(
+      persist(
+        immer((set) => ({
+          count: 0,
+          increment: () =>
+            set((state) => {
+              state.count += 1
+            }),
+        })),
+        {
+          name: 'counter-storage',
+          version: 1,
+        }
+      )
+    )
+  )

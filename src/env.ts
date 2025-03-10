@@ -12,6 +12,10 @@ export const env = createEnv({
       .string()
       .url()
       .default('https://maps.googleapis.com/maps/api/place/nearbysearch/json'),
+    GOOGLE_PLACES_V2_URL: z
+      .string()
+      .url()
+      .default('https://places.googleapis.com/v1/places:searchText'),
     GOOGLE_PLACES_DETAILS_URL: z
       .string()
       .url()
@@ -65,6 +69,9 @@ export const env = createEnv({
     // SUPABASE
     NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+
+    // STATSIG
+    NEXT_PUBLIC_STATSIG_CLIENT_KEY: z.string().min(1),
   },
 
   /**
@@ -75,6 +82,7 @@ export const env = createEnv({
     // GOOGLE PLACES
     GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
     GOOGLE_PLACES_URL: process.env.GOOGLE_PLACES_URL,
+    GOOGLE_PLACES_V2_URL: process.env.GOOGLE_PLACES_V2_URL,
     GOOGLE_PLACES_DETAILS_URL: process.env.GOOGLE_PLACES_DETAILS_URL,
     GOOGLE_PLACES_PHOTO_URL: process.env.GOOGLE_PLACES_PHOTO_URL,
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
@@ -107,6 +115,9 @@ export const env = createEnv({
     KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
     KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
     KV_REST_API_URL: process.env.KV_REST_API_URL,
+
+    // STATSIG
+    NEXT_PUBLIC_STATSIG_CLIENT_KEY: process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY,
   },
 
   /**

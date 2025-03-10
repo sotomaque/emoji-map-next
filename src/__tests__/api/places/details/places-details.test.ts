@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { redis, generatePlaceDetailsCacheKey } from '@/lib/redis';
 import { GET } from '../../../../app/api/places/details/route';
 
 // Mock the Redis module
@@ -15,22 +16,6 @@ vi.mock('@/lib/redis', () => {
     }),
   };
 });
-
-// Mock the environment variables
-vi.mock('@/env', () => {
-  return {
-    env: {
-      GOOGLE_PLACES_API_KEY: 'test-api-key',
-      GOOGLE_PLACES_DETAILS_URL:
-        'https://maps.googleapis.com/maps/api/place/details/json',
-      GOOGLE_PLACES_PHOTO_URL:
-        'https://maps.googleapis.com/maps/api/place/photo',
-    },
-  };
-});
-
-// Import the mocked Redis module
-import { redis, generatePlaceDetailsCacheKey } from '@/lib/redis';
 
 // Mock the fetch function
 const mockPlaceDetailsResponse = {
@@ -120,7 +105,7 @@ describe('Place Details API Route', () => {
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('placeDetails');
     expect(data).toHaveProperty('source', 'api');
-    
+
     // Verify the place details structure
     const placeDetails = data.placeDetails;
     expect(placeDetails).toHaveProperty('photos');
@@ -159,7 +144,7 @@ describe('Place Details API Route', () => {
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('placeDetails');
     expect(data).toHaveProperty('source', 'cache');
-    
+
     // Verify the place details structure
     const placeDetails = data.placeDetails;
     expect(placeDetails).toHaveProperty('photos');

@@ -118,30 +118,34 @@ describe('Redis Cache Utilities', () => {
       expect(generatePlaceDetailsCacheKey('ChIJN1t_tDeuEmsRUsoyG83frY4')).toBe(
         'place-details:ChIJN1t_tDeuEmsRUsoyG83frY4'
       );
-      
-      expect(generatePlaceDetailsCacheKey('abc123')).toBe('place-details:abc123');
-      
-      expect(generatePlaceDetailsCacheKey('place-with-dashes-and_underscores')).toBe(
-        'place-details:place-with-dashes-and_underscores'
+
+      expect(generatePlaceDetailsCacheKey('abc123')).toBe(
+        'place-details:abc123'
       );
+
+      expect(
+        generatePlaceDetailsCacheKey('place-with-dashes-and_underscores')
+      ).toBe('place-details:place-with-dashes-and_underscores');
     });
 
     it('should handle special characters in placeId', () => {
       expect(generatePlaceDetailsCacheKey('place:with:colons')).toBe(
         'place-details:place:with:colons'
       );
-      
+
       expect(generatePlaceDetailsCacheKey('place/with/slashes')).toBe(
         'place-details:place/with/slashes'
       );
-      
+
       expect(generatePlaceDetailsCacheKey('place.with.dots')).toBe(
         'place-details:place.with.dots'
       );
     });
 
     it('should handle numeric placeIds', () => {
-      expect(generatePlaceDetailsCacheKey('123456')).toBe('place-details:123456');
+      expect(generatePlaceDetailsCacheKey('123456')).toBe(
+        'place-details:123456'
+      );
     });
 
     it('should throw an error if placeId is not provided', () => {

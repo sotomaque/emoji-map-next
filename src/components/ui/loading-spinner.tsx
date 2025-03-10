@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 type LoadingSpinnerProps = {
   size?: 'sm' | 'md' | 'lg';

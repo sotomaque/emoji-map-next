@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
-import type { RenderOptions } from '@testing-library/react';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { RenderOptions } from '@testing-library/react';
 
 // Add any providers that your app needs here
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {

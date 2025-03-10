@@ -1,9 +1,9 @@
-import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { Webhook } from 'svix';
+import { env } from '@/env';
 import { prisma } from '@/lib/db';
 import type { UserJSON, WebhookEvent } from '@clerk/nextjs/server';
-import { env } from '@/env';
 
 export async function POST(req: Request) {
   try {
@@ -48,19 +48,29 @@ export async function POST(req: Request) {
 
     // Handle the webhook based on the event type
     const eventType = evt.type;
-    console.log(`Webhook received: ${eventType}`);
+    console.log(`Webhook received: ${eventType}`, {
+      userId: evt.data.id,
+      timestamp: new Date().toISOString(),
+    });
 
+    let result;
     if (eventType === 'user.created') {
-      await handleUserCreated(evt.data);
+      result = await handleUserCreated(evt.data);
     } else if (eventType === 'user.updated') {
-      await handleUserUpdated(evt.data);
+      result = await handleUserUpdated(evt.data);
     } else if (eventType === 'user.deleted') {
       if (evt.data.id) {
-        await handleUserDeleted(evt.data.id);
+        result = await handleUserDeleted(evt.data.id);
       } else {
-        console.error('User ID is missing');
+        console.error('User ID is missing in user.deleted event');
       }
     }
+
+    console.log(`Webhook processed: ${eventType}`, {
+      userId: evt.data.id,
+      result: result ? 'success' : 'no action taken',
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -83,7 +93,25 @@ async function handleUserCreated(userData: UserJSON) {
     }
 
     const clerkId = userData.id;
-    const email = userData?.email_addresses[0]?.email_address;
+
+    // Find the primary email address if possible, otherwise use the first one
+    let email: string | undefined;
+    if (
+      userData.primary_email_address_id &&
+      userData.email_addresses?.length > 0
+    ) {
+      // Try to find the primary email
+      const primaryEmail = userData.email_addresses.find(
+        (emailObj) => emailObj.id === userData.primary_email_address_id
+      );
+      email = primaryEmail?.email_address;
+    }
+
+    // If no primary email found, use the first one
+    if (!email && userData.email_addresses?.length > 0) {
+      email = userData.email_addresses[0].email_address;
+    }
+
     const createdAt = userData.created_at;
 
     if (!clerkId) {
@@ -92,7 +120,7 @@ async function handleUserCreated(userData: UserJSON) {
     }
 
     if (!email) {
-      console.error('Email is missing');
+      console.error('Email is missing for user:', clerkId);
       return;
     }
 
@@ -102,16 +130,17 @@ async function handleUserCreated(userData: UserJSON) {
         clerkId,
         email,
         createdAt: new Date(createdAt),
-        firstName: userData.first_name,
-        lastName: userData.last_name,
-        imageUrl: userData.image_url,
-        username: userData.username,
+        firstName: userData.first_name || null,
+        lastName: userData.last_name || null,
+        imageUrl: userData.image_url || null,
+        username: userData.username || null,
         id: clerkId,
         updatedAt: new Date(userData.updated_at),
       },
     });
 
     console.log(`User created: ${user.id}`);
+    return user;
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
@@ -127,15 +156,34 @@ async function handleUserUpdated(userData: UserJSON) {
     });
 
     if (!existingUser) {
+      console.log(`User doesn't exist during update, creating: ${userData.id}`);
       // If user doesn't exist, create them
       return await handleUserCreated(userData);
+    }
+
+    // Find the primary email address if possible, otherwise use the first one
+    let email: string | undefined;
+    if (
+      userData.primary_email_address_id &&
+      userData.email_addresses?.length > 0
+    ) {
+      // Try to find the primary email
+      const primaryEmail = userData.email_addresses.find(
+        (emailObj) => emailObj.id === userData.primary_email_address_id
+      );
+      email = primaryEmail?.email_address;
+    }
+
+    // If no primary email found, use the first one
+    if (!email && userData.email_addresses?.length > 0) {
+      email = userData.email_addresses[0].email_address;
     }
 
     // Update the user in the database
     const user = await prisma.user.update({
       where: { clerkId: userData.id },
       data: {
-        email: userData.email_addresses[0]?.email_address || existingUser.email,
+        email: email || existingUser.email,
         firstName: userData.first_name,
         lastName: userData.last_name,
         username: userData.username,
@@ -145,6 +193,7 @@ async function handleUserUpdated(userData: UserJSON) {
     });
 
     console.log(`User updated: ${user.id}`);
+    return user;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -160,8 +209,8 @@ async function handleUserDeleted(clerkId: string) {
     });
 
     if (!existingUser) {
-      console.log(`User not found: ${clerkId}`);
-      return;
+      console.log(`User not found for deletion: ${clerkId}`);
+      return null;
     }
 
     // Delete the user from the database
@@ -170,6 +219,7 @@ async function handleUserDeleted(clerkId: string) {
     });
 
     console.log(`User deleted: ${user.id}`);
+    return user;
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error;

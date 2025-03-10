@@ -10,13 +10,26 @@ export function usePlaces(params: PlacesParams) {
   // Extract refetchTrigger from params to include in queryKey
   const { refetchTrigger, ...apiParams } = params;
 
+  // Separate viewport parameters from filter parameters
+  const { latitude, longitude, radius, bounds } = apiParams;
+
+  // Create a viewport key for the query
+  const viewportKey = {
+    latitude,
+    longitude,
+    radius,
+    bounds: bounds ? JSON.stringify(bounds) : undefined,
+  };
+
   return useQuery({
-    queryKey: ['places', apiParams, refetchTrigger],
+    // Only include viewport parameters in the query key
+    // This ensures that changes to filter parameters don't trigger a refetch
+    queryKey: ['places', viewportKey, refetchTrigger],
     queryFn: async () => {
       try {
         console.log('[usePlaces] Fetching places with params:', apiParams);
 
-        // Fetch places from the API
+        // Fetch places from the API with all parameters
         const places = await fetchPlaces(apiParams);
 
         // Convert places to map data points
@@ -89,6 +102,7 @@ export function useCurrentLocation(options?: UseCurrentLocationOptions) {
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: true, // Always refetch on mount to handle permission changes
     ...(options?.onSuccess
       ? {
           gcTime: 0, // Needed for onSuccess to work properly in React Query v5

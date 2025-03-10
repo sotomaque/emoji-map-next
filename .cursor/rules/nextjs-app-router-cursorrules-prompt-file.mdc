@@ -1,0 +1,47 @@
+---
+description: nextjs-app-router-cursorrules-prompt-file
+globs: 
+alwaysApply: true
+---
+// Next.js App Router .cursorrules
+
+// Next.js App Router best practices
+
+const nextjsAppRouterBestPractices = [
+"Use server components by default",
+"Implement client components only when necessary",
+"Utilize the new file-based routing system",
+"Use layout.js for shared layouts",
+"Implement loading.js for loading states",
+"Use error.js for error handling",
+"Utilize route handlers for API routes",
+];
+
+// Folder structure
+
+const folderStructure = `app/
+  layout.js
+  page.js
+  components/
+  lib/
+  styles/
+public/`;
+
+// Testing
+
+1. If you find yourself mocking something often, with no variation in the mocks, mock at a global level in the setup
+2. Tests should be co-located for utilities and components
+3. No tests are necessary for pages
+
+// Additional instructions
+
+const additionalInstructions = `
+
+1. Use TypeScript for type safety
+2. Implement proper metadata for SEO
+3. Utilize Next.js Image component for optimized images
+4. Use CSS Modules or Tailwind CSS for styling
+5. Implement proper error boundaries
+6. Follow Next.js naming conventions for special files
+7. Use environment variables for configuration
+   `;

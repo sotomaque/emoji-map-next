@@ -1,0 +1,47 @@
+{
+  "placeDetails": {
+    "id": "place1",
+    "name": "Coffee Shop",
+    "formatted_address": "123 Main St, San Francisco, CA 94103",
+    "geometry": {
+      "location": {
+        "lat": 37.7749,
+        "lng": -122.4194
+      }
+    },
+    "types": ["cafe", "food"],
+    "rating": 4.5,
+    "user_ratings_total": 100,
+    "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/cafe-71.png",
+    "photos": [
+      {
+        "photo_reference": "photo_ref_1",
+        "width": 800,
+        "height": 600
+      },
+      {
+        "photo_reference": "photo_ref_2",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0800"
+          },
+          "close": {
+            "day": 0,
+            "time": "2000"
+          }
+        }
+      ]
+    },
+    "website": "https://example.com",
+    "phone_number": "+1 (555) 123-4567"
+  },
+  "timestamp": "2023-07-01T12:00:00Z"
+}

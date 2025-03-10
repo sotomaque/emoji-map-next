@@ -1,29 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
+import { describe, it, expect } from 'vitest';
+import { setupApiTestServer } from '../../helpers/api-test-helpers';
 
-// Mock server setup
-const server = setupServer(
-  http.get('/api/health', () => {
-    return HttpResponse.json(
-      {
-        status: 'ok',
-        message: 'API is running',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 200 }
-    );
-  })
-);
-
-// Start server before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-
-// Reset handlers after each test
-afterEach(() => server.resetHandlers());
-
-// Close server after all tests
-afterAll(() => server.close());
+// Setup server with API handlers
+const server = setupApiTestServer();
 
 describe('Health API Integration Test', () => {
   it('should fetch health data successfully from API', async () => {
@@ -42,7 +22,7 @@ describe('Health API Integration Test', () => {
   it('handles API errors correctly', async () => {
     // Override the default handler for this specific test
     server.use(
-      http.get('/api/health', () => {
+      http.get('*/api/health', () => {
         return HttpResponse.json(
           {
             status: 'error',

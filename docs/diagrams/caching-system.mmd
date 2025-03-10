@@ -1,0 +1,67 @@
+flowchart TD
+    %% Caching System Diagram
+    %% Shows how the Redis caching system works
+    
+    %% Define styles
+    classDef request fill:#f9f,stroke:#333,stroke-width:2px
+    classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
+    classDef process fill:#bbf,stroke:#333,stroke-width:1px
+    classDef data fill:#bfb,stroke:#333,stroke-width:1px
+    classDef config fill:#ddd,stroke:#333,stroke-width:1px
+    
+    %% Main flow
+    A[API Request]:::request --> B{Check Cache}:::decision
+    B -->|Cache Hit| C[Return Cached Data]:::data
+    B -->|Cache Miss| D[Fetch from Google API]:::process
+    
+    D --> E[Process Data]:::process
+    E --> F[Store in Cache]:::process
+    F --> G[Return Processed Data]:::data
+    C --> G
+    
+    %% Cache key generation
+    subgraph "Cache Key Generation"
+        direction TB
+        H[Text Query]:::request --> K[Generate Cache Key]:::process
+        I[Location]:::request --> K
+        J[Radius/Bounds]:::request --> K
+        
+        %% Add example
+        example["Example: places:37.78,-122.41:5000:restaurant,pizza"]:::data
+        K -.-> example
+    end
+    
+    %% Connect cache key to main flow
+    K --> B
+    
+    %% Cache configuration
+    subgraph "Cache Configuration"
+        direction LR
+        L[TTL: Time to Live]:::config
+        M[bypassCache Parameter]:::config
+        
+        %% Add TTL details
+        L1["Places: 7 days"]:::config
+        L2["Details: 1 hour"]:::config
+        L --> L1
+        L --> L2
+    end
+    
+    %% Connect bypass parameter to flow
+    M -->|true| D
+    M -->|false| B
+    
+    %% Add performance metrics
+    subgraph "Performance Metrics"
+        direction TB
+        P1["Cache Hit: ~50ms response"]:::data
+        P2["Cache Miss: ~500ms response"]:::data
+    end
+    
+    %% Connect performance to flow paths
+    C -.-> P1
+    F -.-> P2
+    
+    %% Add a note about cache invalidation
+    note["Note: Cache can be manually invalidated<br>by setting bypassCache=true in the request"]
+    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5 
