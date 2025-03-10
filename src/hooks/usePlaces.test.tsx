@@ -5,8 +5,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { usePlaces, useCurrentLocation } from './usePlaces';
 import * as placesService from '../services/places';
 
-
-
 // Mock the places service
 vi.mock('../services/places', () => ({
   fetchPlaces: vi.fn(),

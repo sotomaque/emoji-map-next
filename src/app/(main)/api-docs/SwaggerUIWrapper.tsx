@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes';
 // Dynamically import SwaggerUI to avoid build issues with lodash-es
 const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
   ssr: false,
-  loading: () => <div className="p-8 text-center">Loading Swagger UI...</div>,
+  loading: () => <div className='p-8 text-center'>Loading Swagger UI...</div>,
 });
 
 interface SwaggerUIWrapperProps {
@@ -47,7 +47,7 @@ const SwaggerUIWrapper: React.FC<SwaggerUIWrapperProps> = ({ spec }) => {
 
   // Render loading state if not mounted
   if (!mounted) {
-    return <div className="p-8 text-center">Loading Swagger UI...</div>;
+    return <div className='p-8 text-center'>Loading Swagger UI...</div>;
   }
 
   return (

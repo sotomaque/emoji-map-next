@@ -3,7 +3,6 @@ import { Footer } from '../../components/footer/footer';
 import { env } from '../../env';
 import type { Metadata } from 'next';
 
-
 const isProduction = env.NEXT_PUBLIC_SITE_ENV === 'production';
 
 export const metadata: Metadata = {

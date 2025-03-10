@@ -16,7 +16,6 @@ import {
 } from '@/store/markerStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
 
-
 // Dynamically import the EmojiSelector component with no SSR
 const EmojiSelector = dynamic(
   () => import('@/components/map/emoji-selector/emoji-selector'),

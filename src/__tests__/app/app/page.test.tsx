@@ -4,8 +4,6 @@ import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AppPage from '@/app/app/page';
 
-
-
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({

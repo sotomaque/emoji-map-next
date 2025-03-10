@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
-        'lodash': 'lodash-es',
+        lodash: 'lodash-es',
       };
     }
     return config;

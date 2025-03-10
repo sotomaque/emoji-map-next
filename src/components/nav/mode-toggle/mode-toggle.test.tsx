@@ -3,7 +3,6 @@ import * as nextThemes from 'next-themes';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ModeToggle } from './mode-toggle';
 
-
 // Mock the next-themes module
 vi.mock('next-themes', () => ({
   useTheme: vi.fn().mockReturnValue({

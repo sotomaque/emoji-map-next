@@ -259,7 +259,10 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter out places with undefined id
-    const filteredPlaces = filter(processedPlaces, (place: Partial<NearbyPlace>) => place.id !== undefined);
+    const filteredPlaces = filter(
+      processedPlaces,
+      (place: Partial<NearbyPlace>) => place.id !== undefined
+    );
 
     // Limit the number of results
     const limitedResults = filteredPlaces.slice(0, maxResults);

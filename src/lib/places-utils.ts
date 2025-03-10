@@ -141,9 +141,7 @@ export function processPlaces(
     const emoji = categoryEmojis[matchedKeyword];
 
     if (!emoji) {
-      console.error(
-        `[places] No emoji found for category: ${matchedKeyword}`
-      );
+      console.error(`[places] No emoji found for category: ${matchedKeyword}`);
       // Return a place with undefined id which will be filtered out
       return { id: undefined } as unknown as NearbyPlace;
     }
@@ -152,5 +150,8 @@ export function processPlaces(
     return createSimplifiedPlace(place, matchedKeyword, emoji);
   });
 
-  return filter(mappedPlaces, (place: Partial<NearbyPlace>) => place.id !== undefined);
+  return filter(
+    mappedPlaces,
+    (place: Partial<NearbyPlace>) => place.id !== undefined
+  );
 }
