@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 echo "🧪 Running precheck (format, lint, type check)..."
 pnpm precheck || { echo "❌ Precheck failed. Please fix the issues before pushing."; exit 1; }
