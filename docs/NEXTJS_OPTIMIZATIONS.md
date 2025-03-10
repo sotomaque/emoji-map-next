@@ -13,29 +13,13 @@ We've implemented several strategies to optimize Lodash imports and reduce bundl
 
 For more details, see [LODASH_OPTIMIZATION.md](./LODASH_OPTIMIZATION.md).
 
-### 2. Modular React Imports
+### 2. React 19 Compatibility
 
-We've configured webpack to use modular imports for React components:
+We've configured our application to work with React 19, which includes improved tree shaking and performance optimizations out of the box. React 19 has a different exports structure that automatically handles JSX runtime paths.
 
-```javascript
-config.resolve.alias = {
-  ...config.resolve.alias,
-  'react/jsx-runtime': 'react/jsx-runtime.js',
-  'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
-};
-```
+### 3. Next.js 15 Compiler Optimizations
 
-This ensures that only the necessary React components are included in the bundle.
-
-### 3. SWC Minification
-
-We've enabled SWC minification for better and faster code minification:
-
-```javascript
-swcMinify: true,
-```
-
-SWC is a Rust-based compiler that is significantly faster than Terser for minification.
+Next.js 15 includes built-in optimizations with its Rust-based compiler (SWC), which provides faster compilation and better minification than previous versions. This is enabled by default and doesn't require additional configuration.
 
 ## Performance Optimizations
 

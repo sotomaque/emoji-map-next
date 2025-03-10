@@ -9,17 +9,14 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Configure SWC for better minification
-  swcMinify: true,
-  // Optimize Lodash imports
   webpack: (config, { isServer }) => {
     // Use lodash-es for client bundles
+    // Note: This may cause issues with swagger-ui-react which requires lodash/fp modules
+    // If you need swagger-ui-react, you may need to modify this configuration
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
         'lodash': 'lodash-es',
-        'react/jsx-runtime': 'react/jsx-runtime.js',
-        'react/jsx-dev-runtime': 'react/jsx-dev-runtime.js',
       };
     }
     return config;
@@ -46,6 +43,5 @@ const nextConfig: NextConfig = {
     },
   },
 };
-
 
 export default withBundleAnalyzer(nextConfig);
