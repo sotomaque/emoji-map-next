@@ -159,7 +159,12 @@
       "rating": 4.5,
       "reference": "ChIJ6zi00isH3IARq_pEaCyhKW8",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 2435,
       "vicinity": "4150 Regents Park Row #100, La Jolla"
     },
@@ -370,7 +375,12 @@
       "rating": 4.4,
       "reference": "ChIJJ98fR1EB3IARZ1CA8EOsNLM",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 1535,
       "vicinity": "1950 Spindrift Drive, La Jolla"
     },
@@ -418,7 +428,12 @@
       "rating": 4.4,
       "reference": "ChIJGx9dguEG3IARy4xQaWDJbaM",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 529,
       "vicinity": "10300 Campus Point Drive, San Diego"
     },
@@ -574,7 +589,12 @@
       "rating": 4.1,
       "reference": "ChIJdfkVdTIH3IARjA_o0gNjg9Y",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 17,
       "vicinity": "4550 La Jolla Village Drive, San Diego"
     },
@@ -678,7 +698,12 @@
       "rating": 3.8,
       "reference": "ChIJcZr61fQG3IARHvNPhGIi-Qc",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 111,
       "vicinity": "10950 North Torrey Pines Road, La Jolla"
     },
@@ -726,7 +751,12 @@
       "rating": 4.5,
       "reference": "ChIJNad-_lEB3IAR9hVkmr4PX-0",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 1844,
       "vicinity": "2182 Avenida De La Playa, La Jolla"
     },
@@ -829,7 +859,12 @@
       "rating": 4.5,
       "reference": "ChIJk9OXZz4H3IARfqGFCAKt1MU",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 177,
       "vicinity": "9254 Scranton Road, San Diego"
     },
@@ -987,7 +1022,12 @@
       "rating": 4.5,
       "reference": "ChIJVU50O_wD3IAR2D1-vUFwYmw",
       "scope": "GOOGLE",
-      "types": ["restaurant", "food", "point_of_interest", "establishment"],
+      "types": [
+        "restaurant",
+        "food",
+        "point_of_interest",
+        "establishment"
+      ],
       "user_ratings_total": 1914,
       "vicinity": "1235 Coast Boulevard, La Jolla"
     },

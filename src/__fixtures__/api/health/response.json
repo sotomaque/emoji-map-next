@@ -1,0 +1,7 @@
+{
+  "status": "ok",
+  "message": "API is running",
+  "timestamp": "2023-07-01T12:00:00Z",
+  "environment": "test",
+  "version": "1.0.0"
+}

@@ -1,0 +1,31 @@
+{
+  "places": [
+    {
+      "id": "place1",
+      "name": "Coffee Shop",
+      "vicinity": "123 Main St",
+      "geometry": {
+        "location": {
+          "lat": 37.7749,
+          "lng": -122.4194
+        }
+      },
+      "types": [
+        "cafe",
+        "food"
+      ],
+      "rating": 4.5,
+      "user_ratings_total": 100,
+      "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/cafe-71.png",
+      "photos": [
+        {
+          "photo_reference": "photo_ref_1",
+          "width": 800,
+          "height": 600
+        }
+      ]
+    }
+  ],
+  "count": 1,
+  "timestamp": "2023-07-01T12:00:00Z"
+}

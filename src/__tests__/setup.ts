@@ -1,7 +1,14 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import healthResponse from '@/__fixtures__/api/health/response.json';
+import placesDetailsResponse from '@/__fixtures__/api/places/details/response.json';
+import placesNearbyResponse from '@/__fixtures__/api/places/nearby/response.json';
+import googlePlacesNewResponse from '@/__fixtures__/api/places/v2/google-response.json';
+import placesV2Response from '@/__fixtures__/api/places/v2/response.json';
+import webhookSuccessResponse from '@/__fixtures__/api/webhooks/success-response.json';
 import type { RequestHandler } from 'msw';
 
 // Mock Statsig's useGateValue hook globally
@@ -63,15 +70,133 @@ vi.mock('@/env', () => ({
 // Clean up after each test
 afterEach(() => {
   cleanup();
+  vi.resetAllMocks();
 });
+
+// Define handlers for both external and internal API routes
+export const defaultHandlers = [
+  // External API handlers
+  // Google Places API - External endpoints
+  http.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json*', () => {
+    return HttpResponse.json(
+      googlePlacesNewResponse,
+      { status: 200 }
+    );
+  }),
+  
+  http.get('https://maps.googleapis.com/maps/api/place/details/json*', () => {
+    return HttpResponse.json(
+      {
+        result: {
+          place_id: 'test_place_id',
+          name: 'Test Place',
+          formatted_address: '123 Test St, Test City',
+          geometry: {
+            location: {
+              lat: 37.7749,
+              lng: -122.4194
+            }
+          },
+          photos: [
+            { photo_reference: 'photo1' },
+            { photo_reference: 'photo2' }
+          ],
+          types: ['restaurant', 'food']
+        },
+        status: 'OK'
+      },
+      { status: 200 }
+    );
+  }),
+  
+  http.post('https://places.googleapis.com/v1/places:searchText*', () => {
+    return HttpResponse.json(
+      googlePlacesNewResponse,
+      { status: 200 }
+    );
+  }),
+  
+  // Internal API handlers
+  // Health API
+  http.get('*/api/health', () => {
+    return HttpResponse.json(healthResponse, { status: 200 });
+  }),
+  
+  http.get('*/api/health/error', () => {
+    return HttpResponse.json(
+      { status: 'error', message: 'Service unavailable' },
+      { status: 503 }
+    );
+  }),
+  
+  // Places API
+  http.get('*/api/places/nearby*', () => {
+    return HttpResponse.json(placesNearbyResponse, { status: 200 });
+  }),
+  
+  http.get('*/api/places/details*', () => {
+    return HttpResponse.json(placesDetailsResponse, { status: 200 });
+  }),
+  
+  http.get('*/api/places/v2*', () => {
+    return HttpResponse.json(placesV2Response, { status: 200 });
+  }),
+  
+  // Webhook API
+  http.post('*/api/webhooks*', () => {
+    return HttpResponse.json(webhookSuccessResponse, { status: 200 });
+  }),
+  
+  // Handle missing parameters for API routes
+  http.get('*/api/places/nearby', ({ request }) => {
+    const url = new URL(request.url);
+    if (!url.searchParams.get('location')) {
+      return HttpResponse.json(
+        { error: 'Missing required parameter: location' },
+        { status: 400 }
+      );
+    }
+    return HttpResponse.json(placesNearbyResponse, { status: 200 });
+  }),
+  
+  http.get('*/api/places/details', ({ request }) => {
+    const url = new URL(request.url);
+    if (!url.searchParams.get('placeId')) {
+      return HttpResponse.json(
+        { error: 'Missing required parameter: placeId' },
+        { status: 400 }
+      );
+    }
+    return HttpResponse.json(placesDetailsResponse, { status: 200 });
+  }),
+  
+  // Handle server errors
+  http.get('*/api/places/nearby/error', () => {
+    return HttpResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }),
+  
+  http.get('*/api/places/details/error', () => {
+    return HttpResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  })
+];
 
 // MSW server setup for API mocking
 export const createMockServer = (...handlers: RequestHandler[]) => {
   const server = setupServer(...handlers);
 
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+  beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
   afterEach(() => server.resetHandlers());
   afterAll(() => server.close());
 
   return server;
 };
+
+// Initialize the global server but don't start it automatically
+// This allows individual test files to use their own server setup
+export const globalServer = setupServer(...defaultHandlers);

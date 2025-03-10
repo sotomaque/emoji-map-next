@@ -98,17 +98,19 @@ export function generatePlaceDetailsCacheKey(placeId: string | null): string {
 /**
  * Generate a cache key for the places text search API
  * Cache based on textQuery, location, radius, and bounds
+ * Returns null if required parameters are missing or invalid
  */
 export function generatePlacesTextSearchCacheKey(params: {
   textQuery: string;
   location?: string | null;
   radius?: string | null;
   bounds?: string | null;
-}): string {
+}): string | null {
   const { textQuery, location, radius = '5000', bounds } = params;
 
   if (!textQuery) {
-    throw new Error('textQuery is required for generating a cache key');
+    console.warn('textQuery is required for generating a cache key');
+    return null;
   }
 
   // Normalize the text query by trimming and converting to lowercase
@@ -119,19 +121,29 @@ export function generatePlacesTextSearchCacheKey(params: {
 
   // Add location and radius if provided
   if (location) {
-    const normalizedLocation = normalizeLocation(location);
-    const normalizedRadius = normalizeRadius(radius || '5000');
-    cacheKey += `:loc:${normalizedLocation}:${normalizedRadius}`;
+    try {
+      const normalizedLocation = normalizeLocation(location);
+      const normalizedRadius = normalizeRadius(radius || '5000');
+      cacheKey += `:loc:${normalizedLocation}:${normalizedRadius}`;
+    } catch (error) {
+      console.warn('Error normalizing location or radius:', error);
+      // Continue without location info in the cache key
+    }
   }
 
   // Add bounds if provided
   if (bounds) {
-    // Normalize bounds by splitting and rounding each coordinate
-    const [southwest, northeast] = bounds.split('|');
-    if (southwest && northeast) {
-      const normalizedSW = normalizeLocation(southwest);
-      const normalizedNE = normalizeLocation(northeast);
-      cacheKey += `:bounds:${normalizedSW}|${normalizedNE}`;
+    try {
+      // Normalize bounds by splitting and rounding each coordinate
+      const [southwest, northeast] = bounds.split('|');
+      if (southwest && northeast) {
+        const normalizedSW = normalizeLocation(southwest);
+        const normalizedNE = normalizeLocation(northeast);
+        cacheKey += `:bounds:${normalizedSW}|${normalizedNE}`;
+      }
+    } catch (error) {
+      console.warn('Error normalizing bounds:', error);
+      // Continue without bounds info in the cache key
     }
   }
 

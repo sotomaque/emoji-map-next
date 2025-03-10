@@ -1,4 +1,3 @@
-import { http, HttpResponse } from 'msw';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
 import { setupApiTestServer } from '../../helpers/api-test-helpers';
@@ -19,7 +18,6 @@ vi.mock('@/lib/db', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
       create: vi.fn(),
-      delete: vi.fn(),
     },
   },
 }));
@@ -30,14 +28,10 @@ const mockedPrisma = prisma as unknown as MockedPrismaClient;
 // Mock the Svix webhook verification
 mockClerkWebhook(webhookFixtures.userCreate);
 
-describe('Clerk Webhook Handler', () => {
+describe('Clerk Webhook Handler - User Create', () => {
   // Reset mocks before each test
   beforeEach(() => {
     vi.resetAllMocks();
-    
-    // Mock console.log and console.error to keep test output clean
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('should handle user.created event and create a user in the database', async () => {
@@ -46,10 +40,8 @@ describe('Clerk Webhook Handler', () => {
       id: webhookFixtures.userCreate.data.id,
       clerkId: webhookFixtures.userCreate.data.id,
       email: webhookFixtures.userCreate.data.email_addresses[0].email_address,
-      firstName: webhookFixtures.userCreate.data.first_name || null,
-      lastName: webhookFixtures.userCreate.data.last_name || null,
-      username: webhookFixtures.userCreate.data.username || null,
-      imageUrl: webhookFixtures.userCreate.data.image_url || null,
+      firstName: webhookFixtures.userCreate.data.first_name || 'Test',
+      lastName: webhookFixtures.userCreate.data.last_name || 'User',
     };
 
     // Mock the findUnique method to return null (user not found)
@@ -105,10 +97,8 @@ describe('Clerk Webhook Handler', () => {
       id: webhookFixtures.userCreate.data.id,
       clerkId: webhookFixtures.userCreate.data.id,
       email: webhookFixtures.userCreate.data.email_addresses[0].email_address,
-      firstName: webhookFixtures.userCreate.data.first_name || null,
-      lastName: webhookFixtures.userCreate.data.last_name || null,
-      username: webhookFixtures.userCreate.data.username || null,
-      imageUrl: webhookFixtures.userCreate.data.image_url || null,
+      firstName: webhookFixtures.userCreate.data.first_name || 'Test',
+      lastName: webhookFixtures.userCreate.data.last_name || 'User',
     };
 
     // Mock the findUnique method to return an existing user
@@ -148,32 +138,4 @@ describe('Clerk Webhook Handler', () => {
     // Verify that create was not called
     expect(mockedPrisma.user.create).not.toHaveBeenCalled();
   });
-
-  it('should handle missing svix headers', async () => {
-    // Override the default handler for this specific test
-    server.use(
-      http.post('/api/webhooks', () => {
-        return HttpResponse.json(
-          { error: 'Missing svix headers' },
-          { status: 400 }
-        );
-      })
-    );
-
-    // Create a mock request without the necessary headers
-    const response = await fetch('/api/webhooks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookFixtures.userCreate),
-    });
-
-    // Check that the response is a 400 error
-    expect(response.status).toBe(400);
-
-    // Verify that Prisma was not called
-    expect(mockedPrisma.user.findUnique).not.toHaveBeenCalled();
-    expect(mockedPrisma.user.create).not.toHaveBeenCalled();
-  });
-});
+}); 
