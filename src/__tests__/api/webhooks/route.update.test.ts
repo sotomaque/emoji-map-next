@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userUpdateFixture from '@/__fixtures__/clerk/webhooks/user/update.json';
 import { POST } from '@/app/api/webhooks/route';
 import { prisma } from '@/lib/db';
-import userUpdateFixture from '@/__fixtures__/clerk/webhooks/user/update.json';
 
 // Mock the Next.js headers
 vi.mock('next/headers', () => ({

@@ -1,6 +1,6 @@
-import type { NavItem } from '@/types/nav-items';
-import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import { useGateValue } from '@statsig/react-bindings';
+import { FEATURE_FLAGS } from '@/constants/feature-flags';
+import type { NavItem } from '@/types/nav-items';
 
 /**
  * Hook to filter navigation items based on feature flags and hidden status

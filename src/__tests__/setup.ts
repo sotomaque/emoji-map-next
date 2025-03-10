@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { setupServer } from 'msw/node';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import type { RequestHandler } from 'msw';
 
 // Mock Statsig's useGateValue hook globally

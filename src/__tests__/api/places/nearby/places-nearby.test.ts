@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET } from '../../../../app/api/places/nearby/route';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { redis, generatePlacesCacheKey } from '@/lib/redis';
 import type { Place } from '@/types/google-places';
+import { GET } from '../../../../app/api/places/nearby/route';
+
+
+// Environment variables are now mocked globally in src/__tests__/setup.ts
+
+// Import the mocked Redis module
 
 // Mock the Redis module
 vi.mock('@/lib/redis', () => {
@@ -18,11 +24,6 @@ vi.mock('@/lib/redis', () => {
       }),
   };
 });
-
-// Environment variables are now mocked globally in src/__tests__/setup.ts
-
-// Import the mocked Redis module
-import { redis, generatePlacesCacheKey } from '@/lib/redis';
 
 // Mock the fetch function
 const mockFetchResponse = {

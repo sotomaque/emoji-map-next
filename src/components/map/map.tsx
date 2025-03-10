@@ -8,9 +8,9 @@ import React, {
   useEffect,
 } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { useTheme } from 'next-themes';
 import { env } from '@/env';
 import EmojiMarker from './emoji-maker/emoji-marker';
-import { useTheme } from 'next-themes';
 
 // Define the center type
 interface LatLngLiteral {

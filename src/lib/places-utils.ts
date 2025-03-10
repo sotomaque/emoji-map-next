@@ -1,6 +1,11 @@
+import filter from 'lodash/filter';
+import find from 'lodash/find';
+import includes from 'lodash/includes';
+import map from 'lodash/map';
+import some from 'lodash/some';
+import toLower from 'lodash/toLower';
 import { categoryEmojis } from '@/services/places';
 import type { GooglePlace, NearbyPlace } from '@/types/places';
-import _ from 'lodash';
 
 /**
  * Checks if a place matches any of the provided keywords
@@ -14,27 +19,27 @@ export function findMatchingKeyword(
   keywords: string[],
   lowercaseKeywords: string[]
 ): string | undefined {
-  return _.find(keywords, (keyword: string, index: number) => {
+  return find(keywords, (keyword: string, index: number) => {
     const lowercaseKeyword = lowercaseKeywords[index];
 
     return (
       // Check in primaryType
-      _.includes(_.toLower(place.primaryType || ''), lowercaseKeyword) ||
+      includes(toLower(place.primaryType || ''), lowercaseKeyword) ||
       // Check in types array
-      _.some(place.types || [], (type: string) =>
-        _.includes(_.toLower(type), lowercaseKeyword)
+      some(place.types || [], (type: string) =>
+        includes(toLower(type), lowercaseKeyword)
       ) ||
       // Check in primaryTypeDisplayName
-      _.includes(
-        _.toLower(place.primaryTypeDisplayName?.text || ''),
+      includes(
+        toLower(place.primaryTypeDisplayName?.text || ''),
         lowercaseKeyword
       ) ||
       // Check in displayName
-      _.includes(_.toLower(place.displayName?.text || ''), lowercaseKeyword) ||
+      includes(toLower(place.displayName?.text || ''), lowercaseKeyword) ||
       // Check in name
-      _.includes(_.toLower(place.name || ''), lowercaseKeyword) ||
+      includes(toLower(place.name || ''), lowercaseKeyword) ||
       // Check in formattedAddress
-      _.includes(_.toLower(place.formattedAddress || ''), lowercaseKeyword)
+      includes(toLower(place.formattedAddress || ''), lowercaseKeyword)
     );
   });
 }
@@ -119,34 +124,33 @@ export function processPlaces(
   // Convert keywords to lowercase for case-insensitive matching
   const lowercaseKeywords = keywords.map((keyword) => keyword.toLowerCase());
 
-  return _(places)
-    .map((place: GooglePlace) => {
-      // Find the first keyword that matches any of the place's properties
-      const matchedKeyword = findMatchingKeyword(
-        place,
-        keywords,
-        lowercaseKeywords
+  const mappedPlaces = map(places, (place: GooglePlace) => {
+    // Find the first keyword that matches any of the place's properties
+    const matchedKeyword = findMatchingKeyword(
+      place,
+      keywords,
+      lowercaseKeywords
+    );
+
+    // If no keyword match was found, return a place with undefined id which will be filtered out
+    if (!matchedKeyword) {
+      return { id: undefined } as unknown as NearbyPlace;
+    }
+
+    // Get the emoji for the category from our mapping
+    const emoji = categoryEmojis[matchedKeyword];
+
+    if (!emoji) {
+      console.error(
+        `[places] No emoji found for category: ${matchedKeyword}`
       );
+      // Return a place with undefined id which will be filtered out
+      return { id: undefined } as unknown as NearbyPlace;
+    }
 
-      // If no keyword match was found, return a place with undefined id which will be filtered out
-      if (!matchedKeyword) {
-        return { id: undefined } as unknown as NearbyPlace;
-      }
+    // Create a simplified place object with only the fields we care about
+    return createSimplifiedPlace(place, matchedKeyword, emoji);
+  });
 
-      // Get the emoji for the category from our mapping
-      const emoji = categoryEmojis[matchedKeyword];
-
-      if (!emoji) {
-        console.error(
-          `[places] No emoji found for category: ${matchedKeyword}`
-        );
-        // Return a place with undefined id which will be filtered out
-        return { id: undefined } as unknown as NearbyPlace;
-      }
-
-      // Create a simplified place object with only the fields we care about
-      return createSimplifiedPlace(place, matchedKeyword, emoji);
-    })
-    .filter((place: Partial<NearbyPlace>) => place.id !== undefined)
-    .value();
+  return filter(mappedPlaces, (place: Partial<NearbyPlace>) => place.id !== undefined);
 }

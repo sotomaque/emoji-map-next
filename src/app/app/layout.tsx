@@ -1,5 +1,3 @@
-import ThemedUserButton from '@/components/auth/themed-user-button';
-import { ModeToggle } from '@/components/nav/mode-toggle/mode-toggle';
 import {
   ClerkProvider,
   SignedIn,
@@ -7,6 +5,8 @@ import {
   SignInButton,
   SignUpButton,
 } from '@clerk/nextjs';
+import ThemedUserButton from '@/components/auth/themed-user-button';
+import { ModeToggle } from '@/components/nav/mode-toggle/mode-toggle';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (

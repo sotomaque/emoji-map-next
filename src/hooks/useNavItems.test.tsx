@@ -1,8 +1,9 @@
-import { renderHook } from '@testing-library/react';
-import { useNavItems } from './useNavItems';
 import { useGateValue } from '@statsig/react-bindings';
-import type { NavItem } from '@/types/nav-items';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { NavItem } from '@/types/nav-items';
+import { useNavItems } from './useNavItems';
+
 
 // Mock the statsig hook
 vi.mock('@statsig/react-bindings', () => ({

@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavItem } from '@/types/nav-items';
-import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { useNavItems } from '@/hooks/useNavItems';
+import type { NavItem } from '@/types/nav-items';
+import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 
 type DesktopNavProps = {
   navItems: NavItem[];

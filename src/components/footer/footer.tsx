@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navItems } from '@/constants/routes';
-import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 import { useNavItems } from '@/hooks/useNavItems';
+import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 
 export function Footer() {
   const path = usePathname();

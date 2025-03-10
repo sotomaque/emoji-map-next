@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { categoryEmojis } from '@/services/places';
+import type { GooglePlace } from '@/types/places';
 import {
   processPlaces,
   findMatchingKeyword,
   createSimplifiedPlace,
 } from './places-utils';
-import type { GooglePlace } from '@/types/places';
-import { categoryEmojis } from '@/services/places';
 
 // Mock the categoryEmojis import
 vi.mock('@/services/places', () => ({

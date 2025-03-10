@@ -1,5 +1,5 @@
-import { env } from '@/env';
 import { Redis } from '@upstash/redis';
+import { env } from '@/env';
 import {
   generatePlacesCacheKey,
   generatePlaceDetailsCacheKey,

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { Header } from './header';
 import { vi, describe, it, expect } from 'vitest';
 import type { NavItem } from '@/types/nav-items';
+import { Header } from './header';
 
 // Mock the child components
 vi.mock('../logo/logo', () => ({

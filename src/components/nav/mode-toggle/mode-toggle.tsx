@@ -8,8 +8,6 @@ import {
   DesktopIcon,
 } from '@radix-ui/react-icons';
 import { useTheme } from 'next-themes';
-import { cn } from '@/lib/utils';
-
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 export function ModeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();

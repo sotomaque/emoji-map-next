@@ -1,9 +1,9 @@
 'use client';
 
 import React, { Suspense, useEffect, useState } from 'react';
-import SwaggerUIWrapper from './SwaggerUIWrapper';
 import { ErrorBoundary } from '@/components/error-boundary/error-boundary';
 import { LoadingDocs } from './LoadingDocs';
+import SwaggerUIWrapper from './SwaggerUIWrapper';
 
 export default function ApiDocs() {
   const [spec, setSpec] = useState<Record<string, unknown> | null>(null);

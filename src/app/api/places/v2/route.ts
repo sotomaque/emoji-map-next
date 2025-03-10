@@ -1,20 +1,21 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import filter from 'lodash/filter';
+import map from 'lodash/map';
 import { env } from '@/env';
+import { findMatchingKeyword, createSimplifiedPlace } from '@/lib/places-utils';
 import {
   redis,
   CACHE_EXPIRATION_TIME,
   generatePlacesTextSearchCacheKey,
 } from '@/lib/redis';
-import { findMatchingKeyword, createSimplifiedPlace } from '@/lib/places-utils';
+import { categoryEmojis } from '@/services/places';
 import type {
   GooglePlace,
   NearbyPlace,
   PlacesSearchTextRequest,
   PlacesSearchTextResponse,
 } from '@/types/places';
-import { categoryEmojis } from '@/services/places';
-import _ from 'lodash';
 
 /**
  * @swagger
@@ -232,46 +233,46 @@ export async function GET(request: NextRequest) {
 
     // Process the places to add category and emoji and filter fields
     // We can use our utility functions directly here for more control
-    const processedPlaces = _(data.places)
-      .map((place: GooglePlace) => {
-        // Find the first keyword that matches any of the place's properties
-        const matchedKeyword = findMatchingKeyword(
-          place,
-          keywords,
-          lowercaseKeywords
-        );
+    const processedPlaces = map(data.places, (place: GooglePlace) => {
+      // Find the first keyword that matches any of the place's properties
+      const matchedKeyword = findMatchingKeyword(
+        place,
+        keywords,
+        lowercaseKeywords
+      );
 
-        // If no keyword match was found, skip this place
-        if (!matchedKeyword) {
-          return { id: undefined } as unknown as NearbyPlace;
-        }
+      // If no keyword match was found, skip this place
+      if (!matchedKeyword) {
+        return { id: undefined } as unknown as NearbyPlace;
+      }
 
-        // Get the emoji for the category from our mapping
-        const emoji = categoryEmojis[matchedKeyword];
+      // Get the emoji for the category from our mapping
+      const emoji = categoryEmojis[matchedKeyword];
 
-        if (!emoji) {
-          console.error(`[API] No emoji found for category: ${matchedKeyword}`);
-          return { id: undefined } as unknown as NearbyPlace;
-        }
+      if (!emoji) {
+        console.error(`[API] No emoji found for category: ${matchedKeyword}`);
+        return { id: undefined } as unknown as NearbyPlace;
+      }
 
-        // Create a simplified place object with only the fields we care about
-        return createSimplifiedPlace(place, matchedKeyword, emoji);
-      })
-      .filter((place: Partial<NearbyPlace>) => place.id !== undefined)
-      .value();
+      // Create a simplified place object with only the fields we care about
+      return createSimplifiedPlace(place, matchedKeyword, emoji);
+    });
+
+    // Filter out places with undefined id
+    const filteredPlaces = filter(processedPlaces, (place: Partial<NearbyPlace>) => place.id !== undefined);
 
     // Limit the number of results
-    const limitedResults = processedPlaces.slice(0, maxResults);
+    const limitedResults = filteredPlaces.slice(0, maxResults);
     console.log(
       `[API] Limited to ${limitedResults.length} results based on maxResultCount=${maxResults}`
     );
 
     // Cache the results for future requests (cache the full results, not the limited ones)
-    if (processedPlaces.length > 0) {
+    if (filteredPlaces.length > 0) {
       console.log(
-        `[API] Caching ${processedPlaces.length} results with key: ${cacheKey}`
+        `[API] Caching ${filteredPlaces.length} results with key: ${cacheKey}`
       );
-      await redis.set(cacheKey, processedPlaces, { ex: CACHE_EXPIRATION_TIME });
+      await redis.set(cacheKey, filteredPlaces, { ex: CACHE_EXPIRATION_TIME });
     }
 
     return NextResponse.json({

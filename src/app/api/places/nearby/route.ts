@@ -1,10 +1,5 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import type {
-  Place,
-  GooglePlacesResponse,
-  PlaceResult,
-} from '@/types/google-places';
 import { env } from '@/env';
 import {
   redis,
@@ -12,6 +7,11 @@ import {
   generatePlacesCacheKey,
 } from '@/lib/redis';
 import { categoryEmojis } from '@/services/places';
+import type {
+  Place,
+  GooglePlacesResponse,
+  PlaceResult,
+} from '@/types/google-places';
 
 // Extend the PlaceResult interface to include the sourceKeyword property
 interface ExtendedPlaceResult extends PlaceResult {

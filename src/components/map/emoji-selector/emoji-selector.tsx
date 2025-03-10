@@ -162,11 +162,10 @@ export default function EmojiSelector({
         animate={{ scale: showFavoritesOnly ? 1.1 : 1 }}
         onClick={handleFavoritesToggle}
         disabled={isLoading}
-        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md ${
-          showFavoritesOnly
+        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md ${showFavoritesOnly
             ? 'bg-yellow-400 text-yellow-900'
             : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-        } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+          } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
         aria-label='Toggle favorites'
       >
         <span className='text-lg sm:text-xl'>⭐</span>
@@ -187,11 +186,10 @@ export default function EmojiSelector({
             animate={{ scale: isAllCategoriesMode ? 1.1 : 1 }}
             onClick={toggleAllCategories}
             disabled={isLoading}
-            className={`all-button flex items-center justify-center min-w-[36px] sm:min-w-[44px] h-8 sm:h-11 rounded-full ${
-              isAllCategoriesMode
+            className={`all-button flex items-center justify-center min-w-[36px] sm:min-w-[44px] h-8 sm:h-11 rounded-full ${isAllCategoriesMode
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-            } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+              } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
             data-category='all'
             aria-label='All categories'
           >
@@ -215,11 +213,10 @@ export default function EmojiSelector({
                   animate={{ scale: isSelected ? 1.1 : 1 }}
                   onClick={() => toggleCategory(category.name)}
                   disabled={isLoading}
-                  className={`flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full ${
-                    isSelected
+                  className={`flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full ${isSelected
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                  } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                    } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                   data-category={category.name}
                   aria-label={`${category.name} category`}
                 >
@@ -242,11 +239,10 @@ export default function EmojiSelector({
         transition={{ type: 'spring', stiffness: 300, damping: 15 }}
         onClick={handleShuffleClick}
         disabled={isLoading}
-        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${
-          isLoading
+        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${isLoading
             ? 'opacity-70 cursor-not-allowed'
             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-        }`}
+          }`}
         aria-label='Shuffle'
       >
         <svg

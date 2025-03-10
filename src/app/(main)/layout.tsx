@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import { Header } from '@/components/nav/header/header';
 import { Footer } from '../../components/footer/footer';
 import { env } from '../../env';
-import { Header } from '@/components/nav/header/header';
+import type { Metadata } from 'next';
+
 
 const isProduction = env.NEXT_PUBLIC_SITE_ENV === 'production';
 

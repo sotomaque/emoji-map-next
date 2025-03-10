@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 
 // Define a base URL for testing
 const BASE_URL = 'https://api.example.com';

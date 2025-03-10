@@ -1,20 +1,21 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useFiltersStore } from '@/store/useFiltersStore';
-import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
-import type { MapDataPoint } from '@/services/places';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+import { useGateValue } from '@statsig/react-bindings';
 import EmojiSelectorSkeleton from '@/components/map/emoji-selector/emoji-selector-skeleton';
 import MapSkeleton from '@/components/map/map-skeleton';
+import { FEATURE_FLAGS } from '@/constants/feature-flags';
+import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
+import type { MapDataPoint } from '@/services/places';
 import {
   useMarkerStore,
   type Viewport,
   type FilterCriteria,
 } from '@/store/markerStore';
-import { useGateValue } from '@statsig/react-bindings';
-import { FEATURE_FLAGS } from '@/constants/feature-flags';
-import { useRouter } from 'next/navigation';
+import { useFiltersStore } from '@/store/useFiltersStore';
+
 
 // Dynamically import the EmojiSelector component with no SSR
 const EmojiSelector = dynamic(

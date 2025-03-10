@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
-import AppPage from '@/app/app/page';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
+import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import AppPage from '@/app/app/page';
+
+
 
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
@@ -30,11 +32,13 @@ vi.mock('@statsig/react-bindings', () => ({
 
 // Mock the components and hooks used in AppPage
 vi.mock('@/components/map/emoji-selector/emoji-selector-skeleton', () => ({
-  default: () => <div data-testid="emoji-selector-skeleton">Emoji Selector Skeleton</div>,
+  default: () => (
+    <div data-testid='emoji-selector-skeleton'>Emoji Selector Skeleton</div>
+  ),
 }));
 
 vi.mock('@/components/map/map-skeleton', () => ({
-  default: () => <div data-testid="map-skeleton">Map Skeleton</div>,
+  default: () => <div data-testid='map-skeleton'>Map Skeleton</div>,
 }));
 
 vi.mock('@/store/useFiltersStore', () => ({
@@ -103,7 +107,9 @@ describe('AppPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useRouter).mockReturnValue(mockRouter as ReturnType<typeof useRouter>);
+    vi.mocked(useRouter).mockReturnValue(
+      mockRouter as ReturnType<typeof useRouter>
+    );
   });
 
   it('should redirect to home page when app is disabled', () => {

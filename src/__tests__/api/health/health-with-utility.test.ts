@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { describe, it, expect } from 'vitest';
 import { createMockServer } from '../../setup';
 
 // Create a mock server using our utility

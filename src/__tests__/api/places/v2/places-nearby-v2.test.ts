@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET } from '@/app/api/places/v2/route';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fixtureResponse from '@/__fixtures__/googe/places-new/response.json';
+import { GET } from '@/app/api/places/v2/route';
+import { findMatchingKeyword, createSimplifiedPlace } from '@/lib/places-utils';
+import { redis } from '@/lib/redis';
 
 // Mock the Redis module
 vi.mock('@/lib/redis', () => {
@@ -79,10 +81,6 @@ vi.mock('@/services/places', () => {
     },
   };
 });
-
-// Import the mocked modules
-import { redis } from '@/lib/redis';
-import { findMatchingKeyword, createSimplifiedPlace } from '@/lib/places-utils';
 
 // Transform the fixture data to match the expected format for the API
 const mockFetchResponse = {

@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useGateValue } from '@statsig/react-bindings';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
 

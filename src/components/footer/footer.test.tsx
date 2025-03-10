@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
-import { Footer } from './footer';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import * as navigation from 'next/navigation';
+import { render, screen } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import * as navHooks from '@/hooks/useNavItems';
 import type { NavItem } from '@/types/nav-items';
+import { Footer } from './footer';
 
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
