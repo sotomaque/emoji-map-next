@@ -52,12 +52,7 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-// Mock environment variables
-vi.mock('@/env', () => ({
-  env: {
-    CLERK_SIGNING_SECRET: 'test-webhook-secret',
-  },
-}));
+// Environment variables are now mocked globally in src/__tests__/setup.ts
 
 describe('Clerk Webhook Handler', () => {
   beforeEach(() => {

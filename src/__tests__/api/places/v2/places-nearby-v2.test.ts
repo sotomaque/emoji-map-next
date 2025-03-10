@@ -62,14 +62,7 @@ vi.mock('@/lib/places-utils', () => {
   };
 });
 
-// Mock the environment variables
-vi.mock('@/env', () => {
-  return {
-    env: {
-      GOOGLE_PLACES_API_KEY: 'test-api-key',
-    },
-  };
-});
+// Environment variables are now mocked globally in src/__tests__/setup.ts
 
 // Mock the categoryEmojis
 vi.mock('@/services/places', () => {

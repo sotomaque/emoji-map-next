@@ -19,16 +19,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 
-// Mock the environment variables and Next.js modules
-vi.mock('@/env', () => {
-  return {
-    env: {
-      GOOGLE_PLACES_API_KEY: 'test-api-key',
-      GOOGLE_PLACES_URL:
-        'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-    },
-  };
-});
+// Environment variables are now mocked globally in src/__tests__/setup.ts
 
 // Import the mocked Redis module
 import { redis, generatePlacesCacheKey } from '@/lib/redis';

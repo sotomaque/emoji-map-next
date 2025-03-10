@@ -16,18 +16,7 @@ vi.mock('@/lib/redis', () => {
   };
 });
 
-// Mock the environment variables
-vi.mock('@/env', () => {
-  return {
-    env: {
-      GOOGLE_PLACES_API_KEY: 'test-api-key',
-      GOOGLE_PLACES_DETAILS_URL:
-        'https://maps.googleapis.com/maps/api/place/details/json',
-      GOOGLE_PLACES_PHOTO_URL:
-        'https://maps.googleapis.com/maps/api/place/photo',
-    },
-  };
-});
+// Environment variables are now mocked globally in src/__tests__/setup.ts
 
 // Import the mocked Redis module
 import { redis, generatePlaceDetailsCacheKey } from '@/lib/redis';
