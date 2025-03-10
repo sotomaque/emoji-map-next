@@ -84,8 +84,13 @@ describe('useNavItems', () => {
 
     const navItems: NavItem[] = [
       { label: 'Home', href: '/', target: false },
-      // @ts-expect-error Testing with an invalid feature flag
-      { label: 'Unknown', href: '/unknown', target: false, featureFlag: 'UNKNOWN_FLAG' },
+      {
+        label: 'Unknown',
+        href: '/unknown',
+        target: false,
+        // @ts-expect-error Testing with an invalid feature flag
+        featureFlag: 'UNKNOWN_FLAG',
+      },
     ];
 
     const { result } = renderHook(() => useNavItems());
@@ -111,8 +116,13 @@ describe('useNavItems', () => {
         target: false,
         children: [
           { label: 'Child1', href: '/child1', target: false },
-          { label: 'Child2', href: '/child2', target: false, featureFlag: 'ENABLE_APP' },
-        ]
+          {
+            label: 'Child2',
+            href: '/child2',
+            target: false,
+            featureFlag: 'ENABLE_APP',
+          },
+        ],
       },
     ];
 
@@ -125,4 +135,4 @@ describe('useNavItems', () => {
     expect(filtered[0].children).toHaveLength(1);
     expect(filtered[0].children?.[0].label).toBe('Child1');
   });
-}); 
+});

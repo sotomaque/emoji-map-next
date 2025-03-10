@@ -128,7 +128,8 @@ describe('Footer', () => {
         if (item.hidden) return false;
         return true; // All feature flags enabled
       },
-      filterNavItems: (items: NavItem[]) => items.filter(item => !item.hidden),
+      filterNavItems: (items: NavItem[]) =>
+        items.filter((item) => !item.hidden),
     });
 
     render(<Footer />);

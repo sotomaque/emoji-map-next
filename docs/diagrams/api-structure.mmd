@@ -1,26 +1,51 @@
-graph TD
-    Client[Client Application] --> API["/api"]
-    API --> Places["/places"]
-    API --> Health["/health"]
-    API --> Webhooks["/webhooks"]
+flowchart TD
+    %% API Structure Diagram for Emoji Map
+    %% Main API endpoints and their relationships
     
-    Places --> PlacesNearby["/nearby"]
-    Places --> PlacesDetails["/details"]
+    %% Define styles
+    classDef apiEndpoint fill:#f9f,stroke:#333,stroke-width:2px
+    classDef handler fill:#bbf,stroke:#333,stroke-width:1px
+    classDef external fill:#bfb,stroke:#333,stroke-width:1px
     
-    PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]
-    PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]
+    %% Client and main API route
+    Client[Client Application]:::apiEndpoint --> |HTTP Request| API["/api"]:::apiEndpoint
     
-    PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]
+    %% Main API categories
+    API --> Places["/places"]:::apiEndpoint
+    API --> Health["/health"]:::apiEndpoint
+    API --> Webhooks["/webhooks"]:::apiEndpoint
     
-    Health --> HealthHandler["GET: Health check"]
+    %% Places endpoints
+    Places --> PlacesNearby["/nearby"]:::apiEndpoint
+    Places --> PlacesDetails["/details"]:::apiEndpoint
     
-    Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]
-    Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]
+    %% Places handlers
+    PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]:::handler
+    PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]:::handler
     
-    PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]
+    PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]:::handler
+    
+    %% Health and Webhooks handlers
+    Health --> HealthHandler["GET: Health check"]:::handler
+    
+    Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]:::handler
+    Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]:::handler
+    
+    %% External services
+    PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]:::external
     PlacesNewHandler --> GooglePlacesAPI
     PlacesDetailsHandler --> GooglePlacesAPI
     
-    PlacesNearbyHandler --> Redis["Redis Cache"]
+    PlacesNearbyHandler --> Redis["Redis Cache"]:::external
     PlacesNewHandler --> Redis
-    PlacesDetailsHandler --> Redis 
+    PlacesDetailsHandler --> Redis
+    
+    %% Add notes
+    subgraph "External Services"
+        GooglePlacesAPI
+        Redis
+    end
+    
+    %% Add a note
+    note["Note: All API routes are implemented as Next.js App Router handlers"]
+    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5 

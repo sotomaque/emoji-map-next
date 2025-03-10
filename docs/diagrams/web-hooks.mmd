@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant C as Clerk
+    participant W as Webhook (POST)
+    participant P as Prisma DB
+    
+    C->>W: Send Webhook Event
+    W->>W: Verify Svix Signature
+    
+    alt eventType = user.created
+        W->>P: findUnique(clerkId)
+        alt User doesn't exist
+            W->>P: create(userData)
+            P-->>W: User created
+        end
+    else eventType = user.updated
+        W->>P: findUnique(clerkId)
+        alt User exists
+            W->>P: update(userData)
+            P-->>W: User updated
+        else User doesn't exist
+            W->>P: create(userData)
+            P-->>W: User created
+        end
+    else eventType = user.deleted
+        W->>P: findUnique(clerkId)
+        alt User exists
+            W->>P: delete(clerkId)
+            P-->>W: User deleted
+        end
+    end
+    
+    W-->>C: Success Response

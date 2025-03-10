@@ -30,10 +30,11 @@ export function Footer() {
                   href={item.href}
                   target={item.target ? '_blank' : undefined}
                   rel={item.target ? 'noopener noreferrer' : undefined}
-                  className={`text-sm ${isActive
-                    ? 'text-gray-900 dark:text-gray-100 font-medium'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                    }`}
+                  className={`text-sm ${
+                    isActive
+                      ? 'text-gray-900 dark:text-gray-100 font-medium'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
                 >
                   {item.label}
                 </Link>

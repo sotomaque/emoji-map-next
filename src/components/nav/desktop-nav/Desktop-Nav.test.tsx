@@ -88,15 +88,16 @@ describe('DesktopNav', () => {
     // Setup default mock implementation
     (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
       shouldShowNavItem: mockShouldShowNavItem,
-      filterNavItems: (items: NavItem[]) => items.filter(mockShouldShowNavItem).map(item => {
-        if (item.children) {
-          return {
-            ...item,
-            children: item.children.filter(mockShouldShowNavItem)
-          };
-        }
-        return item;
-      }),
+      filterNavItems: (items: NavItem[]) =>
+        items.filter(mockShouldShowNavItem).map((item) => {
+          if (item.children) {
+            return {
+              ...item,
+              children: item.children.filter(mockShouldShowNavItem),
+            };
+          }
+          return item;
+        }),
     });
   });
 
@@ -166,15 +167,18 @@ describe('DesktopNav', () => {
         if (item.hidden) return false;
         return true; // All feature flags enabled
       },
-      filterNavItems: (items: NavItem[]) => items.filter(item => !item.hidden).map(item => {
-        if (item.children) {
-          return {
-            ...item,
-            children: item.children.filter(child => !child.hidden)
-          };
-        }
-        return item;
-      }),
+      filterNavItems: (items: NavItem[]) =>
+        items
+          .filter((item) => !item.hidden)
+          .map((item) => {
+            if (item.children) {
+              return {
+                ...item,
+                children: item.children.filter((child) => !child.hidden),
+              };
+            }
+            return item;
+          }),
     });
 
     render(<DesktopNav navItems={mockNavItems} />);

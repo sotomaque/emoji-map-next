@@ -9,7 +9,7 @@ import { useGateValue } from '@statsig/react-bindings';
 export function useNavItems() {
   // Get the value for the ENABLE_APP feature flag
   const isAppEnabled = useGateValue(FEATURE_FLAGS.ENABLE_APP);
-  
+
   /**
    * Determines if a navigation item should be shown based on its feature flag and hidden status
    * @param navItem The navigation item to check
@@ -18,7 +18,7 @@ export function useNavItems() {
   const shouldShowNavItem = (navItem: NavItem): boolean => {
     // Don't show hidden items
     if (navItem.hidden) return false;
-    
+
     // Check feature flag if present
     if (navItem.featureFlag) {
       // Check which feature flag is being used
@@ -30,7 +30,7 @@ export function useNavItems() {
           return false; // If we don't recognize the flag, hide the item
       }
     }
-    
+
     // No feature flag or hidden flag, show the item
     return true;
   };
@@ -41,20 +41,18 @@ export function useNavItems() {
    * @returns Filtered array of navigation items
    */
   const filterNavItems = (items: NavItem[]): NavItem[] => {
-    return items
-      .filter(shouldShowNavItem)
-      .map(item => {
-        if (item.children && item.children.length > 0) {
-          // Filter children recursively
-          const filteredChildren = item.children.filter(shouldShowNavItem);
-          return { ...item, children: filteredChildren };
-        }
-        return item;
-      });
+    return items.filter(shouldShowNavItem).map((item) => {
+      if (item.children && item.children.length > 0) {
+        // Filter children recursively
+        const filteredChildren = item.children.filter(shouldShowNavItem);
+        return { ...item, children: filteredChildren };
+      }
+      return item;
+    });
   };
 
   return {
     shouldShowNavItem,
-    filterNavItems
+    filterNavItems,
   };
-} 
+}

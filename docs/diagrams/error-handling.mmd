@@ -1,24 +1,76 @@
 flowchart TD
-    A[API Request] --> B{Try Request Processing}
+    %% Error Handling Flow Diagram
+    %% Shows how errors are handled in the API
     
-    B -->|Success| C[Return Data]
-    B -->|Error| D{Error Type}
+    %% Define styles
+    classDef request fill:#f9f,stroke:#333,stroke-width:2px
+    classDef process fill:#bbf,stroke:#333,stroke-width:1px
+    classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
+    classDef error fill:#faa,stroke:#333,stroke-width:1px
+    classDef response fill:#bfb,stroke:#333,stroke-width:1px
     
-    D -->|API Error| E[Log API Error]
-    D -->|Network Error| F[Log Network Error]
-    D -->|Other Exception| G[Log General Error]
+    %% Main flow
+    A[API Request]:::request --> B{Try Request Processing}:::decision
     
-    E --> H[Return Error Response]
+    %% Success path
+    B -->|Success| C[Return Data]:::response
+    
+    %% Error paths
+    B -->|Error| D{Error Type}:::decision
+    
+    D -->|API Error| E[Log API Error]:::error
+    D -->|Network Error| F[Log Network Error]:::error
+    D -->|Other Exception| G[Log General Error]:::error
+    
+    %% Error responses
+    E --> H[Return Error Response]:::response
     F --> H
     G --> H
     
-    subgraph Error Responses
-    H --> I[HTTP Status Code]
-    H --> J[Error Message]
+    %% Error response details
+    subgraph "Error Response Structure"
+        direction TB
+        H --> I[HTTP Status Code]:::response
+        H --> J[Error Message]:::response
+        
+        %% Add examples
+        I1["400: Bad Request"]:::response
+        I2["404: Not Found"]:::response
+        I3["500: Server Error"]:::response
+        
+        I --> I1
+        I --> I2
+        I --> I3
     end
     
-    subgraph Logging
-    E --> K[Console Error]
-    F --> K
-    G --> K
+    %% Logging details
+    subgraph "Error Logging"
+        direction TB
+        K[Console Error]:::error
+        
+        %% Add examples
+        K1["[API] Google Places API error: INVALID_REQUEST"]:::error
+        K2["[API] Network error: Connection timeout"]:::error
+        K3["[API] Unexpected error in places-new route"]:::error
+        
+        K --> K1
+        K --> K2
+        K --> K3
     end
+    
+    %% Connect logging to error types
+    E -.-> K1
+    F -.-> K2
+    G -.-> K3
+    
+    %% Add error handling strategies
+    subgraph "Error Handling Strategies"
+        direction TB
+        S1["Retry Logic"]:::process
+        S2["Fallback Data"]:::process
+        S3["Graceful Degradation"]:::process
+    end
+    
+    %% Add a note about error handling
+    note["Note: All errors are prefixed with [API]<br>for easier identification in logs"]
+    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5

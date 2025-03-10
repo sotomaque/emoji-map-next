@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET } from '@/app/api/places/nearby/places-new/route';
+import { GET } from '@/app/api/places/v2/route';
 import fixtureResponse from '@/__fixtures__/googe/places-new/response.json';
 
 // Mock the Redis module
@@ -390,7 +390,7 @@ describe('Places New API Route', () => {
   it('should properly process multiple keywords in textQuery with batching', async () => {
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Create a mock request with multiple keywords separated by pipe
     const request = new NextRequest(
       'http://localhost:3000/api/places/nearby/places-new?textQuery=coffee|restaurant|bar&location=37.7749,-122.4194'
@@ -418,7 +418,7 @@ describe('Places New API Route', () => {
             types: ['restaurant', 'food'],
             formattedAddress: '456 Restaurant Ave',
             location: {
-              latitude: 37.7750,
+              latitude: 37.775,
               longitude: -122.4195,
             },
           },
@@ -443,26 +443,26 @@ describe('Places New API Route', () => {
     // Check the response
     expect(response.status).toBe(200);
     const data = await response.json();
-    
+
     // Verify that we got places back
     expect(data.places.length).toBeGreaterThan(0);
-    
+
     // Verify that findMatchingKeyword was called for each place
     expect(findMatchingKeyword).toHaveBeenCalledTimes(3);
-    
+
     // Verify that findMatchingKeyword was called with the correct parameters
     expect(findMatchingKeyword).toHaveBeenCalledWith(
       expect.any(Object),
       expect.arrayContaining(['coffee', 'restaurant', 'bar']),
       expect.arrayContaining(['coffee', 'restaurant', 'bar'])
     );
-    
+
     // Verify that createSimplifiedPlace was called for each matching place
     expect(createSimplifiedPlace).toHaveBeenCalledTimes(data.places.length);
-    
+
     // Verify that only one API call was made despite having multiple keywords
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    
+
     // Verify that the textQuery in the request body includes all keywords
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -470,7 +470,7 @@ describe('Places New API Route', () => {
         body: expect.stringContaining('"textQuery":"coffee|restaurant|bar"'),
       })
     );
-    
+
     // Verify that the cache was set with the combined cache key
     expect(redis.set).toHaveBeenCalledWith(
       expect.stringContaining('coffee|restaurant|bar'),
@@ -482,7 +482,7 @@ describe('Places New API Route', () => {
   it('should respect maxResults parameter with multiple keywords in textQuery', async () => {
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Create a mock request with multiple keywords and maxResults=1
     const request = new NextRequest(
       'http://localhost:3000/api/places/nearby/places-new?textQuery=coffee|restaurant|bar&location=37.7749,-122.4194&maxResults=1'
@@ -510,7 +510,7 @@ describe('Places New API Route', () => {
             types: ['restaurant', 'food'],
             formattedAddress: '456 Restaurant Ave',
             location: {
-              latitude: 37.7750,
+              latitude: 37.775,
               longitude: -122.4195,
             },
           },
@@ -535,11 +535,11 @@ describe('Places New API Route', () => {
     // Check the response
     expect(response.status).toBe(200);
     const data = await response.json();
-    
+
     // Verify that we got exactly 1 place back (respecting maxResults)
     expect(data.places.length).toBe(1);
     expect(data.count).toBe(1);
-    
+
     // Verify that the API request included the maxResults parameter
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -547,14 +547,14 @@ describe('Places New API Route', () => {
         body: expect.stringContaining('"maxResultCount":1'),
       })
     );
-    
+
     // Verify that we still processed all places from the API
     expect(findMatchingKeyword).toHaveBeenCalledTimes(3);
-    
+
     // But we only created simplified places for the ones we're returning
     // (This might vary based on implementation - some might create all and then slice)
     expect(createSimplifiedPlace).toHaveBeenCalled();
-    
+
     // Verify that we cached the full results, not just the limited ones
     expect(redis.set).toHaveBeenCalledWith(
       expect.any(String),

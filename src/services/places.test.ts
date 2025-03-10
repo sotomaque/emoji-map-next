@@ -223,7 +223,7 @@ describe('Places Service', () => {
 
       // Verify result is empty (place with unknown category is excluded)
       expect(result).toHaveLength(0);
-      
+
       // Verify console error was called
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('No emoji found for category: unknown_category')
