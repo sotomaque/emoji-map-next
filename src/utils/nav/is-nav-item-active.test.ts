@@ -30,4 +30,16 @@ describe('isNavItemActive', () => {
       false
     );
   });
+
+  it('should handle null path by returning true only for root href', () => {
+    expect(isNavItemActive('/', null)).toBe(true);
+    expect(isNavItemActive('/dashboard', null)).toBe(false);
+    expect(isNavItemActive('/users', null)).toBe(false);
+  });
+
+  it('should handle undefined path by returning true only for root href', () => {
+    expect(isNavItemActive('/', undefined)).toBe(true);
+    expect(isNavItemActive('/dashboard', undefined)).toBe(false);
+    expect(isNavItemActive('/users', undefined)).toBe(false);
+  });
 });

@@ -28,10 +28,10 @@ vi.mock('svix', () => ({
       data: {
         id: 'user_id',
         email_addresses: [
-          { 
+          {
             id: 'email_id_1',
-            email_address: 'test@gmail.com' 
-          }
+            email_address: 'test@gmail.com',
+          },
         ],
         primary_email_address_id: 'email_id_1',
         first_name: 'first_name',
@@ -68,7 +68,7 @@ vi.mock('@/env', () => ({
 describe('Clerk Webhook Handler - User Update', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock console.log and console.error to keep test output clean
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -217,17 +217,17 @@ describe('Clerk Webhook Handler - User Update', () => {
       data: {
         ...userUpdateFixture.data,
         email_addresses: [
-          { 
+          {
             id: 'email_id_1',
-            email_address: 'secondary@gmail.com' 
+            email_address: 'secondary@gmail.com',
           },
-          { 
+          {
             id: 'email_id_2',
-            email_address: 'primary@gmail.com' 
-          }
+            email_address: 'primary@gmail.com',
+          },
         ],
-        primary_email_address_id: 'email_id_2'
-      }
+        primary_email_address_id: 'email_id_2',
+      },
     };
 
     // Mock the Svix Webhook class to return our custom data
@@ -238,14 +238,14 @@ describe('Clerk Webhook Handler - User Update', () => {
         data: {
           id: 'user_id',
           email_addresses: [
-            { 
+            {
               id: 'email_id_1',
-              email_address: 'secondary@gmail.com' 
+              email_address: 'secondary@gmail.com',
             },
-            { 
+            {
               id: 'email_id_2',
-              email_address: 'primary@gmail.com' 
-            }
+              email_address: 'primary@gmail.com',
+            },
           ],
           primary_email_address_id: 'email_id_2',
           first_name: 'first_name',
@@ -311,8 +311,8 @@ describe('Clerk Webhook Handler - User Update', () => {
       data: {
         ...userUpdateFixture.data,
         email_addresses: [],
-        primary_email_address_id: null
-      }
+        primary_email_address_id: null,
+      },
     };
 
     // Mock the Svix Webhook class to return our custom data

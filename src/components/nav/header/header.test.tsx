@@ -4,11 +4,11 @@ import { vi, describe, it, expect } from 'vitest';
 import type { NavItem } from '@/types/nav-items';
 
 // Mock the child components
-vi.mock('../logo/Logo', () => ({
+vi.mock('../logo/logo', () => ({
   Logo: () => <div data-testid='logo'>Logo</div>,
 }));
 
-vi.mock('../desktop-nav/Desktop-Nav', () => ({
+vi.mock('../desktop-nav/desktop-nav', () => ({
   DesktopNav: ({ navItems }: { navItems: NavItem[] }) => (
     <div data-testid='desktop-nav'>
       Desktop Nav with {navItems.length} items
@@ -24,6 +24,11 @@ vi.mock('../mobile-nav/mobile-nav', () => ({
 
 vi.mock('../mode-toggle/mode-toggle', () => ({
   ModeToggle: () => <div data-testid='mode-toggle'>Mode Toggle</div>,
+}));
+
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/',
 }));
 
 describe('Header', () => {
