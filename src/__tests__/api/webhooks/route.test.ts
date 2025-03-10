@@ -2,11 +2,11 @@ import { http, HttpResponse } from 'msw';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
 import { setupApiTestServer } from '../../helpers/api-test-helpers';
-import { 
-  webhookFixtures, 
-  mockClerkWebhook, 
+import {
+  webhookFixtures,
+  mockClerkWebhook,
   createClerkWebhookHandler,
-  type MockedPrismaClient
+  type MockedPrismaClient,
 } from '../../helpers/clerk-webhook-helpers';
 
 // Setup server with API handlers
@@ -34,7 +34,7 @@ describe('Clerk Webhook Handler', () => {
   // Reset mocks before each test
   beforeEach(() => {
     vi.resetAllMocks();
-    
+
     // Mock console.log and console.error to keep test output clean
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});

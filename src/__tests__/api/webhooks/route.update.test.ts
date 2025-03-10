@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
 import { setupApiTestServer } from '../../helpers/api-test-helpers';
-import { 
-  webhookFixtures, 
-  mockClerkWebhook, 
+import {
+  webhookFixtures,
+  mockClerkWebhook,
   createClerkWebhookHandler,
-  type MockedPrismaClient
+  type MockedPrismaClient,
 } from '../../helpers/clerk-webhook-helpers';
 
 // Setup server with API handlers
@@ -27,7 +27,6 @@ const mockedPrisma = prisma as unknown as MockedPrismaClient;
 
 // Mock the Svix webhook verification
 mockClerkWebhook(webhookFixtures.userUpdate);
-
 
 describe('Clerk Webhook Handler - User Update', () => {
   // Reset mocks before each test

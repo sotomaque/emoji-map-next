@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
 import { setupApiTestServer } from '../../helpers/api-test-helpers';
-import { 
-  webhookFixtures, 
-  mockClerkWebhook, 
+import {
+  webhookFixtures,
+  mockClerkWebhook,
   createClerkWebhookHandler,
-  type MockedPrismaClient
+  type MockedPrismaClient,
 } from '../../helpers/clerk-webhook-helpers';
 
 // Setup server with API handlers
@@ -138,4 +138,4 @@ describe('Clerk Webhook Handler - User Create', () => {
     // Verify that create was not called
     expect(mockedPrisma.user.create).not.toHaveBeenCalled();
   });
-}); 
+});

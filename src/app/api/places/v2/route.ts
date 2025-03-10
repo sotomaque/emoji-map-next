@@ -55,20 +55,24 @@ async function getCachedData(cacheKey: string | null, maxResults: number) {
 
   try {
     const cachedData = await redis.get<NearbyPlace[]>(cacheKey);
-    
+
     if (!cachedData) {
       console.log(`[API] Cache miss for key: ${cacheKey}`);
       return null;
     }
-    
+
     console.log(`[API] Cache hit for key: ${cacheKey}`);
-    
+
     if (cachedData.length < maxResults) {
-      console.log(`[API] Cache hit has only ${cachedData.length} results, but ${maxResults} were requested`);
+      console.log(
+        `[API] Cache hit has only ${cachedData.length} results, but ${maxResults} were requested`
+      );
       return null;
     }
-    
-    console.log(`[API] Returning ${maxResults} cached results out of ${cachedData.length} total`);
+
+    console.log(
+      `[API] Returning ${maxResults} cached results out of ${cachedData.length} total`
+    );
     return cachedData.slice(0, maxResults);
   } catch (redisError) {
     console.error('[API] Error accessing Redis cache:', redisError);
@@ -97,7 +101,7 @@ function prepareGoogleRequestBody(
     maxResultCount: maxResults,
   };
 
-  // Add location parameters 
+  // Add location parameters
   const [lat, lng] = location.split(',').map(Number);
   if (!isNaN(lat) && !isNaN(lng)) {
     requestBody.locationBias = {
@@ -152,7 +156,7 @@ function prepareGoogleRequestBody(
  */
 async function fetchFromGoogle(requestBody: PlacesSearchTextRequest) {
   console.log('[API] Fetching from Google Places API');
-  
+
   const apiKey = env.GOOGLE_PLACES_API_KEY;
   const baseUrl = env.GOOGLE_PLACES_V2_URL;
 
@@ -177,7 +181,9 @@ async function fetchFromGoogle(requestBody: PlacesSearchTextRequest) {
       );
     }
 
-    console.log(`[API] Received ${data.places.length} results from Google Places API`);
+    console.log(
+      `[API] Received ${data.places.length} results from Google Places API`
+    );
     return data;
   } catch (error) {
     console.error('[API] Error fetching from Google Places API:', error);
@@ -232,7 +238,9 @@ function processGoogleResponse(
     (place: Partial<NearbyPlace>) => place.id !== undefined
   );
 
-  console.log(`[API] Processed and filtered to ${filteredPlaces.length} valid results`);
+  console.log(
+    `[API] Processed and filtered to ${filteredPlaces.length} valid results`
+  );
   return filteredPlaces;
 }
 
@@ -252,7 +260,9 @@ async function cacheResults(
   }
 
   try {
-    console.log(`[API] Caching ${filteredPlaces.length} results with key: ${cacheKey}`);
+    console.log(
+      `[API] Caching ${filteredPlaces.length} results with key: ${cacheKey}`
+    );
     await redis.set(cacheKey, filteredPlaces, { ex: CACHE_EXPIRATION_TIME });
   } catch (redisError) {
     console.error('[API] Error caching results:', redisError);
@@ -382,7 +392,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch data from Google Places API
     const googleResponse = await fetchFromGoogle(requestBody);
-    
+
     // If the response is an error, return it
     if (googleResponse instanceof NextResponse) {
       return googleResponse;

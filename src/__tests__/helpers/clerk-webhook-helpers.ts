@@ -4,7 +4,7 @@
 import { http, HttpResponse } from 'msw';
 import { vi } from 'vitest';
 import userCreateFixture from '@/__fixtures__/api/webhooks/create.json';
-import userUpdateFixture from '@/__fixtures__/api/webhooks/update.json'
+import userUpdateFixture from '@/__fixtures__/api/webhooks/update.json';
 
 /**
  * Available webhook fixtures
@@ -17,7 +17,9 @@ export const webhookFixtures = {
 /**
  * Type for webhook fixtures
  */
-export type WebhookFixture = typeof userCreateFixture | typeof userUpdateFixture;
+export type WebhookFixture =
+  | typeof userCreateFixture
+  | typeof userUpdateFixture;
 
 /**
  * Type for mocked Prisma client
@@ -27,7 +29,7 @@ export type MockedPrismaClient = {
     findUnique: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
-  }
+  };
 };
 
 /**
@@ -55,22 +57,22 @@ export function createClerkWebhookHandler(
 ) {
   return http.post(path, async ({ request }) => {
     // Manually simulate the webhook handler behavior
-    const body = await request.json() as WebhookFixture;
-    
+    const body = (await request.json()) as WebhookFixture;
+
     if (body.type === 'user.updated') {
       const userData = body.data;
-      
+
       // Check if user exists
       await mockPrisma.user.findUnique({
         where: { clerkId: userData.id },
       });
-      
+
       // Get email from the user data
       let email = '';
       if (userData.email_addresses && userData.email_addresses.length > 0) {
         email = userData.email_addresses[0].email_address;
       }
-      
+
       // Update the user
       await mockPrisma.user.update({
         where: { clerkId: userData.id },
@@ -85,12 +87,12 @@ export function createClerkWebhookHandler(
       });
     } else if (body.type === 'user.created') {
       const userData = body.data;
-      
+
       // Check if user exists
       const existingUser = await mockPrisma.user.findUnique({
         where: { clerkId: userData.id },
       });
-      
+
       // Only create if user doesn't exist
       if (!existingUser) {
         // Get email from the user data
@@ -98,7 +100,7 @@ export function createClerkWebhookHandler(
         if (userData.email_addresses && userData.email_addresses.length > 0) {
           email = userData.email_addresses[0].email_address;
         }
-        
+
         // Create the user
         await mockPrisma.user.create({
           data: {
@@ -115,7 +117,7 @@ export function createClerkWebhookHandler(
         });
       }
     }
-    
+
     return HttpResponse.json({ success: true }, { status: 200 });
   });
-} 
+}

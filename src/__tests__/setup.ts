@@ -77,13 +77,13 @@ afterEach(() => {
 export const defaultHandlers = [
   // External API handlers
   // Google Places API - External endpoints
-  http.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json*', () => {
-    return HttpResponse.json(
-      googlePlacesNewResponse,
-      { status: 200 }
-    );
-  }),
-  
+  http.get(
+    'https://maps.googleapis.com/maps/api/place/nearbysearch/json*',
+    () => {
+      return HttpResponse.json(googlePlacesNewResponse, { status: 200 });
+    }
+  ),
+
   http.get('https://maps.googleapis.com/maps/api/place/details/json*', () => {
     return HttpResponse.json(
       {
@@ -94,59 +94,56 @@ export const defaultHandlers = [
           geometry: {
             location: {
               lat: 37.7749,
-              lng: -122.4194
-            }
+              lng: -122.4194,
+            },
           },
           photos: [
             { photo_reference: 'photo1' },
-            { photo_reference: 'photo2' }
+            { photo_reference: 'photo2' },
           ],
-          types: ['restaurant', 'food']
+          types: ['restaurant', 'food'],
         },
-        status: 'OK'
+        status: 'OK',
       },
       { status: 200 }
     );
   }),
-  
+
   http.post('https://places.googleapis.com/v1/places:searchText*', () => {
-    return HttpResponse.json(
-      googlePlacesNewResponse,
-      { status: 200 }
-    );
+    return HttpResponse.json(googlePlacesNewResponse, { status: 200 });
   }),
-  
+
   // Internal API handlers
   // Health API
   http.get('*/api/health', () => {
     return HttpResponse.json(healthResponse, { status: 200 });
   }),
-  
+
   http.get('*/api/health/error', () => {
     return HttpResponse.json(
       { status: 'error', message: 'Service unavailable' },
       { status: 503 }
     );
   }),
-  
+
   // Places API
   http.get('*/api/places/nearby*', () => {
     return HttpResponse.json(placesNearbyResponse, { status: 200 });
   }),
-  
+
   http.get('*/api/places/details*', () => {
     return HttpResponse.json(placesDetailsResponse, { status: 200 });
   }),
-  
+
   http.get('*/api/places/v2*', () => {
     return HttpResponse.json(placesV2Response, { status: 200 });
   }),
-  
+
   // Webhook API
   http.post('*/api/webhooks*', () => {
     return HttpResponse.json(webhookSuccessResponse, { status: 200 });
   }),
-  
+
   // Handle missing parameters for API routes
   http.get('*/api/places/nearby', ({ request }) => {
     const url = new URL(request.url);
@@ -158,7 +155,7 @@ export const defaultHandlers = [
     }
     return HttpResponse.json(placesNearbyResponse, { status: 200 });
   }),
-  
+
   http.get('*/api/places/details', ({ request }) => {
     const url = new URL(request.url);
     if (!url.searchParams.get('placeId')) {
@@ -169,7 +166,7 @@ export const defaultHandlers = [
     }
     return HttpResponse.json(placesDetailsResponse, { status: 200 });
   }),
-  
+
   // Handle server errors
   http.get('*/api/places/nearby/error', () => {
     return HttpResponse.json(
@@ -177,13 +174,13 @@ export const defaultHandlers = [
       { status: 500 }
     );
   }),
-  
+
   http.get('*/api/places/details/error', () => {
     return HttpResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
-  })
+  }),
 ];
 
 // MSW server setup for API mocking
