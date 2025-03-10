@@ -4,6 +4,7 @@ import {
   generatePlacesCacheKey,
   generatePlaceDetailsCacheKey,
   generatePlacesTextSearchCacheKey,
+  generatePlacesV2CacheKey,
 } from '@/utils/redis/cache-utils';
 
 // Check if the required environment variables are set
@@ -30,4 +31,5 @@ export {
   generatePlacesCacheKey,
   generatePlaceDetailsCacheKey,
   generatePlacesTextSearchCacheKey,
+  generatePlacesV2CacheKey,
 };

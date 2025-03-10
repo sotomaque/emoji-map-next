@@ -149,3 +149,48 @@ export function generatePlacesTextSearchCacheKey(params: {
 
   return cacheKey;
 }
+
+/**
+ * Generate a cache key for the places v2 API
+ * We only cache based on location and radius, similar to the nearby API
+ * This allows us to reuse cached results for different text queries
+ */
+export function generatePlacesV2CacheKey(params: {
+  location: string | null;
+  radius?: string | null;
+  bounds?: string | null;
+}): string | null {
+  const { location, radius = '5000', bounds } = params;
+
+  if (!location) {
+    console.warn('Location is required for generating a cache key');
+    return null;
+  }
+
+  // Normalize the location by rounding the coordinates
+  const normalizedLocation = normalizeLocation(location);
+
+  // Normalize the radius (handle null case)
+  const normalizedRadius = normalizeRadius(radius || '5000');
+
+  // Start building the cache key
+  let cacheKey = `places-v2:${normalizedLocation}:${normalizedRadius}`;
+
+  // Add bounds if provided
+  if (bounds) {
+    try {
+      // Normalize bounds by splitting and rounding each coordinate
+      const [southwest, northeast] = bounds.split('|');
+      if (southwest && northeast) {
+        const normalizedSW = normalizeLocation(southwest);
+        const normalizedNE = normalizeLocation(northeast);
+        cacheKey += `:bounds:${normalizedSW}|${normalizedNE}`;
+      }
+    } catch (error) {
+      console.warn('Error normalizing bounds:', error);
+      // Continue without bounds info in the cache key
+    }
+  }
+
+  return cacheKey;
+}

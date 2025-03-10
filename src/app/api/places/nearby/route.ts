@@ -20,6 +20,7 @@ interface ExtendedPlaceResult extends PlaceResult {
 
 /**
  * @swagger
+ * @deprecated use /api/places/v2 instead
  * /api/places/nearby:
  *   get:
  *     summary: Get nearby places

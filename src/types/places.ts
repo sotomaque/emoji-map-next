@@ -252,5 +252,7 @@ export interface PlacesSearchTextRequest {
       };
     };
   };
-  maxResultCount?: number;
+  pageSize?: number;
+  pageToken?: string;
+  rankPreference?: 'DISTANCE' | 'POPULARITY' | 'RANK_PREFERENCE_UNSPECIFIED'
 }

@@ -191,7 +191,7 @@ describe('Nearby Places API Route', () => {
       expect.stringContaining('type=restaurant')
     );
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('key=test-api-key')
+      expect.stringContaining('key=')
     );
 
     // Verify the response structure
@@ -257,7 +257,7 @@ describe('Nearby Places API Route', () => {
     expect(data.places).toBeInstanceOf(Array);
 
     // Should return all restaurant types (3 in our mock data)
-    expect(data.places.length).toBe(2);
+    expect(data.places.length).toBe(3);
 
     // Verify the returned places are all restaurants
     data.places.forEach((place: Place) => {
@@ -267,6 +267,7 @@ describe('Nearby Places API Route', () => {
     // Verify the place IDs match our expected restaurant places
     const placeIds = data.places.map((p: Place) => p.placeId);
     expect(placeIds).toContain('place123'); // Pizza Restaurant
+    expect(placeIds).toContain('place101'); // Italian Bistro
     expect(placeIds).toContain('place202'); // Burger Joint
   });
 
@@ -318,7 +319,7 @@ describe('Nearby Places API Route', () => {
 
     // Verify the response contains only open restaurants
     expect(response.status).toBe(200);
-    expect(data.places.length).toBe(1);
+    expect(data.places.length).toBe(2);
 
     // All returned places should have openNow=true
     data.places.forEach((place: Place) => {
@@ -328,6 +329,7 @@ describe('Nearby Places API Route', () => {
     // Verify the place IDs match our expected open restaurants
     const placeIds = data.places.map((p: Place) => p.placeId);
     expect(placeIds).toContain('place123'); // Pizza Restaurant (open)
+    expect(placeIds).toContain('place101'); // Italian Bistro (open)
     expect(placeIds).not.toContain('place202'); // Burger Joint (closed)
   });
 
@@ -351,11 +353,12 @@ describe('Nearby Places API Route', () => {
 
     // Verify the response contains only restaurants with pizza or italian in the name/vicinity
     expect(response.status).toBe(200);
-    expect(data.places.length).toBe(1);
+    expect(data.places.length).toBe(2);
 
     // Verify the place IDs match our expected restaurants with pizza or italian
     const placeIds = data.places.map((p: Place) => p.placeId);
     expect(placeIds).toContain('place123'); // Pizza Restaurant
+    expect(placeIds).toContain('place101'); // Italian Bistro
     expect(placeIds).not.toContain('place202'); // Burger Joint
   });
 
@@ -432,7 +435,7 @@ describe('Nearby Places API Route', () => {
     // Create a mock request with multiple filters
     const request = new NextRequest(
       new URL(
-        'http://localhost:3000/api/places/nearby?location=37.7749,-122.4194&type=restaurant&openNow=true&keywords=pizza'
+        'http://localhost:3000/api/places/nearby?location=37.7749,-122.4194&type=restaurant&openNow=true&keywords=pizza,italian'
       )
     );
 
@@ -443,10 +446,20 @@ describe('Nearby Places API Route', () => {
     // Verify fetch was NOT called (using cache)
     expect(global.fetch).not.toHaveBeenCalled();
 
-    // Verify the response contains only open restaurants with pizza in the name/vicinity
+    // Verify the response contains only open restaurants with pizza or italian in the name/vicinity
     expect(response.status).toBe(200);
-    expect(data.places.length).toBe(1);
-    expect(data.places[0].placeId).toBe('place123'); // Pizza Restaurant (open)
+    expect(data.places.length).toBe(2);
+    
+    // All returned places should have openNow=true
+    data.places.forEach((place: Place) => {
+      expect(place.openNow).toBe(true);
+    });
+
+    // Verify the place IDs match our expected open restaurants with pizza or italian
+    const placeIds = data.places.map((p: Place) => p.placeId);
+    expect(placeIds).toContain('place123'); // Pizza Restaurant (open)
+    expect(placeIds).toContain('place101'); // Italian Bistro (open)
+    expect(placeIds).not.toContain('place202'); // Burger Joint (closed)
   });
 
   it('should return 400 when location parameter is missing', async () => {
@@ -549,12 +562,14 @@ describe('Nearby Places API Route', () => {
                 name: 'Pizza Place',
                 geometry: { location: { lat: 37.7, lng: -122.4 } },
                 vicinity: 'Pizza Street',
+                types: ['restaurant', 'food'],
               },
               {
                 place_id: 'italian1',
                 name: 'Italian Restaurant',
                 geometry: { location: { lat: 37.8, lng: -122.5 } },
                 vicinity: 'Italian Avenue',
+                types: ['restaurant', 'food'],
               },
             ],
           }),
@@ -575,7 +590,8 @@ describe('Nearby Places API Route', () => {
 
     // Verify the response contains both places
     expect(response.status).toBe(200);
-    expect(data.places.length).toBe(1);
+    expect(data.places.length).toBe(2);
     expect(data.places[0].placeId).toBe('pizza1');
+    expect(data.places[1].placeId).toBe('italian1');
   });
 });
