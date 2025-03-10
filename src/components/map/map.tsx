@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  useEffect,
+} from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { env } from '@/env';
-import EmojiMarker from './EmojiMarker';
+import EmojiMarker from './emoji-maker/emoji-marker';
 import { useTheme } from 'next-themes';
 
 // Define the center type
@@ -173,11 +179,23 @@ export default function GoogleMapComponent({
   });
 
   // State for the map
-  const [center] = useState<LatLngLiteral>(initialCenter);
+  const [center, setCenter] = useState<LatLngLiteral>(initialCenter);
   const [zoom] = useState<number>(initialZoom);
 
   // Refs for the map
   const mapRef = useRef<google.maps.Map | null>(null);
+
+  // Update center when initialCenter changes (e.g., when user grants location permissions)
+  useEffect(() => {
+    if (initialCenter && initialCenter.lat !== 0 && initialCenter.lng !== 0) {
+      setCenter(initialCenter);
+
+      // Also update the map center if the map is already loaded
+      if (mapRef.current) {
+        mapRef.current.panTo(initialCenter);
+      }
+    }
+  }, [initialCenter]);
 
   // Callback when the map is loaded
   const onLoad = useCallback((map: google.maps.Map) => {
@@ -274,7 +292,7 @@ export default function GoogleMapComponent({
         />
       );
     });
-  }, [markers, onMarkerClick, newMarkerIds]);
+  }, [markers, onMarkerClick, newMarkerIds, isTransitioning]);
 
   // Render loading state
   if (loadError) {

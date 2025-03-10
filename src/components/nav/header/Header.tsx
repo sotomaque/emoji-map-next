@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { Logo } from '../logo/Logo';
-import { DesktopNav } from '../desktop-nav/Desktop-Nav';
-import { ModeToggle } from '../mode-toggle/Mode-Toggle';
+import { Logo } from '../logo/logo';
+import { ModeToggle } from '../mode-toggle/mode-toggle';
 import { navItems } from '@/constants/routes';
-import { MobileNav } from '../mobile-nav/Mobile-Nav';
+import { MobileNav } from '../mobile-nav/mobile-nav';
+import { DesktopNav } from '../desktop-nav/desktop-nav';
 
 export function Header() {
   return (

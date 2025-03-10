@@ -3,6 +3,16 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { OverlayView } from '@react-google-maps/api';
 
+/**
+ * Props for the EmojiMarker component
+ *
+ * @interface EmojiMarkerProps
+ * @property {google.maps.LatLngLiteral} position - The geographical position of the marker
+ * @property {string} emoji - The emoji character to display as the marker
+ * @property {Function} onClick - Callback function triggered when the marker is clicked
+ * @property {boolean} [isNew=false] - Whether this is a newly added marker (affects animation)
+ * @property {number} [delay=0] - Delay in milliseconds before showing the marker (for staggered animations)
+ */
 interface EmojiMarkerProps {
   position: google.maps.LatLngLiteral;
   emoji: string;
@@ -11,7 +21,21 @@ interface EmojiMarkerProps {
   delay?: number;
 }
 
-// Use React.memo to prevent unnecessary re-renders
+/**
+ * EmojiMarker Component
+ *
+ * Renders an emoji as a marker on a Google Map with animation effects.
+ * Uses React.memo for performance optimization to prevent unnecessary re-renders.
+ *
+ * Features:
+ * - Fade-in animation for new markers
+ * - Hover effects (scale up/down)
+ * - Optimized rendering with custom equality check
+ * - Development-only logging
+ *
+ * @param {EmojiMarkerProps} props - Component props
+ * @returns {JSX.Element} The rendered emoji marker
+ */
 const EmojiMarker = memo(
   function EmojiMarker({
     position,
@@ -47,27 +71,34 @@ const EmojiMarker = memo(
 
     // Log when marker renders
     useEffect(() => {
+      // Skip logging in production
+      if (process.env.NODE_ENV !== 'development') {
+        return;
+      }
+
       if (isFirstRender.current) {
         console.log(
           `[EmojiMarker] Initial render of ${emoji} marker, isNew: ${isNew}, delay: ${delay}ms`
         );
         isFirstRender.current = false;
-      } else {
-        // Check if position has changed significantly
-        const positionChanged =
-          Math.abs(prevPositionRef.current.lat - position.lat) > 0.0000001 ||
-          Math.abs(prevPositionRef.current.lng - position.lng) > 0.0000001;
-
-        if (positionChanged) {
-          console.log(`[EmojiMarker] Position update for ${emoji} marker`);
-          prevPositionRef.current = position;
-        } else {
-          console.log(
-            `[EmojiMarker] Re-render of ${emoji} marker (no position change)`
-          );
-        }
+        return;
       }
-    });
+
+      // Check if position has changed significantly
+      const positionChanged =
+        Math.abs(prevPositionRef.current.lat - position.lat) > 0.0000001 ||
+        Math.abs(prevPositionRef.current.lng - position.lng) > 0.0000001;
+
+      if (positionChanged) {
+        console.log(`[EmojiMarker] Position update for ${emoji} marker`);
+        prevPositionRef.current = position;
+        return;
+      }
+
+      console.log(
+        `[EmojiMarker] Re-render of ${emoji} marker (no position change)`
+      );
+    }, [position, emoji, isNew, delay]);
 
     return (
       <OverlayView

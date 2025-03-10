@@ -120,7 +120,7 @@ describe('Place Details API Route', () => {
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('placeDetails');
     expect(data).toHaveProperty('source', 'api');
-    
+
     // Verify the place details structure
     const placeDetails = data.placeDetails;
     expect(placeDetails).toHaveProperty('photos');
@@ -159,7 +159,7 @@ describe('Place Details API Route', () => {
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('placeDetails');
     expect(data).toHaveProperty('source', 'cache');
-    
+
     // Verify the place details structure
     const placeDetails = data.placeDetails;
     expect(placeDetails).toHaveProperty('photos');

@@ -132,22 +132,32 @@ export async function fetchPlaces(
 
 // Function to convert places to map data points
 export function placesToMapDataPoints(places: Place[]): MapDataPoint[] {
-  return places.map((place) => {
-    // Get the emoji for the category, or use a default
-    const emoji = categoryEmojis[place.category] || '📍';
+  return places
+    .map((place) => {
+      // Get the emoji for the category
+      const emoji = categoryEmojis[place.category];
 
-    return {
-      id: place.placeId,
-      position: {
-        lat: place.coordinate.latitude,
-        lng: place.coordinate.longitude,
-      },
-      emoji,
-      title: place.name,
-      category: place.category,
-      priceLevel: place.priceLevel,
-      openNow: place.openNow,
-      rating: place.rating,
-    };
-  });
+      if (!emoji) {
+        console.error(
+          `[places] No emoji found for category: ${place.category}`
+        );
+
+        return {};
+      }
+
+      return {
+        id: place.placeId,
+        position: {
+          lat: place.coordinate.latitude,
+          lng: place.coordinate.longitude,
+        },
+        emoji,
+        title: place.name,
+        category: place.category,
+        priceLevel: place.priceLevel,
+        openNow: place.openNow,
+        rating: place.rating,
+      };
+    })
+    .filter((point) => point.id !== undefined);
 }

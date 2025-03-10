@@ -5,23 +5,38 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useFiltersStore } from '@/store/useFiltersStore';
 import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
 import type { MapDataPoint } from '@/services/places';
-import EmojiSelectorSkeleton from '@/components/map/EmojiSelectorSkeleton';
-import MapSkeleton from '@/components/map/MapSkeleton';
-import { useMarkerStore, type Viewport } from '@/store/markerStore';
+import EmojiSelectorSkeleton from '@/components/map/emoji-selector/emoji-selector-skeleton';
+import MapSkeleton from '@/components/map/map-skeleton';
+import {
+  useMarkerStore,
+  type Viewport,
+  type FilterCriteria,
+} from '@/store/markerStore';
+import { useGateValue } from '@statsig/react-bindings';
+import { FEATURE_FLAGS } from '@/constants/feature-flags';
 
 // Dynamically import the EmojiSelector component with no SSR
-const EmojiSelector = dynamic(() => import('@/components/map/EmojiSelector'), {
-  ssr: false,
-  loading: () => <EmojiSelectorSkeleton />,
-});
+const EmojiSelector = dynamic(
+  () => import('@/components/map/emoji-selector/emoji-selector'),
+  {
+    ssr: false,
+    loading: () => <EmojiSelectorSkeleton />,
+  }
+);
 
 // Dynamically import the GoogleMap component with no SSR
-const GoogleMap = dynamic(() => import('@/components/map/GoogleMap'), {
+const GoogleMap = dynamic(() => import('@/components/map/map'), {
   ssr: false,
   loading: () => <MapSkeleton />,
 });
 
 export default function AppPage() {
+  const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
+
+  if (!IS_APP_ENABLED) {
+    window.location.href = '/';
+  }
+
   // Get filters from Zustand store
   const {
     selectedCategories,
@@ -66,15 +81,13 @@ export default function AppPage() {
   // Refs for debounce timeouts
   const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const centerChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const filtersChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track if we're currently panning the map
   const isPanningRef = useRef(false);
 
-  // Create a persistent marker cache to track which markers have already been rendered
-  // const markerCacheRef = useRef(new Map<string, MapDataPoint>());
-
-  // Track the previous viewport for comparison
-  // const prevViewportRef = useRef({...});
+  // Track if we need to refetch due to filter changes
+  const needsRefetchRef = useRef(false);
 
   // Fetch places based on filters and viewport
   const { isLoading: isLoadingPlaces, refetch } = usePlaces({
@@ -94,10 +107,11 @@ export default function AppPage() {
     newMarkerIds,
     isTransitioning,
     setMarkers,
+    setVisibleMarkers,
     setCurrentViewport,
     setIsTransitioning,
     hasViewportCached,
-    getMarkersForViewport,
+    filterMarkers,
     clearCache,
   } = useMarkerStore();
 
@@ -110,6 +124,119 @@ export default function AppPage() {
     }),
     [zustandViewport]
   );
+
+  // Create filter criteria object
+  const filterCriteria: FilterCriteria = useMemo(
+    () => ({
+      categories: selectedCategories,
+      isAllCategoriesMode,
+      showFavoritesOnly,
+      favoriteIds: favoriteMarkerIds,
+      openNow,
+      priceLevel,
+      minimumRating,
+    }),
+    [
+      selectedCategories,
+      isAllCategoriesMode,
+      showFavoritesOnly,
+      favoriteMarkerIds,
+      openNow,
+      priceLevel,
+      minimumRating,
+    ]
+  );
+
+  // Handle refetch with transition state
+  const handleRefetchWithTransition = useCallback(
+    async (viewport: Viewport) => {
+      if (!searchLocation) return;
+
+      // Set transitioning state to true
+      setIsTransitioning(true);
+
+      try {
+        // Refetch data - this will fetch ALL categories regardless of user selection
+        // and then we'll filter them client-side based on the selected categories
+        const result = await refetch();
+        console.log('[AppPage] Data refetched successfully');
+
+        // If we have data, update the marker store
+        if (result.data && result.data.mapDataPoints) {
+          // Store all markers in the cache (unfiltered)
+          setMarkers(result.data.mapDataPoints, viewport);
+
+          // Apply filters to determine which markers to show
+          const filteredMarkers = filterMarkers(viewport, filterCriteria);
+
+          // Update visible markers
+          setVisibleMarkers(filteredMarkers);
+
+          console.log(
+            `[AppPage] Showing ${filteredMarkers.length} filtered markers out of ${result.data.mapDataPoints.length} total`
+          );
+        }
+
+        // Add a small delay before removing transition state
+        // This gives time for the new markers to prepare for animation
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 100);
+      } catch (error) {
+        console.error('[AppPage] Error refetching data:', error);
+        setIsTransitioning(false);
+      }
+    },
+    [
+      searchLocation,
+      refetch,
+      setMarkers,
+      filterMarkers,
+      filterCriteria,
+      setVisibleMarkers,
+      setIsTransitioning,
+    ]
+  );
+
+  // Apply filters locally when filter criteria change but viewport remains the same
+  useEffect(() => {
+    // Skip if we don't have a current viewport or if the viewport isn't cached
+    if (!currentViewport || !hasViewportCached(currentViewport)) {
+      // Mark that we need to refetch when the viewport changes
+      needsRefetchRef.current = true;
+      return;
+    }
+
+    // Clear any existing timeout
+    if (filtersChangeTimeoutRef.current) {
+      clearTimeout(filtersChangeTimeoutRef.current);
+    }
+
+    // Debounce filter application to prevent too many updates
+    filtersChangeTimeoutRef.current = setTimeout(() => {
+      console.log('[AppPage] Applying filters locally');
+
+      // Apply filters locally
+      const filteredMarkers = filterMarkers(currentViewport, filterCriteria);
+
+      // Update visible markers without making a network request
+      setVisibleMarkers(filteredMarkers);
+
+      console.log(`[AppPage] Filtered to ${filteredMarkers.length} markers`);
+    }, 300); // 300ms debounce for local filtering
+
+    return () => {
+      if (filtersChangeTimeoutRef.current) {
+        clearTimeout(filtersChangeTimeoutRef.current);
+      }
+    };
+  }, [
+    filterCriteria,
+    currentViewport,
+    hasViewportCached,
+    filterMarkers,
+    setVisibleMarkers,
+  ]);
 
   // Handle map bounds changed
   const handleBoundsChanged = useCallback(
@@ -154,32 +281,34 @@ export default function AppPage() {
         // Check if we already have markers for this viewport
         if (hasViewportCached(newViewport)) {
           console.log('[AppPage] Using cached markers for this viewport');
-          // No need to fetch, just use the cached markers
-          const cachedMarkers = getMarkersForViewport(newViewport);
 
-          // Apply any filters if needed
-          const filteredMarkers = showFavoritesOnly
-            ? cachedMarkers.filter((marker) => favoriteMarkerIds.has(marker.id))
-            : cachedMarkers;
+          // Apply filters to the cached markers
+          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
 
           // Update visible markers
-          setMarkers(filteredMarkers, newViewport);
+          setVisibleMarkers(filteredMarkers);
+
+          console.log(
+            `[AppPage] Showing ${filteredMarkers.length} filtered markers`
+          );
         } else {
           console.log('[AppPage] Fetching new markers for this viewport');
           // Trigger refetch with transition
           handleRefetchWithTransition(newViewport);
+          // Reset the needs refetch flag
+          needsRefetchRef.current = false;
         }
-      }, 500); // 500ms debounce
+      }, 1000); // 1000ms debounce (1 second)
     },
     [
       zustandViewport,
       setViewportBounds,
       setCurrentViewport,
       hasViewportCached,
-      getMarkersForViewport,
-      showFavoritesOnly,
-      favoriteMarkerIds,
-      setMarkers,
+      filterMarkers,
+      filterCriteria,
+      setVisibleMarkers,
+      handleRefetchWithTransition,
     ]
   );
 
@@ -218,32 +347,34 @@ export default function AppPage() {
         // Check if we already have markers for this viewport
         if (hasViewportCached(newViewport)) {
           console.log('[AppPage] Using cached markers for this viewport');
-          // No need to fetch, just use the cached markers
-          const cachedMarkers = getMarkersForViewport(newViewport);
 
-          // Apply any filters if needed
-          const filteredMarkers = showFavoritesOnly
-            ? cachedMarkers.filter((marker) => favoriteMarkerIds.has(marker.id))
-            : cachedMarkers;
+          // Apply filters to the cached markers
+          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
 
           // Update visible markers
-          setMarkers(filteredMarkers, newViewport);
+          setVisibleMarkers(filteredMarkers);
+
+          console.log(
+            `[AppPage] Showing ${filteredMarkers.length} filtered markers`
+          );
         } else {
           console.log('[AppPage] Fetching new markers for this viewport');
           // Trigger refetch with transition
           handleRefetchWithTransition(newViewport);
+          // Reset the needs refetch flag
+          needsRefetchRef.current = false;
         }
-      }, 500); // 500ms debounce
+      }, 1000); // 1000ms debounce (1 second)
     },
     [
       zustandViewport,
       setViewportCenter,
       setCurrentViewport,
       hasViewportCached,
-      getMarkersForViewport,
-      showFavoritesOnly,
-      favoriteMarkerIds,
-      setMarkers,
+      filterMarkers,
+      filterCriteria,
+      setVisibleMarkers,
+      handleRefetchWithTransition,
     ]
   );
 
@@ -268,52 +399,6 @@ export default function AppPage() {
       // We don't trigger a refetch here as the bounds change will handle that
     },
     [zustandViewport, setViewportZoom, setCurrentViewport]
-  );
-
-  // Handle refetch with transition state
-  const handleRefetchWithTransition = useCallback(
-    async (viewport: Viewport) => {
-      if (!searchLocation) return;
-
-      // Set transitioning state to true
-      setIsTransitioning(true);
-
-      try {
-        // Refetch data
-        const result = await refetch();
-        console.log('[AppPage] Data refetched successfully');
-
-        // If we have data, update the marker store
-        if (result.data && result.data.mapDataPoints) {
-          // Apply any filters if needed
-          const filteredMarkers = showFavoritesOnly
-            ? result.data.mapDataPoints.filter((marker) =>
-                favoriteMarkerIds.has(marker.id)
-              )
-            : result.data.mapDataPoints;
-
-          // Update the marker store
-          setMarkers(filteredMarkers, viewport);
-        }
-
-        // Add a small delay before removing transition state
-        // This gives time for the new markers to prepare for animation
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 100);
-      } catch (error) {
-        console.error('[AppPage] Error refetching data:', error);
-        setIsTransitioning(false);
-      }
-    },
-    [
-      searchLocation,
-      refetch,
-      showFavoritesOnly,
-      favoriteMarkerIds,
-      setMarkers,
-      setIsTransitioning,
-    ]
   );
 
   // Handle shuffle click (refetch data)

@@ -1,6 +1,13 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { navItems } from '@/constants/routes';
+import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 
 export function Footer() {
+  const path = usePathname();
+
   return (
     <footer className='border-t border-gray-200 dark:border-gray-800'>
       <div className='container mx-auto px-4 py-6'>
@@ -11,40 +18,25 @@ export function Footer() {
             </p>
           </div>
           <div className='flex flex-wrap justify-center gap-6'>
-            <Link
-              href='/app'
-              className='text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-            >
-              App
-            </Link>
-            <Link
-              href='/about'
-              className='text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-            >
-              About
-            </Link>
-            <Link
-              href='/privacy-policy'
-              className='text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href='https://github.com/sotomaque/emoji-map-next'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-            >
-              Web App
-            </Link>
-            <Link
-              href='https://github.com/sotomaque/emoji-map'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-            >
-              iOS App
-            </Link>
+            {navItems.map((item, index) => {
+              const isActive = isNavItemActive(item.href, path);
+
+              return (
+                <Link
+                  key={`footer-${item.label}-${index}`}
+                  href={item.href}
+                  target={item.target ? '_blank' : undefined}
+                  rel={item.target ? 'noopener noreferrer' : undefined}
+                  className={`text-sm ${
+                    isActive
+                      ? 'text-gray-900 dark:text-gray-100 font-medium'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

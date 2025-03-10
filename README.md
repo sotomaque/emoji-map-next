@@ -218,6 +218,195 @@ Webhook endpoint for Clerk authentication events.
 - Validates webhook requests using Clerk's signing secret
 - Rejects requests without valid Svix headers
 
+## API Architecture Diagrams
+
+The following diagrams provide a visual representation of the API architecture and data flow in the application. These diagrams are created using [Mermaid](https://mermaid.js.org/), a JavaScript-based diagramming and charting tool.
+
+### API Structure
+
+This diagram shows the overall structure of the API endpoints and their relationships:
+
+```mermaid
+graph TD
+    Client[Client Application] --> API["/api"]
+    API --> Places["/places"]
+    API --> Health["/health"]
+    API --> Webhooks["/webhooks"]
+    
+    Places --> PlacesNearby["/nearby"]
+    Places --> PlacesDetails["/details"]
+    
+    PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]
+    PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]
+    
+    PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]
+    
+    Health --> HealthHandler["GET: Health check"]
+    
+    Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]
+    Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]
+    
+    PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]
+    PlacesNewHandler --> GooglePlacesAPI
+    PlacesDetailsHandler --> GooglePlacesAPI
+    
+    PlacesNearbyHandler --> Redis["Redis Cache"]
+    PlacesNewHandler --> Redis
+    PlacesDetailsHandler --> Redis
+```
+
+### Places API Flow
+
+This sequence diagram illustrates the data flow when fetching places from the API:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Next.js API Route
+    participant Cache as Redis Cache
+    participant Google as Google Places API
+    
+    Client->>API: GET /api/places/nearby/places-new
+    
+    Note over API: Process request parameters
+    
+    API->>Cache: Check cache for results
+    
+    alt Cache hit
+        Cache-->>API: Return cached results
+    else Cache miss
+        API->>Google: Fetch from Google Places API
+        Google-->>API: Return places data
+        
+        Note over API: Process places with<br/>findMatchingKeyword<br/>createSimplifiedPlace
+        
+        API->>Cache: Store results in cache
+    end
+    
+    API-->>Client: Return processed places
+```
+
+### Feature Flag System
+
+This diagram shows how feature flags are implemented in the application:
+
+```mermaid
+flowchart TD
+    A[User Request] --> B{Check Feature Flags}
+    B -->|ENABLE_APP = true| C[Show App Route]
+    B -->|ENABLE_APP = false| D[Hide App Route]
+    
+    C --> E[Render Navigation]
+    D --> E
+    
+    subgraph Feature Flag System
+    F[Statsig Client] --> G[useGateValue Hook]
+    G --> B
+    end
+    
+    subgraph Navigation Components
+    E --> H[DesktopNav]
+    E --> I[MobileNav]
+    E --> J[Footer]
+    end
+    
+    subgraph useNavItems Hook
+    K[filterNavItems] --> L{Check Feature Flags}
+    L -->|Enabled| M[Include Route]
+    L -->|Disabled| N[Exclude Route]
+    end
+    
+    H --> K
+    I --> K
+    J --> K
+```
+
+### Places Data Processing
+
+This flowchart illustrates how place data is processed:
+
+```mermaid
+flowchart LR
+    A[Google Places API Response] --> B[processPlaces Function]
+    
+    subgraph Data Processing
+    B --> C[Filter by Categories]
+    C --> D[Match Keywords]
+    D --> E[Create Simplified Places]
+    end
+    
+    E --> F[Cache Results]
+    E --> G[Return to Client]
+    
+    subgraph Utility Functions
+    H[findMatchingKeyword] --> D
+    I[createSimplifiedPlace] --> E
+    end
+```
+
+### Caching System
+
+This diagram shows how the caching system works:
+
+```mermaid
+flowchart TD
+    A[API Request] --> B{Check Cache}
+    B -->|Cache Hit| C[Return Cached Data]
+    B -->|Cache Miss| D[Fetch from Google API]
+    
+    D --> E[Process Data]
+    E --> F[Store in Cache]
+    F --> G[Return Processed Data]
+    C --> G
+    
+    subgraph Cache Keys
+    H[Text Query] --> K[Generate Cache Key]
+    I[Location] --> K
+    J[Radius/Bounds] --> K
+    end
+    
+    K --> B
+    
+    subgraph Cache Configuration
+    L[TTL: Time to Live]
+    M[bypassCache Parameter]
+    end
+    
+    M -->|true| D
+    M -->|false| B
+```
+
+### Error Handling
+
+This flowchart illustrates the error handling flow:
+
+```mermaid
+flowchart TD
+    A[API Request] --> B{Try Request Processing}
+    
+    B -->|Success| C[Return Data]
+    B -->|Error| D{Error Type}
+    
+    D -->|API Error| E[Log API Error]
+    D -->|Network Error| F[Log Network Error]
+    D -->|Other Exception| G[Log General Error]
+    
+    E --> H[Return Error Response]
+    F --> H
+    G --> H
+    
+    subgraph Error Responses
+    H --> I[HTTP Status Code]
+    H --> J[Error Message]
+    end
+    
+    subgraph Logging
+    E --> K[Console Error]
+    F --> K
+    G --> K
+    end
+```
+
 ## Project Structure
 
 ```

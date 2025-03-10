@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant Client
+    participant API as Next.js API Route
+    participant Cache as Redis Cache
+    participant Google as Google Places API
+    
+    Client->>API: GET /api/places/nearby/places-new
+    
+    Note over API: Process request parameters
+    
+    API->>Cache: Check cache for results
+    
+    alt Cache hit
+        Cache-->>API: Return cached results
+    else Cache miss
+        API->>Google: Fetch from Google Places API
+        Google-->>API: Return places data
+        
+        Note over API: Process places with<br/>findMatchingKeyword<br/>createSimplifiedPlace
+        
+        API->>Cache: Store results in cache
+    end
+    
+    API-->>Client: Return processed places 

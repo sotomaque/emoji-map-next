@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import './EmojiSelector.css';
+import './emoji-selector.css';
 import { categories as categoriesData } from '@/services/places';
 import { useFiltersStore } from '@/store/useFiltersStore';
 
@@ -48,9 +48,6 @@ export default function EmojiSelector({
       isAllCategoriesMode,
     });
 
-    // Play a click sound for feedback
-    playClickSound();
-
     if (isAllCategoriesMode) {
       // If "All" is currently selected and we're selecting a specific category
       console.log(
@@ -88,9 +85,6 @@ export default function EmojiSelector({
       isAllCategoriesMode,
     });
 
-    // Play a click sound for feedback
-    playClickSound();
-
     // If "All" is not already selected, switch to "All" mode
     if (!isAllCategoriesMode) {
       console.log('[EmojiSelector] Switching to All mode');
@@ -102,9 +96,6 @@ export default function EmojiSelector({
   // Handle shuffle button click
   const handleShuffleClick = () => {
     if (isLoading) return;
-
-    // Play a click sound for feedback
-    playClickSound();
 
     // Activate shuffle animation briefly
     setIsShuffleActive(true);
@@ -122,34 +113,8 @@ export default function EmojiSelector({
   const handleFavoritesToggle = () => {
     if (isLoading) return;
 
-    // Play a click sound for feedback
-    playClickSound();
-
     // Toggle favorites in the store
     setShowFavoritesOnly(!showFavoritesOnly);
-  };
-
-  // Play a click sound
-  const playClickSound = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        // Use proper type for AudioContext
-        const AudioContextClass =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext })
-            .webkitAudioContext;
-
-        const audioCtx = new AudioContextClass();
-        const oscillator = audioCtx.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-        oscillator.connect(audioCtx.destination);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.05);
-      } catch (error) {
-        console.error('Error playing click sound:', error);
-      }
-    }
   };
 
   // Scroll to the appropriate element when categories change

@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { ThemeProvider } from '../components/providers/ThemeProvider';
-import { QueryProvider } from '../components/providers/QueryProvider';
 import { Inter as FontSans } from 'next/font/google';
 import { cn } from '../lib/utils';
 import { env } from '../env';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Providers } from '@/components/providers/providers';
 
 const isProduction = env.NEXT_PUBLIC_SITE_ENV === 'production';
 
@@ -38,17 +37,10 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <ReactQueryDevtools initialIsOpen={false} />
-            {children}
-          </QueryProvider>
-        </ThemeProvider>
+        <Providers>
+          <ReactQueryDevtools initialIsOpen={false} />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -1,0 +1,28 @@
+flowchart TD
+    A[User Request] --> B{Check Feature Flags}
+    B -->|ENABLE_APP = true| C[Show App Route]
+    B -->|ENABLE_APP = false| D[Hide App Route]
+    
+    C --> E[Render Navigation]
+    D --> E
+    
+    subgraph Feature Flag System
+    F[Statsig Client] --> G[useGateValue Hook]
+    G --> B
+    end
+    
+    subgraph Navigation Components
+    E --> H[DesktopNav]
+    E --> I[MobileNav]
+    E --> J[Footer]
+    end
+    
+    subgraph useNavItems Hook
+    K[filterNavItems] --> L{Check Feature Flags}
+    L -->|Enabled| M[Include Route]
+    L -->|Disabled| N[Exclude Route]
+    end
+    
+    H --> K
+    I --> K
+    J --> K 

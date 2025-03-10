@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Logo } from '../logo/Logo';
+import { Logo } from '../logo/logo';
 import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 import type { NavItem } from '@/types/nav-items';
 

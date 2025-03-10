@@ -1,0 +1,16 @@
+flowchart LR
+    A[Google Places API Response] --> B[processPlaces Function]
+    
+    subgraph Data Processing
+    B --> C[Filter by Categories]
+    C --> D[Match Keywords]
+    D --> E[Create Simplified Places]
+    end
+    
+    E --> F[Cache Results]
+    E --> G[Return to Client]
+    
+    subgraph Utility Functions
+    H[findMatchingKeyword] --> D
+    I[createSimplifiedPlace] --> E
+    end 

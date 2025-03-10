@@ -143,13 +143,13 @@ describe('Places Service', () => {
 
   describe('placesToMapDataPoints', () => {
     it('should convert places to map data points correctly', () => {
-      // Test places
+      // Mock places data with categories that exist in categoryEmojis
       const places: Place[] = [
         {
           placeId: 'place123',
           name: 'Test Restaurant',
           coordinate: { latitude: 37.7749, longitude: -122.4194 },
-          category: 'restaurant',
+          category: 'pizza', // Using a category that exists in categoryEmojis
           description: 'A test restaurant',
           priceLevel: 2,
           openNow: true,
@@ -159,7 +159,7 @@ describe('Places Service', () => {
           placeId: 'place456',
           name: 'Test Cafe',
           coordinate: { latitude: 37.775, longitude: -122.4195 },
-          category: 'cafe',
+          category: 'coffee', // Using a category that exists in categoryEmojis
           description: 'A test cafe',
           priceLevel: 1,
           openNow: false,
@@ -177,9 +177,9 @@ describe('Places Service', () => {
       expect(result[0]).toEqual({
         id: 'place123',
         position: { lat: 37.7749, lng: -122.4194 },
-        emoji: expect.any(String), // The emoji depends on the category mapping
+        emoji: categoryEmojis['pizza'], // Use the actual emoji
         title: 'Test Restaurant',
-        category: 'restaurant',
+        category: 'pizza',
         priceLevel: 2,
         openNow: true,
         rating: 4.5,
@@ -189,9 +189,9 @@ describe('Places Service', () => {
       expect(result[1]).toEqual({
         id: 'place456',
         position: { lat: 37.775, lng: -122.4195 },
-        emoji: expect.any(String), // The emoji depends on the category mapping
+        emoji: categoryEmojis['coffee'], // Use the actual emoji
         title: 'Test Cafe',
-        category: 'cafe',
+        category: 'coffee',
         priceLevel: 1,
         openNow: false,
         rating: 3.5,
@@ -206,14 +206,14 @@ describe('Places Service', () => {
       expect(result).toEqual([]);
     });
 
-    it('should use default emoji for unknown categories', () => {
+    it('should exclude places with unknown categories', () => {
       // Test place with unknown category
       const places: Place[] = [
         {
           placeId: 'place123',
           name: 'Unknown Place',
           coordinate: { latitude: 37.7749, longitude: -122.4194 },
-          category: 'unknown_category',
+          category: 'unknown_category', // Category that doesn't exist in categoryEmojis
           description: 'A place with unknown category',
         },
       ];
@@ -221,8 +221,13 @@ describe('Places Service', () => {
       // Call the function
       const result = placesToMapDataPoints(places);
 
-      // Verify result uses default emoji
-      expect(result[0].emoji).toBe('📍'); // Default emoji
+      // Verify result is empty (place with unknown category is excluded)
+      expect(result).toHaveLength(0);
+      
+      // Verify console error was called
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('No emoji found for category: unknown_category')
+      );
     });
   });
 

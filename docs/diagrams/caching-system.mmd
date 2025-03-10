@@ -1,0 +1,25 @@
+flowchart TD
+    A[API Request] --> B{Check Cache}
+    B -->|Cache Hit| C[Return Cached Data]
+    B -->|Cache Miss| D[Fetch from Google API]
+    
+    D --> E[Process Data]
+    E --> F[Store in Cache]
+    F --> G[Return Processed Data]
+    C --> G
+    
+    subgraph Cache Keys
+    H[Text Query] --> K[Generate Cache Key]
+    I[Location] --> K
+    J[Radius/Bounds] --> K
+    end
+    
+    K --> B
+    
+    subgraph Cache Configuration
+    L[TTL: Time to Live]
+    M[bypassCache Parameter]
+    end
+    
+    M -->|true| D
+    M -->|false| B 

@@ -1,5 +1,5 @@
-import ThemedUserButton from '@/components/auth/ThemedUserButton';
-import { ModeToggle } from '@/components/nav/mode-toggle/Mode-Toggle';
+import ThemedUserButton from '@/components/auth/themed-user-button';
+import { ModeToggle } from '@/components/nav/mode-toggle/mobile-toggle';
 import {
   ClerkProvider,
   SignedIn,

@@ -62,6 +62,10 @@ vi.mock('@/env', () => ({
 describe('Clerk Webhook Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock console.log and console.error to keep test output clean
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('should handle user.created event and create a user in the database', async () => {

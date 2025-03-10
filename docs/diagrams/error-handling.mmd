@@ -1,0 +1,24 @@
+flowchart TD
+    A[API Request] --> B{Try Request Processing}
+    
+    B -->|Success| C[Return Data]
+    B -->|Error| D{Error Type}
+    
+    D -->|API Error| E[Log API Error]
+    D -->|Network Error| F[Log Network Error]
+    D -->|Other Exception| G[Log General Error]
+    
+    E --> H[Return Error Response]
+    F --> H
+    G --> H
+    
+    subgraph Error Responses
+    H --> I[HTTP Status Code]
+    H --> J[Error Message]
+    end
+    
+    subgraph Logging
+    E --> K[Console Error]
+    F --> K
+    G --> K
+    end

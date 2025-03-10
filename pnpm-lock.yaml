@@ -35,6 +35,12 @@ importers:
       '@react-google-maps/api':
         specifier: ^2.20.6
         version: 2.20.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@statsig/react-bindings':
+        specifier: ^3.14.1
+        version: 3.14.1(react@19.0.0)
+      '@statsig/web-analytics':
+        specifier: ^3.14.1
+        version: 3.14.1
       '@t3-oss/env-nextjs':
         specifier: ^0.12.0
         version: 0.12.0(typescript@5.8.2)(zod@3.24.2)
@@ -117,6 +123,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
+      '@types/lodash':
+        specifier: ^4.17.16
+        version: 4.17.16
       '@types/node':
         specifier: ^20
         version: 20.17.24
@@ -1407,6 +1416,20 @@ packages:
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
+  '@statsig/client-core@3.14.1':
+    resolution: {integrity: sha512-ARb3Ig0pZopPQuRehx3tcdhZo6+KEY32r67Qhzzx0YGdtEAuqSvTEYFGtujJRMZS1NLgYg8UP3ktfw1CYiJOHw==}
+
+  '@statsig/js-client@3.14.1':
+    resolution: {integrity: sha512-kFmo66KR8pMkQmgnSI2T5K4MM1l2PZMobUy7h8Ldg5iyUlMqQElZB6Z5eqLZyDJf5+3SNcVZGbAmIKC7bBU+7Q==}
+
+  '@statsig/react-bindings@3.14.1':
+    resolution: {integrity: sha512-XDGpqg+iCsEzx9Ysp6NllWphLrPNYSiXprbgSgFIhhan/e4vWM/FsJVaSsc1bghJcHDydu0kaq8QgYQWZADhkQ==}
+    peerDependencies:
+      react: ^16.6.3 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@statsig/web-analytics@3.14.1':
+    resolution: {integrity: sha512-1hxm7O/EHIY915lqC4R2o18SfGY6eS4shlNAvGaG6Bqq3IFDBqczaq2h6gcN6u6+NXDfkbc1Svs6b7R2XwfZtQ==}
+
   '@swagger-api/apidom-ast@1.0.0-beta.12':
     resolution: {integrity: sha512-KdJ+8PyYvfnHgpqrC0WWDRJLVx6+YkmYgAGpsdOa8S/p6btJdCUozeqpcXawmGqwAX/9jCXbmKdia3v3fUrP0w==}
 
@@ -1636,6 +1659,9 @@ packages:
 
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+
+  '@types/lodash@4.17.16':
+    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
 
   '@types/node@20.17.24':
     resolution: {integrity: sha512-d7fGCyB96w9BnWQrOsJtpyiSaBcAYYr75bnK6ZRjDbql2cGLj/3GsL5OYmLPNq76l7Gf2q4Rv9J2o6h5CrD9sA==}
@@ -5841,6 +5867,23 @@ snapshots:
 
   '@stablelib/base64@1.0.1': {}
 
+  '@statsig/client-core@3.14.1': {}
+
+  '@statsig/js-client@3.14.1':
+    dependencies:
+      '@statsig/client-core': 3.14.1
+
+  '@statsig/react-bindings@3.14.1(react@19.0.0)':
+    dependencies:
+      '@statsig/client-core': 3.14.1
+      '@statsig/js-client': 3.14.1
+      react: 19.0.0
+
+  '@statsig/web-analytics@3.14.1':
+    dependencies:
+      '@statsig/client-core': 3.14.1
+      '@statsig/js-client': 3.14.1
+
   '@swagger-api/apidom-ast@1.0.0-beta.12':
     dependencies:
       '@babel/runtime-corejs3': 7.26.9
@@ -6325,6 +6368,8 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
+
+  '@types/lodash@4.17.16': {}
 
   '@types/node@20.17.24':
     dependencies:

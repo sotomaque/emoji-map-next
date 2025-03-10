@@ -1,0 +1,26 @@
+graph TD
+    Client[Client Application] --> API["/api"]
+    API --> Places["/places"]
+    API --> Health["/health"]
+    API --> Webhooks["/webhooks"]
+    
+    Places --> PlacesNearby["/nearby"]
+    Places --> PlacesDetails["/details"]
+    
+    PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]
+    PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]
+    
+    PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]
+    
+    Health --> HealthHandler["GET: Health check"]
+    
+    Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]
+    Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]
+    
+    PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]
+    PlacesNewHandler --> GooglePlacesAPI
+    PlacesDetailsHandler --> GooglePlacesAPI
+    
+    PlacesNearbyHandler --> Redis["Redis Cache"]
+    PlacesNewHandler --> Redis
+    PlacesDetailsHandler --> Redis 

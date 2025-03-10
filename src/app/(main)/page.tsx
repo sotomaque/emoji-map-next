@@ -2,8 +2,24 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useGateValue } from '@statsig/react-bindings';
+import { FEATURE_FLAGS } from '@/constants/feature-flags';
 
+/**
+ * Home Page Component
+ *
+ * Renders the landing page of the Emoji Map application with:
+ * - Logo and title
+ * - Brief description of the app
+ * - Main call-to-action button to launch the app
+ * - Links to API docs and GitHub repositories
+ * - Footer with copyright information
+ *
+ * @returns {JSX.Element} The rendered Home page
+ */
 export default function Home() {
+  const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
+
   return (
     <div className='flex flex-col'>
       <div className='flex-1 grid grid-rows-[1fr_auto] items-center justify-items-center p-8 pb-20 gap-16 sm:p-20'>
@@ -29,16 +45,18 @@ export default function Home() {
           </div>
 
           {/* Main App Button */}
-          <div className='flex justify-center w-full mt-6'>
-            <Link
-              href='/app'
-              className='inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105'
-            >
-              <span className='text-2xl mr-2'>🗺️</span> Launch App
-            </Link>
-          </div>
+          {IS_APP_ENABLED && (
+            <div className='flex justify-center w-full mt-6'>
+              <Link
+                href='/app'
+                className='inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105'
+              >
+                <span className='text-2xl mr-2'>🗺️</span> Launch App
+              </Link>
+            </div>
+          )}
 
-          {/* All links in one row */}
+          {/* Links */}
           <div className='flex gap-4 items-center flex-wrap justify-center mt-8'>
             <Link
               className='rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white gap-2 text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5'
