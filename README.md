@@ -1,14 +1,16 @@
 # Emoji Map Web App
 
 <div align="center">
-  <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin-bottom: 20px;" />
-  <h3>Find places on a map with emoji markers</h3>
+  <p align="center">
+    <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin: 0 auto 20px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+  </p>
+  <h3 align="center" style="margin-bottom: 20px;">Find places on a map with emoji markers</h3>
   
   <div style="margin-top: 20px;">
-    <a href="https://github.com/sotomaque/emoji-map-next">
+    <a href="https://github.com/sotomaque/emoji-map-next" style="margin: 0 10px;">
       <img src="https://img.shields.io/badge/GitHub-Web_App-blue?style=for-the-badge&logo=github" alt="Web App Repository" />
     </a>
-    <a href="https://github.com/sotomaque/emoji-map">
+    <a href="https://github.com/sotomaque/emoji-map" style="margin: 0 10px;">
       <img src="https://img.shields.io/badge/GitHub-iOS_App-purple?style=for-the-badge&logo=github" alt="iOS App Repository" />
     </a>
   </div>
