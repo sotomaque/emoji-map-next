@@ -50,7 +50,6 @@ describe('fetchAndProcessGoogleData', () => {
     },
     category: 'restaurant',
     emoji: '🍕',
-    openNow: true,
   };
 
   // Reset mocks before each test

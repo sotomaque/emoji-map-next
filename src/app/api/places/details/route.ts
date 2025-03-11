@@ -1,11 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { env } from '@/env';
-import {
-  redis,
-  PLACE_DETAILS_CACHE_EXPIRATION_TIME,
-  generatePlaceDetailsCacheKey,
-} from '@/lib/redis';
+import { redis, PLACE_DETAILS_CACHE_EXPIRATION_TIME } from '@/lib/redis';
+import { generatePlaceDetailsCacheKey } from '@/utils/redis/cache-utils';
 
 // Define the response types based on the iOS app models
 interface Photo {

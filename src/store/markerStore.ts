@@ -80,7 +80,7 @@ export const useMarkerStore = create<MarkerStore>()(
       const viewportKey = getViewportKey(viewport);
       const newMarkerIds = new Set<string>();
       const viewportMarkerIds = new Set<string>();
-      
+
       // Get the existing markers map - we'll add to this instead of replacing it
       const markersMap = new Map(get().markers);
 
@@ -142,12 +142,12 @@ export const useMarkerStore = create<MarkerStore>()(
     hasViewportCached: (viewport: Viewport): boolean => {
       // Check if we have any markers in the store
       const hasMarkers = get().markers.size > 0;
-      
+
       // If we have markers, we consider all viewports "cached"
       if (hasMarkers) {
         return true;
       }
-      
+
       // Otherwise, check if this specific viewport is cached
       const viewportKey = getViewportKey(viewport);
       return get().viewportMarkers.has(viewportKey);
@@ -157,16 +157,14 @@ export const useMarkerStore = create<MarkerStore>()(
       // Get all markers from the store
       const markers = get().markers;
       const allMarkers = Array.from(markers.values());
-      
+
       console.log(
         `[MarkerStore] Retrieved ${allMarkers.length} total markers from store`
       );
       return allMarkers;
     },
 
-    filterMarkers: (
-      filterCriteria: FilterCriteria
-    ): SimplifiedMapPlace[] => {
+    filterMarkers: (filterCriteria: FilterCriteria): SimplifiedMapPlace[] => {
       // Get all markers from the store
       const markers = get().markers;
       const filteredMarkers: SimplifiedMapPlace[] = [];
@@ -197,7 +195,9 @@ export const useMarkerStore = create<MarkerStore>()(
         filteredMarkers.push(marker);
       });
 
-      console.log(`[MarkerStore] Filtered to ${filteredMarkers.length} markers out of ${markers.size} total`);
+      console.log(
+        `[MarkerStore] Filtered to ${filteredMarkers.length} markers out of ${markers.size} total`
+      );
       return filteredMarkers;
     },
 
@@ -205,7 +205,7 @@ export const useMarkerStore = create<MarkerStore>()(
       // Keep the markers but clear other state
       const currentMarkers = get().markers;
       const allMarkers = Array.from(currentMarkers.values());
-      
+
       set({
         // Keep the existing markers
         markers: currentMarkers,
@@ -214,10 +214,12 @@ export const useMarkerStore = create<MarkerStore>()(
         // Set all markers as visible
         visibleMarkers: allMarkers,
         // Mark all as new for animation
-        newMarkerIds: new Set(allMarkers.map(marker => marker.id)),
+        newMarkerIds: new Set(allMarkers.map((marker) => marker.id)),
       });
-      
-      console.log(`[MarkerStore] Cache partially cleared, keeping ${currentMarkers.size} markers as visible`);
+
+      console.log(
+        `[MarkerStore] Cache partially cleared, keeping ${currentMarkers.size} markers as visible`
+      );
     },
   }))
 );

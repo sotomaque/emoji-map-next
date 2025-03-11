@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   roundCoordinate,
   normalizeLocation,
-  generatePlacesCacheKey,
   generatePlaceDetailsCacheKey,
 } from './cache-utils';
 
@@ -31,33 +30,6 @@ describe('Redis Cache Utilities', () => {
     it('should return the original string if parsing fails', () => {
       expect(normalizeLocation('invalid')).toBe('invalid');
       expect(normalizeLocation('')).toBe('');
-    });
-  });
-
-  describe('generatePlacesCacheKey', () => {
-    it('should generate a cache key based on location and radius', () => {
-      expect(
-        generatePlacesCacheKey({
-          location: '40.7128,-74.0060',
-          radius: '1000',
-        })
-      ).toBe('places:40.71,-74.01:1000');
-    });
-
-    it('should use default radius if not provided', () => {
-      expect(
-        generatePlacesCacheKey({
-          location: '40.7128,-74.0060',
-        })
-      ).toBe('places:40.71,-74.01:5000');
-    });
-
-    it('should throw an error if location is not provided', () => {
-      expect(() =>
-        generatePlacesCacheKey({
-          location: null,
-        })
-      ).toThrow('Location is required for generating a cache key');
     });
   });
 

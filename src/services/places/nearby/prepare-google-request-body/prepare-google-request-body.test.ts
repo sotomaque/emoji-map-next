@@ -26,8 +26,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
     });
 
     expect(result.textQuery).toBe('coffee');
@@ -37,7 +35,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
       limit: 10,
     });
 
@@ -48,8 +45,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
     });
 
     expect(result.pageSize).toBe(20);
@@ -60,7 +55,6 @@ describe('prepareGoogleRequestBody', () => {
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
       openNow: true,
-      limit: null,
     });
 
     expect(result.openNow).toBe(true);
@@ -70,8 +64,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
     });
 
     expect(result.openNow).toBeUndefined();
@@ -91,8 +83,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
     });
 
     // Verify isValidLocation was called with the correct location
@@ -114,8 +104,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: 'invalid',
-      openNow: null,
-      limit: null,
     });
 
     // Verify isValidLocation was called with the correct location
@@ -143,8 +131,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
     });
 
     // Verify the locationRestriction was not set
@@ -172,8 +158,6 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      openNow: null,
-      limit: null,
       bufferMiles: 5,
     });
 

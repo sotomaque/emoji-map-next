@@ -1,8 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  type PlacesParams,
-  fetchPlaces,
-} from '../services/places';
+import { type PlacesParams, fetchPlaces } from '../../services/places';
 
 // Hook for fetching places based on parameters
 export function usePlaces(params: PlacesParams) {

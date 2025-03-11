@@ -1,10 +1,5 @@
 import { Redis } from '@upstash/redis';
 import { env } from '@/env';
-import {
-  generatePlacesCacheKey,
-  generatePlaceDetailsCacheKey,
-  generatePlacesTextSearchCacheKey,
-} from '@/utils/redis/cache-utils';
 
 // Check if the required environment variables are set
 if (!env.KV_REST_API_URL || !env.KV_REST_API_TOKEN) {
@@ -24,10 +19,3 @@ export const CACHE_EXPIRATION_TIME = 60 * 60 * 24 * 7; // 7 days
 
 // Cache expiration time (1 hour in seconds) for place details
 export const PLACE_DETAILS_CACHE_EXPIRATION_TIME = 60 * 60; // 1 hour
-
-// Re-export the cache key generation functions for convenience
-export {
-  generatePlacesCacheKey,
-  generatePlaceDetailsCacheKey,
-  generatePlacesTextSearchCacheKey,
-};

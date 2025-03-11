@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { redis, generatePlaceDetailsCacheKey } from '@/lib/redis';
+import { redis } from '@/lib/redis';
+import { generatePlaceDetailsCacheKey } from '@/utils/redis/cache-utils';
 import { GET } from '../../../../app/api/places/details/route';
 
 // Mock the Redis module
@@ -11,6 +12,11 @@ vi.mock('@/lib/redis', () => {
       set: vi.fn(),
     },
     PLACE_DETAILS_CACHE_EXPIRATION_TIME: 3600, // 1 hour in seconds
+  };
+});
+
+vi.mock('@/utils/redis/cache-utils', () => {
+  return {
     generatePlaceDetailsCacheKey: vi.fn().mockImplementation((placeId) => {
       return `place-details:${placeId}`;
     }),
@@ -87,7 +93,9 @@ describe('Place Details API Route', () => {
 
     // Verify the cache was checked
     expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(generatePlaceDetailsCacheKey).toHaveBeenCalledWith('test-place-id');
+    expect(vi.mocked(generatePlaceDetailsCacheKey)).toHaveBeenCalledWith(
+      'test-place-id'
+    );
 
     // Verify the fetch was called with the correct URL
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -135,7 +143,9 @@ describe('Place Details API Route', () => {
 
     // Verify the cache was checked
     expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(generatePlaceDetailsCacheKey).toHaveBeenCalledWith('test-place-id');
+    expect(vi.mocked(generatePlaceDetailsCacheKey)).toHaveBeenCalledWith(
+      'test-place-id'
+    );
 
     // Verify fetch was NOT called (using cache)
     expect(global.fetch).not.toHaveBeenCalled();

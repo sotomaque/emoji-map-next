@@ -117,7 +117,6 @@ const darkModeMapOptions = [
   },
 ];
 
-
 interface GoogleMapComponentProps {
   markers?: SimplifiedMapPlace[];
   onMapClick?: (event: google.maps.MapMouseEvent) => void;

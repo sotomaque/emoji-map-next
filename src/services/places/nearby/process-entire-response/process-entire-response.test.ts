@@ -47,7 +47,6 @@ describe('processGoogleResponse', () => {
       location: { latitude: 40.7128, longitude: -74.006 },
       category: 'restaurant',
       emoji: '🍕',
-      openNow: true,
     };
 
     const mockResult2 = {
@@ -55,7 +54,6 @@ describe('processGoogleResponse', () => {
       location: { latitude: 40.7129, longitude: -74.0061 },
       category: 'restaurant',
       emoji: '🍔',
-      openNow: false,
     };
 
     // Configure mock to return different values for different inputs
@@ -149,7 +147,6 @@ describe('processGoogleResponse', () => {
       location: { latitude: 40.7128, longitude: -74.006 },
       category: 'restaurant',
       emoji: '🍕',
-      openNow: true,
     });
 
     const googleData = {
@@ -224,7 +221,6 @@ describe('processGoogleResponse', () => {
       location: { latitude: 40.7128, longitude: -74.006 },
       category: 'restaurant',
       emoji: '🍕',
-      openNow: true,
     });
 
     const googleData = {

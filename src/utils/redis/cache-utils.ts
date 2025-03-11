@@ -41,31 +41,6 @@ export function normalizeLocation(
 }
 
 /**
- * @deprecated when we move to the new places v2 API
- * Generate a cache key for the places API
- * We only cache based on location and radius
- */
-export function generatePlacesCacheKey(params: {
-  location: string | null;
-  radius?: string | null;
-}): string {
-  const { location, radius = '5000' } = params;
-
-  if (!location) {
-    throw new Error('Location is required for generating a cache key');
-  }
-
-  // Normalize the location by rounding the coordinates
-  const normalizedLocation = normalizeLocation(location);
-
-  // Use the radius directly without normalization
-  const normalizedRadius = radius || '5000';
-
-  // Create a deterministic key based only on the location and radius
-  return `places:${normalizedLocation}:${normalizedRadius}`;
-}
-
-/**
  * Generate a cache key for the place details API
  * We only cache based on placeId
  */

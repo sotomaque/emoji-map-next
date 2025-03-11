@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AppPage from '@/app/app/page';
@@ -58,15 +59,17 @@ vi.mock('@/store/useFiltersStore', () => ({
   })),
 }));
 
-vi.mock('@/hooks/usePlaces', () => ({
+vi.mock('@/hooks/usePlaces/usePlaces', () => ({
   usePlaces: vi.fn(() => ({
     isLoading: false,
     refetch: vi.fn(),
     data: { mapDataPoints: [] },
   })),
   useCurrentLocation: vi.fn(() => ({
-    data: null,
+    data: { lat: 37.7749, lng: -122.4194 },
     isLoading: false,
+    isSuccess: true,
+    error: null,
   })),
 }));
 
@@ -104,11 +107,28 @@ describe('AppPage', () => {
     prefetch: vi.fn(),
   };
 
+  // Create a new QueryClient for each test
+  let queryClient: QueryClient;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useRouter).mockReturnValue(
       mockRouter as ReturnType<typeof useRouter>
     );
+
+    // Initialize a new QueryClient for each test
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    // Mock console methods to keep test output clean
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   it('should redirect to home page when app is disabled', () => {
@@ -127,8 +147,12 @@ describe('AppPage', () => {
     // Mock the feature flag to return true (app enabled)
     vi.mocked(useGateValue).mockReturnValue(true);
 
-    // Render the component
-    render(<AppPage />);
+    // Render the component with QueryClientProvider
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppPage />
+      </QueryClientProvider>
+    );
 
     // Verify that router.push was not called
     expect(mockRouter.push).not.toHaveBeenCalled();

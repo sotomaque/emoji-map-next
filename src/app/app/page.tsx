@@ -7,7 +7,7 @@ import { useGateValue } from '@statsig/react-bindings';
 import EmojiSelectorSkeleton from '@/components/map/emoji-selector/emoji-selector-skeleton';
 import MapSkeleton from '@/components/map/map-skeleton';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
-import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
+import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces/usePlaces';
 import {
   useMarkerStore,
   type Viewport,
@@ -70,13 +70,10 @@ function AppContent() {
   } = useFiltersStore();
 
   // Local state for favorites
-  const [favoriteMarkerIds] = useState<Set<string>>(
-    new Set()
-  );
+  const [favoriteMarkerIds] = useState<Set<string>>(new Set());
 
   // Get user location
-  const { data: locationData, } =
-    useCurrentLocation();
+  const { data: locationData } = useCurrentLocation();
 
   // Update user location when available
   useEffect(() => {
@@ -254,7 +251,6 @@ function AppContent() {
     setVisibleMarkers,
   ]);
 
-
   // Handle map bounds changed
   const handleBoundsChanged = useCallback(
     (bounds: google.maps.LatLngBounds | null) => {
@@ -312,25 +308,32 @@ function AppContent() {
           // Even though we have markers, we should still fetch new ones for this viewport
           // to ensure we have the most up-to-date data
           // We'll do this in the background without showing a loading state
-          console.log('[AppPage] Fetching additional markers for this viewport in the background');
-          refetch().then((result) => {
-            if (result.data && result.data.mapDataPoints) {
-              // Add the new markers to the store
-              setMarkers(result.data.mapDataPoints, newViewport);
+          console.log(
+            '[AppPage] Fetching additional markers for this viewport in the background'
+          );
+          refetch()
+            .then((result) => {
+              if (result.data && result.data.mapDataPoints) {
+                // Add the new markers to the store
+                setMarkers(result.data.mapDataPoints, newViewport);
 
-              // Apply filters again with the new markers
-              const updatedFilteredMarkers = filterMarkers(filterCriteria);
+                // Apply filters again with the new markers
+                const updatedFilteredMarkers = filterMarkers(filterCriteria);
 
-              // Update visible markers
-              setVisibleMarkers(updatedFilteredMarkers);
+                // Update visible markers
+                setVisibleMarkers(updatedFilteredMarkers);
 
-              console.log(
-                `[AppPage] Updated with ${result.data.mapDataPoints.length} additional markers, now showing ${updatedFilteredMarkers.length} filtered markers`
+                console.log(
+                  `[AppPage] Updated with ${result.data.mapDataPoints.length} additional markers, now showing ${updatedFilteredMarkers.length} filtered markers`
+                );
+              }
+            })
+            .catch((error) => {
+              console.error(
+                '[AppPage] Error fetching additional markers:',
+                error
               );
-            }
-          }).catch((error) => {
-            console.error('[AppPage] Error fetching additional markers:', error);
-          });
+            });
         } else {
           console.log('[AppPage] Fetching new markers for this viewport');
           // Trigger refetch with transition
@@ -340,7 +343,19 @@ function AppContent() {
         }
       }, 1000); // 1000ms debounce (1 second)
     },
-    [setViewportBounds, zustandViewport.center, zustandViewport.zoom, setCurrentViewport, hasViewportCached, filterMarkers, filterCriteria, setVisibleMarkers, refetch, setMarkers, handleRefetchWithTransition]
+    [
+      setViewportBounds,
+      zustandViewport.center,
+      zustandViewport.zoom,
+      setCurrentViewport,
+      hasViewportCached,
+      filterMarkers,
+      filterCriteria,
+      setVisibleMarkers,
+      refetch,
+      setMarkers,
+      handleRefetchWithTransition,
+    ]
   );
 
   // Handle map center changed
@@ -432,23 +447,17 @@ function AppContent() {
     [zustandViewport, setViewportZoom, setCurrentViewport]
   );
 
-
   // Handle map click
-  const handleMapClick = useCallback(() => {
-  }, []);
+  const handleMapClick = useCallback(() => {}, []);
 
   // Handle marker click
-  const handleMarkerClick = useCallback(() => {
-  }, []);
+  const handleMarkerClick = useCallback(() => {}, []);
 
   return (
     <div className='flex flex-col h-screen'>
       <div className='flex justify-center'>
         <div className='absolute top-0 z-50 py-4'>
-          <EmojiSelector
-            onShuffleClick={() => { }}
-            isLoading={false}
-          />
+          <EmojiSelector onShuffleClick={() => {}} isLoading={false} />
         </div>
       </div>
 

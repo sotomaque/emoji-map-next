@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navItems } from '@/constants/routes';
-import { useNavItems } from '@/hooks/useNavItems';
+import { useNavItems } from '@/hooks/useNavItems/useNavItems';
 import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 
 export function Footer() {
