@@ -8,7 +8,6 @@ import EmojiSelectorSkeleton from '@/components/map/emoji-selector/emoji-selecto
 import MapSkeleton from '@/components/map/map-skeleton';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
-import type { MapDataPoint } from '@/services/places';
 import {
   useMarkerStore,
   type Viewport,
@@ -56,10 +55,9 @@ export default function AppPage() {
 function AppContent() {
   // Get filters from Zustand store
   const {
-    selectedCategories,
+    selectedCategoryKeys,
     showFavoritesOnly,
     isAllCategoriesMode,
-    getAllCategoryKeywords,
     openNow,
     priceLevel,
     minimumRating,
@@ -72,12 +70,12 @@ function AppContent() {
   } = useFiltersStore();
 
   // Local state for favorites
-  const [favoriteMarkerIds, setFavoriteMarkerIds] = useState<Set<string>>(
+  const [favoriteMarkerIds] = useState<Set<string>>(
     new Set()
   );
 
   // Get user location
-  const { data: locationData, isLoading: isLoadingLocation } =
+  const { data: locationData, } =
     useCurrentLocation();
 
   // Update user location when available
@@ -87,10 +85,12 @@ function AppContent() {
     }
   }, [locationData, setUserLocation]);
 
-  // Determine categories to use for API request
-  const categoriesToUse = isAllCategoriesMode
-    ? getAllCategoryKeywords()
-    : selectedCategories;
+  // Determine category keys to use for API request
+  const categoryKeysToUse = isAllCategoriesMode
+    ? [] // Empty array when in "All" mode (either no categories or all categories selected)
+    : selectedCategoryKeys;
+
+  console.log({ categoryKeysToUse });
 
   // Use viewport center for API request if available, otherwise use user location
   const searchLocation = zustandViewport.center || userLocation;
@@ -107,12 +107,12 @@ function AppContent() {
   const needsRefetchRef = useRef(false);
 
   // Fetch places based on filters and viewport
-  const { isLoading: isLoadingPlaces, refetch } = usePlaces({
+  const { refetch } = usePlaces({
     latitude: searchLocation?.lat || 0,
     longitude: searchLocation?.lng || 0,
     radius: 5000, // 5km
     bounds: zustandViewport.bounds || undefined,
-    categories: categoriesToUse,
+    categoryKeys: categoryKeysToUse,
     openNow,
     priceLevel,
     minimumRating: minimumRating || undefined,
@@ -129,7 +129,6 @@ function AppContent() {
     setIsTransitioning,
     hasViewportCached,
     filterMarkers,
-    clearCache,
   } = useMarkerStore();
 
   // Convert Zustand viewport to our Viewport type
@@ -145,7 +144,7 @@ function AppContent() {
   // Create filter criteria object
   const filterCriteria: FilterCriteria = useMemo(
     () => ({
-      categories: selectedCategories,
+      categories: selectedCategoryKeys.map((key) => key.toString()), // Convert to strings for compatibility
       isAllCategoriesMode,
       showFavoritesOnly,
       favoriteIds: favoriteMarkerIds,
@@ -154,7 +153,7 @@ function AppContent() {
       minimumRating,
     }),
     [
-      selectedCategories,
+      selectedCategoryKeys,
       isAllCategoriesMode,
       showFavoritesOnly,
       favoriteMarkerIds,
@@ -184,13 +183,13 @@ function AppContent() {
           setMarkers(result.data.mapDataPoints, viewport);
 
           // Apply filters to determine which markers to show
-          const filteredMarkers = filterMarkers(viewport, filterCriteria);
+          const filteredMarkers = filterMarkers(filterCriteria);
 
           // Update visible markers
           setVisibleMarkers(filteredMarkers);
 
           console.log(
-            `[AppPage] Showing ${filteredMarkers.length} filtered markers out of ${result.data.mapDataPoints.length} total`
+            `[AppPage] Showing ${filteredMarkers.length} filtered markers out of all accumulated markers in the store`
           );
         }
 
@@ -234,7 +233,7 @@ function AppContent() {
       console.log('[AppPage] Applying filters locally');
 
       // Apply filters locally
-      const filteredMarkers = filterMarkers(currentViewport, filterCriteria);
+      const filteredMarkers = filterMarkers(filterCriteria);
 
       // Update visible markers without making a network request
       setVisibleMarkers(filteredMarkers);
@@ -254,6 +253,7 @@ function AppContent() {
     filterMarkers,
     setVisibleMarkers,
   ]);
+
 
   // Handle map bounds changed
   const handleBoundsChanged = useCallback(
@@ -300,7 +300,7 @@ function AppContent() {
           console.log('[AppPage] Using cached markers for this viewport');
 
           // Apply filters to the cached markers
-          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
+          const filteredMarkers = filterMarkers(filterCriteria);
 
           // Update visible markers
           setVisibleMarkers(filteredMarkers);
@@ -308,6 +308,29 @@ function AppContent() {
           console.log(
             `[AppPage] Showing ${filteredMarkers.length} filtered markers`
           );
+
+          // Even though we have markers, we should still fetch new ones for this viewport
+          // to ensure we have the most up-to-date data
+          // We'll do this in the background without showing a loading state
+          console.log('[AppPage] Fetching additional markers for this viewport in the background');
+          refetch().then((result) => {
+            if (result.data && result.data.mapDataPoints) {
+              // Add the new markers to the store
+              setMarkers(result.data.mapDataPoints, newViewport);
+
+              // Apply filters again with the new markers
+              const updatedFilteredMarkers = filterMarkers(filterCriteria);
+
+              // Update visible markers
+              setVisibleMarkers(updatedFilteredMarkers);
+
+              console.log(
+                `[AppPage] Updated with ${result.data.mapDataPoints.length} additional markers, now showing ${updatedFilteredMarkers.length} filtered markers`
+              );
+            }
+          }).catch((error) => {
+            console.error('[AppPage] Error fetching additional markers:', error);
+          });
         } else {
           console.log('[AppPage] Fetching new markers for this viewport');
           // Trigger refetch with transition
@@ -317,16 +340,7 @@ function AppContent() {
         }
       }, 1000); // 1000ms debounce (1 second)
     },
-    [
-      zustandViewport,
-      setViewportBounds,
-      setCurrentViewport,
-      hasViewportCached,
-      filterMarkers,
-      filterCriteria,
-      setVisibleMarkers,
-      handleRefetchWithTransition,
-    ]
+    [setViewportBounds, zustandViewport.center, zustandViewport.zoom, setCurrentViewport, hasViewportCached, filterMarkers, filterCriteria, setVisibleMarkers, refetch, setMarkers, handleRefetchWithTransition]
   );
 
   // Handle map center changed
@@ -366,7 +380,7 @@ function AppContent() {
           console.log('[AppPage] Using cached markers for this viewport');
 
           // Apply filters to the cached markers
-          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
+          const filteredMarkers = filterMarkers(filterCriteria);
 
           // Update visible markers
           setVisibleMarkers(filteredMarkers);
@@ -418,48 +432,22 @@ function AppContent() {
     [zustandViewport, setViewportZoom, setCurrentViewport]
   );
 
-  // Handle shuffle click (refetch data)
-  const handleShuffleClick = useCallback(() => {
-    console.log('Shuffle clicked');
-
-    // Clear the marker cache
-    clearCache();
-
-    // Trigger a refetch with transition
-    handleRefetchWithTransition(currentViewport);
-  }, [clearCache, handleRefetchWithTransition, currentViewport]);
 
   // Handle map click
   const handleMapClick = useCallback(() => {
-    console.log('Map clicked');
-    // Close any open info windows or perform other actions
   }, []);
 
   // Handle marker click
-  const handleMarkerClick = useCallback((marker: MapDataPoint) => {
-    console.log('Marker clicked:', marker);
-    // Toggle favorite status
-    setFavoriteMarkerIds((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(marker.id)) {
-        newFavorites.delete(marker.id);
-      } else {
-        newFavorites.add(marker.id);
-      }
-      return newFavorites;
-    });
+  const handleMarkerClick = useCallback(() => {
   }, []);
-
-  // Loading state
-  const isLoading = isLoadingLocation || isLoadingPlaces;
 
   return (
     <div className='flex flex-col h-screen'>
       <div className='flex justify-center'>
         <div className='absolute top-0 z-50 py-4'>
           <EmojiSelector
-            onShuffleClick={handleShuffleClick}
-            isLoading={isLoading}
+            onShuffleClick={() => { }}
+            isLoading={false}
           />
         </div>
       </div>

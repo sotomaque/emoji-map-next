@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { describe, it, expect } from 'vitest';
-import { setupApiTestServer } from '../../helpers/api-test-helpers';
+import { setupApiTestServer } from '../../../../vitest.setup';
 
 // Setup server with API handlers
 const server = setupApiTestServer();

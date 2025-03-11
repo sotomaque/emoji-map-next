@@ -11,14 +11,16 @@ import { OverlayView } from '@react-google-maps/api';
  * @property {string} emoji - The emoji character to display as the marker
  * @property {Function} onClick - Callback function triggered when the marker is clicked
  * @property {boolean} [isNew=false] - Whether this is a newly added marker (affects animation)
- * @property {number} [delay=0] - Delay in milliseconds before showing the marker (for staggered animations)
+ * @property {number} [animationDelay=0] - Delay in milliseconds before showing the marker (for staggered animations)
+ * @property {boolean} [isTransitioning=false] - Whether the map is currently transitioning between viewports
  */
 interface EmojiMarkerProps {
   position: google.maps.LatLngLiteral;
   emoji: string;
   onClick: () => void;
   isNew?: boolean;
-  delay?: number;
+  animationDelay?: number;
+  isTransitioning?: boolean;
 }
 
 /**
@@ -42,7 +44,8 @@ const EmojiMarker = memo(
     emoji,
     onClick,
     isNew = false,
-    delay = 0,
+    animationDelay = 0,
+    isTransitioning = false,
   }: EmojiMarkerProps) {
     // State to track if the marker is visible
     const [isVisible, setIsVisible] = useState(!isNew);
@@ -53,21 +56,24 @@ const EmojiMarker = memo(
     // Ref to track the previous position
     const prevPositionRef = useRef(position);
 
-    // Fade in the marker after it's mounted
+    // Effect to handle delayed appearance for new markers
     useEffect(() => {
-      // If it's not a new marker, it should be visible immediately
-      if (!isNew) {
-        setIsVisible(true);
-        return;
+      if (isNew) {
+        const timer = setTimeout(() => {
+          setIsVisible(true);
+        }, animationDelay);
+
+        return () => clearTimeout(timer);
       }
+    }, [isNew, animationDelay]);
 
-      // For new markers, apply the delay before showing
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, delay);
-
-      return () => clearTimeout(timer);
-    }, [isNew, delay]);
+    // Effect to handle transitioning state
+    useEffect(() => {
+      if (isTransitioning) {
+        // When transitioning, we can add special effects or behaviors
+        console.log(`[EmojiMarker] Marker ${emoji} is in transition state`);
+      }
+    }, [isTransitioning, emoji]);
 
     // Log when marker renders
     useEffect(() => {
@@ -78,7 +84,7 @@ const EmojiMarker = memo(
 
       if (isFirstRender.current) {
         console.log(
-          `[EmojiMarker] Initial render of ${emoji} marker, isNew: ${isNew}, delay: ${delay}ms`
+          `[EmojiMarker] Initial render of ${emoji} marker, isNew: ${isNew}, animationDelay: ${animationDelay}ms`
         );
         isFirstRender.current = false;
         return;
@@ -98,7 +104,7 @@ const EmojiMarker = memo(
       console.log(
         `[EmojiMarker] Re-render of ${emoji} marker (no position change)`
       );
-    }, [position, emoji, isNew, delay]);
+    }, [position, emoji, isNew, animationDelay]);
 
     return (
       <OverlayView

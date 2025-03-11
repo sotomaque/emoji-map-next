@@ -1,40 +1,30 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { categories } from '@/services/places';
-
-// Extract all category names from the categories data
-const allCategoryNames = categories.map(([, name]) => name);
-
-// Current store version
-const STORE_VERSION = 1;
+import { CATEGORY_MAP } from '@/constants/category-map';
 
 /**
- * Helper function for development-only logging
- *
- * @param {string} message - The message to log
- * @param {unknown} [data] - Optional data to log with the message
+ * Development logging helper
  */
 const logDev = (message: string, data?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
-    if (data) {
-      console.log(`[FiltersStore] ${message}`, data);
-    } else {
-      console.log(`[FiltersStore] ${message}`);
-    }
+    console.log(`[FiltersStore] ${message}`, data);
   }
 };
 
 /**
+ * Get all category keys
+ */
+const getAllCategoryKeys = (): number[] => {
+  return Object.keys(CATEGORY_MAP).map(Number);
+};
+
+/**
  * Filters State Interface
- *
- * Defines the state and actions for the filters store used to filter map markers
- *
- * @interface FiltersState
  */
 export interface FiltersState {
-  /** Selected categories (empty array means "All") */
-  selectedCategories: string[];
+  /** Selected category keys (empty array means "All") */
+  selectedCategoryKeys: number[];
 
   /** Show only favorites */
   showFavoritesOnly: boolean;
@@ -64,14 +54,17 @@ export interface FiltersState {
   /** Computed value for "All" mode */
   isAllCategoriesMode: boolean;
 
-  /** Get all category keywords for API requests */
-  getAllCategoryKeywords: () => string[];
+  /** Get all category keys for API requests */
+  getAllCategoryKeys: () => number[];
 
-  /** Set selected categories */
-  setSelectedCategories: (categories: string[]) => void;
+  /** Get selected category names (for backward compatibility) */
+  getSelectedCategoryNames: () => string[];
 
-  /** Toggle a category selection */
-  toggleCategory: (category: string) => void;
+  /** Set selected category keys */
+  setSelectedCategoryKeys: (keys: number[]) => void;
+
+  /** Toggle a category key selection */
+  toggleCategoryKey: (key: number) => void;
 
   /** Set show favorites only filter */
   setShowFavoritesOnly: (show: boolean) => void;
@@ -105,26 +98,123 @@ export interface FiltersState {
 }
 
 /**
- * Migration function to handle store version changes
- *
- * @param {unknown} persistedState - The persisted state from localStorage
- * @param {number} version - The version of the persisted state
- * @returns {unknown} The migrated state
+ * Migration function for persisted state
  */
 const migrate = (persistedState: unknown, version: number) => {
-  if (version === 0) {
-    // Migration from version 0 to 1
-    const state = persistedState as Partial<FiltersState>;
-    return {
-      ...state,
-      // Add any new fields or transform existing ones
-      openNow: state.openNow || false,
-      priceLevel: state.priceLevel || [1, 2, 3, 4],
-      minimumRating: state.minimumRating || null,
-      isAllCategoriesMode: state.selectedCategories?.length === 0,
-    };
+  logDev(`Migrating state from version ${version}`);
+
+  // If we have a fresh state or no version, return a fresh state
+  if (!persistedState || version === 0) {
+    return createFreshState();
   }
+
+  // Handle migrations based on version
+  if (version === 1) {
+    // Migration from v1 to v2: Convert selectedCategories to selectedCategoryKeys
+    interface OldState {
+      selectedCategories?: string[];
+      showFavoritesOnly?: boolean;
+      openNow?: boolean;
+      priceLevel?: number[];
+      minimumRating?: number | null;
+      userLocation?: { lat: number; lng: number } | null;
+      viewport?: {
+        center: { lat: number; lng: number } | null;
+        bounds: {
+          ne: { lat: number; lng: number };
+          sw: { lat: number; lng: number };
+        } | null;
+        zoom: number;
+      };
+    }
+
+    const oldState = persistedState as OldState;
+    const freshState = createFreshState();
+
+    // Convert old selectedCategories to new selectedCategoryKeys
+    if (oldState.selectedCategories && oldState.selectedCategories.length > 0) {
+      const categoryKeys: number[] = [];
+      for (const categoryName of oldState.selectedCategories) {
+        // Find the key for this category name
+        const entry = Object.entries(CATEGORY_MAP).find(
+          ([, category]) => category.name === categoryName
+        );
+        if (entry) {
+          categoryKeys.push(Number(entry[0]));
+        }
+      }
+      freshState.selectedCategoryKeys = categoryKeys;
+      freshState.isAllCategoriesMode = categoryKeys.length === 0;
+    }
+
+    // Copy over other properties
+    if (oldState.showFavoritesOnly !== undefined)
+      freshState.showFavoritesOnly = oldState.showFavoritesOnly;
+    if (oldState.openNow !== undefined) freshState.openNow = oldState.openNow;
+    if (oldState.priceLevel !== undefined)
+      freshState.priceLevel = oldState.priceLevel;
+    if (oldState.minimumRating !== undefined)
+      freshState.minimumRating = oldState.minimumRating;
+    if (oldState.userLocation !== undefined)
+      freshState.userLocation = oldState.userLocation;
+    if (oldState.viewport !== undefined)
+      freshState.viewport = oldState.viewport;
+
+    return freshState;
+  }
+
+  // If we don't have a specific migration, return the persisted state
   return persistedState;
+};
+
+/**
+ * Create a fresh state object
+ */
+const createFreshState = (): Omit<
+  FiltersState,
+  keyof Omit<
+    FiltersState,
+    | 'isAllCategoriesMode'
+    | 'selectedCategoryKeys'
+    | 'showFavoritesOnly'
+    | 'openNow'
+    | 'priceLevel'
+    | 'minimumRating'
+    | 'userLocation'
+    | 'viewport'
+  >
+> => {
+  // Create a fresh state with default values
+  const freshState = {
+    selectedCategoryKeys: [],
+    showFavoritesOnly: false,
+    openNow: false,
+    priceLevel: [1, 2, 3, 4],
+    minimumRating: null,
+    userLocation: null,
+    viewport: {
+      center: null,
+      bounds: null,
+      zoom: 12,
+    },
+    isAllCategoriesMode: true,
+  };
+
+  // Return the fresh state (cast to unknown first to satisfy TypeScript)
+  return freshState as unknown as Omit<
+    FiltersState,
+    keyof Omit<
+      FiltersState,
+      | 'isAllCategoriesMode'
+      | 'selectedCategoryKeys'
+      | 'showFavoritesOnly'
+      | 'openNow'
+      | 'priceLevel'
+      | 'minimumRating'
+      | 'userLocation'
+      | 'viewport'
+    >
+  >;
 };
 
 /**
@@ -133,11 +223,13 @@ const migrate = (persistedState: unknown, version: number) => {
  * Zustand store for managing map filters state with persistence and dev tools
  * Uses Immer for immutable state updates
  */
+// Create the vanilla store
 export const useFiltersStore = create<FiltersState>()(
   devtools(
     persist(
-      immer((set) => ({
-        selectedCategories: [],
+      immer((set, get) => ({
+        // Initial state
+        selectedCategoryKeys: [],
         showFavoritesOnly: false,
         openNow: false,
         priceLevel: [1, 2, 3, 4],
@@ -146,111 +238,138 @@ export const useFiltersStore = create<FiltersState>()(
         viewport: {
           center: null,
           bounds: null,
-          zoom: 14,
+          zoom: 12,
         },
-        isAllCategoriesMode: true, // Default to true since selectedCategories is empty
 
-        // Get all category keywords for API requests
-        getAllCategoryKeywords: () => allCategoryNames,
+        // Initialize isAllCategoriesMode as a regular property
+        isAllCategoriesMode: true,
 
-        setSelectedCategories: (categories) => {
-          logDev('setSelectedCategories called with:', categories);
-          set((state) => {
-            state.selectedCategories = categories;
-            // Update isAllCategoriesMode based on the new categories
-            state.isAllCategoriesMode = categories.length === 0;
+        // Actions
+        getAllCategoryKeys: () => {
+          return getAllCategoryKeys();
+        },
+
+        getSelectedCategoryNames: () => {
+          const { selectedCategoryKeys } = get();
+          return selectedCategoryKeys
+            .map((key: number) => CATEGORY_MAP[key]?.name || '')
+            .filter(Boolean);
+        },
+
+        setSelectedCategoryKeys: (keys: number[]) => {
+          logDev('Setting selected category keys', keys);
+          set((state: FiltersState) => {
+            state.selectedCategoryKeys = keys;
+            // Update isAllCategoriesMode when keys change
+            state.isAllCategoriesMode = keys.length === 0;
+            return state;
           });
         },
 
-        toggleCategory: (category) => {
-          logDev('toggleCategory called with:', category);
-
-          set((state) => {
-            logDev('Current selectedCategories:', state.selectedCategories);
-
-            // If category is already selected, remove it
-            if (state.selectedCategories.includes(category)) {
-              logDev('Removing category:', category);
-              state.selectedCategories = state.selectedCategories.filter(
-                (c: string) => c !== category
-              );
-              state.isAllCategoriesMode = state.selectedCategories.length === 0;
-              return;
+        toggleCategoryKey: (key: number) => {
+          logDev('Toggling category key', key);
+          set((state: FiltersState) => {
+            const index = state.selectedCategoryKeys.indexOf(key);
+            if (index === -1) {
+              state.selectedCategoryKeys.push(key);
+            } else {
+              state.selectedCategoryKeys.splice(index, 1);
             }
-
-            // Otherwise, add it
-            logDev('Adding category:', category);
-            state.selectedCategories.push(category);
-            state.isAllCategoriesMode = false;
+            // Update isAllCategoriesMode when keys change
+            state.isAllCategoriesMode = state.selectedCategoryKeys.length === 0;
+            return state;
           });
         },
 
-        setShowFavoritesOnly: (show) =>
-          set((state) => {
+        setShowFavoritesOnly: (show: boolean) => {
+          logDev('Setting show favorites only', show);
+          set((state: FiltersState) => {
             state.showFavoritesOnly = show;
-          }),
+            return state;
+          });
+        },
 
-        setOpenNow: (openNow) =>
-          set((state) => {
+        setOpenNow: (openNow: boolean) => {
+          logDev('Setting open now', openNow);
+          set((state: FiltersState) => {
             state.openNow = openNow;
-          }),
+            return state;
+          });
+        },
 
-        setPriceLevel: (priceLevel) =>
-          set((state) => {
+        setPriceLevel: (priceLevel: number[]) => {
+          logDev('Setting price level', priceLevel);
+          set((state: FiltersState) => {
             state.priceLevel = priceLevel;
-          }),
+            return state;
+          });
+        },
 
-        setMinimumRating: (rating) =>
-          set((state) => {
+        setMinimumRating: (rating: number | null) => {
+          logDev('Setting minimum rating', rating);
+          set((state: FiltersState) => {
             state.minimumRating = rating;
-          }),
+            return state;
+          });
+        },
 
-        setUserLocation: (location) =>
-          set((state) => {
+        setUserLocation: (location: { lat: number; lng: number } | null) => {
+          logDev('Setting user location', location);
+          set((state: FiltersState) => {
             state.userLocation = location;
-            // Only update the viewport center when user location changes if center is null
-            if (location && state.viewport.center === null) {
-              state.viewport.center = location;
-            }
-          }),
+            return state;
+          });
+        },
 
-        setViewportCenter: (center) =>
-          set((state) => {
+        setViewportCenter: (center: { lat: number; lng: number }) => {
+          set((state: FiltersState) => {
             state.viewport.center = center;
-          }),
+            return state;
+          });
+        },
 
-        setViewportBounds: (bounds) =>
-          set((state) => {
+        setViewportBounds: (bounds: {
+          ne: { lat: number; lng: number };
+          sw: { lat: number; lng: number };
+        }) => {
+          set((state: FiltersState) => {
             state.viewport.bounds = bounds;
-          }),
+            return state;
+          });
+        },
 
-        setViewportZoom: (zoom) =>
-          set((state) => {
+        setViewportZoom: (zoom: number) => {
+          set((state: FiltersState) => {
             state.viewport.zoom = zoom;
-          }),
+            return state;
+          });
+        },
 
-        resetFilters: () =>
-          set((state) => {
-            state.selectedCategories = [];
+        resetFilters: () => {
+          logDev('Resetting filters');
+          set((state: FiltersState) => {
+            state.selectedCategoryKeys = [];
             state.showFavoritesOnly = false;
             state.openNow = false;
             state.priceLevel = [1, 2, 3, 4];
             state.minimumRating = null;
             state.isAllCategoriesMode = true;
-            // Don't reset viewport or user location
-          }),
+            return state;
+          });
+        },
       })),
       {
-        name: 'emoji-map-filters',
-        version: STORE_VERSION,
+        name: 'filters-storage',
+        version: 2,
         migrate,
-        partialize: (state) => ({
-          selectedCategories: state.selectedCategories,
+        partialize: (state: FiltersState) => ({
+          selectedCategoryKeys: state.selectedCategoryKeys,
           showFavoritesOnly: state.showFavoritesOnly,
           openNow: state.openNow,
           priceLevel: state.priceLevel,
           minimumRating: state.minimumRating,
           isAllCategoriesMode: state.isAllCategoriesMode,
+          // Don't persist computed properties or functions
           // Don't persist viewport as it will be set on component mount
         }),
       }

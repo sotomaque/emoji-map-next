@@ -1,17 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-
-// Define MapDataPoint type since we can't import it
-export interface MapDataPoint {
-  id: string;
-  position: { lat: number; lng: number };
-  emoji: string;
-  title: string;
-  category?: string;
-  priceLevel?: number;
-  openNow?: boolean;
-  rating?: number;
-}
+import type { SimplifiedMapPlace } from '@/types/local-places-types';
 
 // Define viewport type
 export type Viewport = {
@@ -49,13 +38,13 @@ export interface FilterCriteria {
 // Define the store type
 interface MarkerStore {
   // All markers by ID
-  markers: Map<string, MapDataPoint>;
+  markers: Map<string, SimplifiedMapPlace>;
 
   // Markers by viewport key (unfiltered)
   viewportMarkers: Map<string, Set<string>>;
 
   // Currently visible markers (filtered)
-  visibleMarkers: MapDataPoint[];
+  visibleMarkers: SimplifiedMapPlace[];
 
   // New markers that should be animated
   newMarkerIds: Set<string>;
@@ -67,16 +56,13 @@ interface MarkerStore {
   isTransitioning: boolean;
 
   // Actions
-  setMarkers: (markers: MapDataPoint[], viewport: Viewport) => void;
-  setVisibleMarkers: (markers: MapDataPoint[]) => void;
+  setMarkers: (markers: SimplifiedMapPlace[], viewport: Viewport) => void;
+  setVisibleMarkers: (markers: SimplifiedMapPlace[]) => void;
   setCurrentViewport: (viewport: Viewport) => void;
   setIsTransitioning: (isTransitioning: boolean) => void;
   hasViewportCached: (viewport: Viewport) => boolean;
-  getMarkersForViewport: (viewport: Viewport) => MapDataPoint[];
-  filterMarkers: (
-    viewport: Viewport,
-    filterCriteria: FilterCriteria
-  ) => MapDataPoint[];
+  getMarkersForViewport: () => SimplifiedMapPlace[];
+  filterMarkers: (filterCriteria: FilterCriteria) => SimplifiedMapPlace[];
   clearCache: () => void;
 }
 
@@ -90,10 +76,12 @@ export const useMarkerStore = create<MarkerStore>()(
     currentViewport: null,
     isTransitioning: false,
 
-    setMarkers: (markers: MapDataPoint[], viewport: Viewport) => {
+    setMarkers: (markers: SimplifiedMapPlace[], viewport: Viewport) => {
       const viewportKey = getViewportKey(viewport);
       const newMarkerIds = new Set<string>();
       const viewportMarkerIds = new Set<string>();
+      
+      // Get the existing markers map - we'll add to this instead of replacing it
       const markersMap = new Map(get().markers);
 
       // Process each marker
@@ -120,10 +108,13 @@ export const useMarkerStore = create<MarkerStore>()(
       const viewportMarkersMap = new Map(get().viewportMarkers);
       viewportMarkersMap.set(viewportKey, viewportMarkerIds);
 
+      // Get all markers as an array
+      const allMarkers = Array.from(markersMap.values());
+
       set({
         markers: markersMap,
         viewportMarkers: viewportMarkersMap,
-        visibleMarkers: markers,
+        visibleMarkers: allMarkers, // Show all markers, not just the new ones
         newMarkerIds,
         currentViewport: viewport,
       });
@@ -132,9 +123,11 @@ export const useMarkerStore = create<MarkerStore>()(
         `[MarkerStore] Cached ${markers.length} markers for viewport ${viewportKey}`
       );
       console.log(`[MarkerStore] New markers: ${newMarkerIds.size}`);
+      console.log(`[MarkerStore] Total markers in store: ${markersMap.size}`);
+      console.log(`[MarkerStore] Visible markers: ${allMarkers.length}`);
     },
 
-    setVisibleMarkers: (markers: MapDataPoint[]) => {
+    setVisibleMarkers: (markers: SimplifiedMapPlace[]) => {
       set({ visibleMarkers: markers });
     },
 
@@ -147,96 +140,84 @@ export const useMarkerStore = create<MarkerStore>()(
     },
 
     hasViewportCached: (viewport: Viewport): boolean => {
+      // Check if we have any markers in the store
+      const hasMarkers = get().markers.size > 0;
+      
+      // If we have markers, we consider all viewports "cached"
+      if (hasMarkers) {
+        return true;
+      }
+      
+      // Otherwise, check if this specific viewport is cached
       const viewportKey = getViewportKey(viewport);
       return get().viewportMarkers.has(viewportKey);
     },
 
-    getMarkersForViewport: (viewport: Viewport): MapDataPoint[] => {
-      const viewportKey = getViewportKey(viewport);
-      const markerIds = get().viewportMarkers.get(viewportKey);
-
-      if (!markerIds) {
-        console.log(
-          `[MarkerStore] No cached markers for viewport ${viewportKey}`
-        );
-        return [];
-      }
-
-      const markers: MapDataPoint[] = [];
-      markerIds.forEach((id) => {
-        const marker = get().markers.get(id);
-        if (marker) {
-          markers.push(marker);
-        }
-      });
-
+    getMarkersForViewport: () => {
+      // Get all markers from the store
+      const markers = get().markers;
+      const allMarkers = Array.from(markers.values());
+      
       console.log(
-        `[MarkerStore] Retrieved ${markers.length} markers for viewport ${viewportKey}`
+        `[MarkerStore] Retrieved ${allMarkers.length} total markers from store`
       );
-      return markers;
+      return allMarkers;
     },
 
     filterMarkers: (
-      viewport: Viewport,
       filterCriteria: FilterCriteria
-    ): MapDataPoint[] => {
-      // Get all markers for the viewport
-      const allMarkers = get().getMarkersForViewport(viewport);
+    ): SimplifiedMapPlace[] => {
+      // Get all markers from the store
+      const markers = get().markers;
+      const filteredMarkers: SimplifiedMapPlace[] = [];
 
-      // Apply filters
-      return allMarkers.filter((marker) => {
-        // Filter by favorites if enabled
+      // Apply filters to all markers
+      markers.forEach((marker) => {
+        // Filter by category
+        if (
+          !filterCriteria.isAllCategoriesMode &&
+          filterCriteria.categories.length > 0 &&
+          marker.category &&
+          !filterCriteria.categories.includes(marker.category)
+        ) {
+          return;
+        }
+
+        // Filter by favorites
         if (
           filterCriteria.showFavoritesOnly &&
           !filterCriteria.favoriteIds.has(marker.id)
         ) {
-          return false;
+          return;
         }
 
-        // Filter by category if not in "All" mode
-        if (
-          !filterCriteria.isAllCategoriesMode &&
-          marker.category &&
-          !filterCriteria.categories.includes(marker.category)
-        ) {
-          return false;
-        }
+        // Skip other filters that don't apply to SimplifiedMapPlace
 
-        // Filter by open now
-        if (filterCriteria.openNow && marker.openNow === false) {
-          return false;
-        }
-
-        // Filter by price level
-        if (
-          marker.priceLevel !== undefined &&
-          !filterCriteria.priceLevel.includes(marker.priceLevel)
-        ) {
-          return false;
-        }
-
-        // Filter by minimum rating
-        if (
-          filterCriteria.minimumRating !== null &&
-          (marker.rating === undefined ||
-            marker.rating < filterCriteria.minimumRating)
-        ) {
-          return false;
-        }
-
-        // Marker passed all filters
-        return true;
+        // If it passes all filters, add it to the filtered markers
+        filteredMarkers.push(marker);
       });
+
+      console.log(`[MarkerStore] Filtered to ${filteredMarkers.length} markers out of ${markers.size} total`);
+      return filteredMarkers;
     },
 
     clearCache: () => {
+      // Keep the markers but clear other state
+      const currentMarkers = get().markers;
+      const allMarkers = Array.from(currentMarkers.values());
+      
       set({
-        markers: new Map(),
+        // Keep the existing markers
+        markers: currentMarkers,
+        // Clear other state
         viewportMarkers: new Map(),
-        visibleMarkers: [],
-        newMarkerIds: new Set(),
+        // Set all markers as visible
+        visibleMarkers: allMarkers,
+        // Mark all as new for animation
+        newMarkerIds: new Set(allMarkers.map(marker => marker.id)),
       });
-      console.log('[MarkerStore] Cache cleared');
+      
+      console.log(`[MarkerStore] Cache partially cleared, keeping ${currentMarkers.size} markers as visible`);
     },
   }))
 );

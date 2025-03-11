@@ -1,15 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
-import { setupApiTestServer } from '../../helpers/api-test-helpers';
 import {
   webhookFixtures,
   mockClerkWebhook,
   createClerkWebhookHandler,
+  setupApiTestServer,
   type MockedPrismaClient,
-} from '../../helpers/clerk-webhook-helpers';
-
-// Setup server with API handlers
-const server = setupApiTestServer();
+} from '../../../../vitest.setup';
 
 // Mock the database operations
 vi.mock('@/lib/db', () => ({
@@ -28,6 +25,9 @@ const mockedPrisma = prisma as unknown as MockedPrismaClient;
 // Mock the Svix webhook verification
 mockClerkWebhook(webhookFixtures.userCreate);
 
+// Setup server with API handlers
+const server = setupApiTestServer();
+
 describe('Clerk Webhook Handler - User Create', () => {
   // Reset mocks before each test
   beforeEach(() => {
@@ -44,19 +44,23 @@ describe('Clerk Webhook Handler - User Create', () => {
       lastName: webhookFixtures.userCreate.data.last_name || 'User',
     };
 
-    // Mock the findUnique method to return null (user not found)
-    mockedPrisma.user.findUnique.mockResolvedValue(null);
+    // Mock findUnique to return null (user doesn't exist)
+    mockedPrisma.user.findUnique.mockResolvedValueOnce(null);
 
-    // Mock the create method to return the new user
-    mockedPrisma.user.create.mockResolvedValue(mockUser);
+    // Mock create to return the mock user
+    mockedPrisma.user.create.mockResolvedValueOnce(mockUser);
 
     // Override the default handler for this specific test
     server.use(
-      createClerkWebhookHandler(webhookFixtures.userCreate, mockedPrisma)
+      createClerkWebhookHandler(
+        webhookFixtures.userCreate,
+        mockedPrisma,
+        'http://localhost/api/webhooks/test-create'
+      )
     );
 
     // Create a mock request with the necessary headers and body
-    const response = await fetch('/api/webhooks', {
+    const response = await fetch('http://localhost/api/webhooks/test-create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,14 +71,12 @@ describe('Clerk Webhook Handler - User Create', () => {
       body: JSON.stringify(webhookFixtures.userCreate),
     });
 
-    // Check that the response is successful
+    // Verify the response
     expect(response.status).toBe(200);
-
-    // Parse the response body
     const data = await response.json();
-
-    // Check that the response contains the expected data
     expect(data).toHaveProperty('success', true);
+    expect(data).toHaveProperty('message');
+    expect(data).toHaveProperty('timestamp');
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({
@@ -101,34 +103,39 @@ describe('Clerk Webhook Handler - User Create', () => {
       lastName: webhookFixtures.userCreate.data.last_name || 'User',
     };
 
-    // Mock the findUnique method to return an existing user
-    mockedPrisma.user.findUnique.mockResolvedValue(mockUser);
+    // Mock findUnique to return the mock user (user exists)
+    mockedPrisma.user.findUnique.mockResolvedValueOnce(mockUser);
 
     // Override the default handler for this specific test
     server.use(
-      createClerkWebhookHandler(webhookFixtures.userCreate, mockedPrisma)
+      createClerkWebhookHandler(
+        webhookFixtures.userCreate,
+        mockedPrisma,
+        'http://localhost/api/webhooks/test-existing'
+      )
     );
 
     // Create a mock request with the necessary headers and body
-    const response = await fetch('/api/webhooks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'svix-id': 'test-svix-id',
-        'svix-timestamp': 'test-svix-timestamp',
-        'svix-signature': 'test-svix-signature',
-      },
-      body: JSON.stringify(webhookFixtures.userCreate),
-    });
+    const response = await fetch(
+      'http://localhost/api/webhooks/test-existing',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'svix-id': 'test-svix-id',
+          'svix-timestamp': 'test-svix-timestamp',
+          'svix-signature': 'test-svix-signature',
+        },
+        body: JSON.stringify(webhookFixtures.userCreate),
+      }
+    );
 
-    // Check that the response is successful
+    // Verify the response
     expect(response.status).toBe(200);
-
-    // Parse the response body
     const data = await response.json();
-
-    // Check that the response contains the expected data
     expect(data).toHaveProperty('success', true);
+    expect(data).toHaveProperty('message');
+    expect(data).toHaveProperty('timestamp');
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({

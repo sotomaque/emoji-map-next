@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   type PlacesParams,
   fetchPlaces,
-  placesToMapDataPoints,
 } from '../services/places';
 
 // Hook for fetching places based on parameters
@@ -32,12 +31,9 @@ export function usePlaces(params: PlacesParams) {
         // Fetch places from the API with all parameters
         const places = await fetchPlaces(apiParams);
 
-        // Convert places to map data points
-        const mapDataPoints = placesToMapDataPoints(places);
-
         return {
           places,
-          mapDataPoints,
+          mapDataPoints: places, // No transformation needed, using SimplifiedMapPlace directly
         };
       } catch (error) {
         console.error(

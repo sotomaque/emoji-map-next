@@ -10,6 +10,7 @@ import React, {
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { useTheme } from 'next-themes';
 import { env } from '@/env';
+import type { SimplifiedMapPlace } from '@/types/local-places-types';
 import EmojiMarker from './emoji-maker/emoji-marker';
 
 // Define the center type
@@ -116,22 +117,11 @@ const darkModeMapOptions = [
   },
 ];
 
-// Define the marker type
-interface MarkerData {
-  id: string;
-  position: LatLngLiteral;
-  emoji: string;
-  title: string;
-  category?: string;
-  priceLevel?: number;
-  openNow?: boolean;
-  rating?: number;
-}
 
 interface GoogleMapComponentProps {
-  markers?: MarkerData[];
+  markers?: SimplifiedMapPlace[];
   onMapClick?: (event: google.maps.MapMouseEvent) => void;
-  onMarkerClick?: (marker: MarkerData) => void;
+  onMarkerClick?: (marker: SimplifiedMapPlace) => void;
   onBoundsChanged?: (bounds: google.maps.LatLngBounds | null) => void;
   onCenterChanged?: (center: LatLngLiteral) => void;
   onZoomChanged?: (zoom: number) => void;
@@ -284,11 +274,13 @@ export default function GoogleMapComponent({
       return (
         <EmojiMarker
           key={marker.id}
-          position={marker.position}
+          position={{
+            lat: marker.location.latitude,
+            lng: marker.location.longitude,
+          }}
           emoji={marker.emoji}
           onClick={() => onMarkerClick?.(marker)}
           isNew={isNewMarker}
-          delay={delay}
         />
       );
     });

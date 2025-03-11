@@ -41,12 +41,12 @@ vi.mock('@/components/map/map-skeleton', () => ({
 
 vi.mock('@/store/useFiltersStore', () => ({
   useFiltersStore: vi.fn(() => ({
-    selectedCategories: [],
+    selectedCategoryKeys: [],
     showFavoritesOnly: false,
-    isAllCategoriesMode: false,
-    getAllCategoryKeywords: vi.fn(() => []),
+    isAllCategoriesMode: true,
+    getAllCategoryKeys: vi.fn(() => [1, 2, 3, 4, 5]),
     openNow: false,
-    priceLevel: null,
+    priceLevel: [1, 2, 3, 4],
     minimumRating: null,
     userLocation: null,
     viewport: { center: null, bounds: null, zoom: 10 },
@@ -54,6 +54,7 @@ vi.mock('@/store/useFiltersStore', () => ({
     setViewportCenter: vi.fn(),
     setViewportBounds: vi.fn(),
     setViewportZoom: vi.fn(),
+    getSelectedCategoryNames: vi.fn(() => []),
   })),
 }));
 

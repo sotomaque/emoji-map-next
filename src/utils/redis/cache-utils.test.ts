@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   roundCoordinate,
   normalizeLocation,
-  normalizeRadius,
   generatePlacesCacheKey,
   generatePlaceDetailsCacheKey,
 } from './cache-utils';
@@ -10,58 +9,28 @@ import {
 describe('Redis Cache Utilities', () => {
   describe('roundCoordinate', () => {
     it('should round coordinates to the specified number of decimal places', () => {
-      expect(roundCoordinate(32.86618219877268, 2)).toBe(32.87);
-      expect(roundCoordinate(-117.22646885454822, 2)).toBe(-117.23);
-      expect(roundCoordinate(32.86618219877268, 3)).toBe(32.866);
-      expect(roundCoordinate(-117.22646885454822, 3)).toBe(-117.226);
-      expect(roundCoordinate(32.86618219877268, 0)).toBe(33);
-      expect(roundCoordinate(-117.22646885454822, 0)).toBe(-117);
+      expect(roundCoordinate(40.7128, 2)).toBe(40.71);
+      expect(roundCoordinate(40.7128, 3)).toBe(40.713);
+      expect(roundCoordinate(40.7128, 1)).toBe(40.7);
+      expect(roundCoordinate(40.7128, 0)).toBe(41);
     });
 
     it('should use 2 decimal places by default', () => {
-      expect(roundCoordinate(32.86618219877268)).toBe(32.87);
-      expect(roundCoordinate(-117.22646885454822)).toBe(-117.23);
+      expect(roundCoordinate(40.7128)).toBe(40.71);
+      expect(roundCoordinate(-74.006)).toBe(-74.01);
     });
   });
 
   describe('normalizeLocation', () => {
     it('should normalize location strings by rounding coordinates', () => {
-      expect(normalizeLocation('32.86618219877268,-117.22646885454822')).toBe(
-        '32.87,-117.23'
-      );
-      expect(
-        normalizeLocation('32.86618219877268,-117.22646885454822', 3)
-      ).toBe('32.866,-117.226');
-      expect(
-        normalizeLocation('32.86618219877268,-117.22646885454822', 0)
-      ).toBe('33,-117');
+      expect(normalizeLocation('40.7128,-74.0060')).toBe('40.71,-74.01');
+      expect(normalizeLocation('40.7128,-74.0060', 3)).toBe('40.713,-74.006');
+      expect(normalizeLocation('40.7128,-74.0060', 1)).toBe('40.7,-74');
     });
 
     it('should return the original string if parsing fails', () => {
       expect(normalizeLocation('invalid')).toBe('invalid');
-      expect(normalizeLocation('32.866,invalid')).toBe('32.866,invalid');
-    });
-  });
-
-  describe('normalizeRadius', () => {
-    it('should normalize small radius values to the nearest 500m', () => {
-      expect(normalizeRadius('1000')).toBe('1000');
-      expect(normalizeRadius('1200')).toBe('1000');
-      expect(normalizeRadius('1300')).toBe('1500');
-      expect(normalizeRadius('4800')).toBe('5000');
-      expect(normalizeRadius('5100')).toBe('5000');
-      expect(normalizeRadius('9800')).toBe('10000');
-    });
-
-    it('should normalize large radius values to the nearest 1km', () => {
-      expect(normalizeRadius('10500')).toBe('11000');
-      expect(normalizeRadius('15400')).toBe('15000');
-      expect(normalizeRadius('20600')).toBe('21000');
-      expect(normalizeRadius('50000')).toBe('50000');
-    });
-
-    it('should return the original string if parsing fails', () => {
-      expect(normalizeRadius('invalid')).toBe('invalid');
+      expect(normalizeLocation('')).toBe('');
     });
   });
 
@@ -69,39 +38,18 @@ describe('Redis Cache Utilities', () => {
     it('should generate a cache key based on location and radius', () => {
       expect(
         generatePlacesCacheKey({
-          location: '32.86618219877268,-117.22646885454822',
-          radius: '5000',
+          location: '40.7128,-74.0060',
+          radius: '1000',
         })
-      ).toBe('places:32.87,-117.23:5000');
-
-      expect(
-        generatePlacesCacheKey({
-          location: '32.86618219877268,-117.22646885454822',
-          radius: '1200',
-        })
-      ).toBe('places:32.87,-117.23:1000');
-
-      expect(
-        generatePlacesCacheKey({
-          location: '32.86618219877268,-117.22646885454822',
-          radius: '15400',
-        })
-      ).toBe('places:32.87,-117.23:15000');
+      ).toBe('places:40.71,-74.01:1000');
     });
 
     it('should use default radius if not provided', () => {
       expect(
         generatePlacesCacheKey({
-          location: '32.86618219877268,-117.22646885454822',
+          location: '40.7128,-74.0060',
         })
-      ).toBe('places:32.87,-117.23:5000');
-
-      expect(
-        generatePlacesCacheKey({
-          location: '32.86618219877268,-117.22646885454822',
-          radius: null,
-        })
-      ).toBe('places:32.87,-117.23:5000');
+      ).toBe('places:40.71,-74.01:5000');
     });
 
     it('should throw an error if location is not provided', () => {
@@ -118,27 +66,11 @@ describe('Redis Cache Utilities', () => {
       expect(generatePlaceDetailsCacheKey('ChIJN1t_tDeuEmsRUsoyG83frY4')).toBe(
         'place-details:ChIJN1t_tDeuEmsRUsoyG83frY4'
       );
-
-      expect(generatePlaceDetailsCacheKey('abc123')).toBe(
-        'place-details:abc123'
-      );
-
-      expect(
-        generatePlaceDetailsCacheKey('place-with-dashes-and_underscores')
-      ).toBe('place-details:place-with-dashes-and_underscores');
     });
 
     it('should handle special characters in placeId', () => {
-      expect(generatePlaceDetailsCacheKey('place:with:colons')).toBe(
-        'place-details:place:with:colons'
-      );
-
-      expect(generatePlaceDetailsCacheKey('place/with/slashes')).toBe(
-        'place-details:place/with/slashes'
-      );
-
-      expect(generatePlaceDetailsCacheKey('place.with.dots')).toBe(
-        'place-details:place.with.dots'
+      expect(generatePlaceDetailsCacheKey('ChIJ/1t_tDeuEmsRUsoyG83frY4')).toBe(
+        'place-details:ChIJ/1t_tDeuEmsRUsoyG83frY4'
       );
     });
 

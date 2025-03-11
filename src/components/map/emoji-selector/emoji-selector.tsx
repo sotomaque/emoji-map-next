@@ -3,14 +3,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './emoji-selector.css';
-import { categories as categoriesData } from '@/services/places';
+import { CATEGORY_MAP } from '@/constants/category-map';
 import { useFiltersStore } from '@/store/useFiltersStore';
 
-// Transform the categories data to match the expected format
-const categories = categoriesData.map(([emoji, name, type]) => ({
-  emoji,
-  name,
-  type,
+// Transform the CATEGORY_MAP to an array for rendering
+const categories = Object.entries(CATEGORY_MAP).map(([key, category]) => ({
+  key: Number(key),
+  emoji: category.emoji,
+  name: category.name,
 }));
 
 interface EmojiSelectorProps {
@@ -24,11 +24,11 @@ export default function EmojiSelector({
 }: EmojiSelectorProps) {
   // Get state and actions from Zustand store
   const {
-    selectedCategories,
+    selectedCategoryKeys,
     showFavoritesOnly,
     isAllCategoriesMode,
-    setSelectedCategories,
-    toggleCategory: storeToggleCategory,
+    setSelectedCategoryKeys,
+    toggleCategoryKey,
     setShowFavoritesOnly,
   } = useFiltersStore();
 
@@ -39,38 +39,38 @@ export default function EmojiSelector({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Handle category toggle
-  const toggleCategory = (categoryName: string) => {
+  const handleCategoryToggle = (categoryKey: number) => {
     if (isLoading) return;
 
-    console.log('[EmojiSelector] toggleCategory called with:', categoryName);
+    console.log('[EmojiSelector] toggleCategory called with key:', categoryKey);
     console.log('[EmojiSelector] Current state:', {
-      selectedCategories,
+      selectedCategoryKeys,
       isAllCategoriesMode,
     });
 
     if (isAllCategoriesMode) {
       // If "All" is currently selected and we're selecting a specific category
       console.log(
-        '[EmojiSelector] Switching from All mode to single category:',
-        categoryName
+        '[EmojiSelector] Switching from All mode to single category key:',
+        categoryKey
       );
-      setSelectedCategories([categoryName]);
-      console.log('[EmojiSelector] After setSelectedCategories:', [
-        categoryName,
+      setSelectedCategoryKeys([categoryKey]);
+      console.log('[EmojiSelector] After setSelectedCategoryKeys:', [
+        categoryKey,
       ]);
     } else {
       // Use the store's toggle function
       console.log(
-        '[EmojiSelector] Using store toggle function for:',
-        categoryName
+        '[EmojiSelector] Using store toggle function for key:',
+        categoryKey
       );
-      storeToggleCategory(categoryName);
+      toggleCategoryKey(categoryKey);
 
       // Log the action
-      if (selectedCategories.includes(categoryName)) {
-        console.log('[EmojiSelector] Removed category:', categoryName);
+      if (selectedCategoryKeys.includes(categoryKey)) {
+        console.log('[EmojiSelector] Removed category key:', categoryKey);
       } else {
-        console.log('[EmojiSelector] Added category:', categoryName);
+        console.log('[EmojiSelector] Added category key:', categoryKey);
       }
     }
   };
@@ -81,15 +81,15 @@ export default function EmojiSelector({
 
     console.log('[EmojiSelector] toggleAllCategories called');
     console.log('[EmojiSelector] Current state:', {
-      selectedCategories,
+      selectedCategoryKeys,
       isAllCategoriesMode,
     });
 
     // If "All" is not already selected, switch to "All" mode
     if (!isAllCategoriesMode) {
       console.log('[EmojiSelector] Switching to All mode');
-      setSelectedCategories([]);
-      console.log('[EmojiSelector] After setSelectedCategories:', []);
+      setSelectedCategoryKeys([]);
+      console.log('[EmojiSelector] After setSelectedCategoryKeys:', []);
     }
   };
 
@@ -131,9 +131,9 @@ export default function EmojiSelector({
             inline: 'center',
           });
         }
-      } else if (selectedCategories.length > 0) {
+      } else if (selectedCategoryKeys.length > 0) {
         // Scroll to the first selected category
-        const firstSelectedCategory = selectedCategories[0];
+        const firstSelectedCategory = selectedCategoryKeys[0];
         const categoryElement = scrollContainerRef.current.querySelector(
           `[data-category="${firstSelectedCategory}"]`
         );
@@ -146,7 +146,7 @@ export default function EmojiSelector({
         }
       }
     }
-  }, [isAllCategoriesMode, selectedCategories]);
+  }, [isAllCategoriesMode, selectedCategoryKeys]);
 
   // Call scrollToSelectedCategory when categories change
   useEffect(() => {
@@ -162,11 +162,10 @@ export default function EmojiSelector({
         animate={{ scale: showFavoritesOnly ? 1.1 : 1 }}
         onClick={handleFavoritesToggle}
         disabled={isLoading}
-        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md ${
-          showFavoritesOnly
-            ? 'bg-yellow-400 text-yellow-900'
-            : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-        } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md ${showFavoritesOnly
+          ? 'bg-yellow-400 text-yellow-900'
+          : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+          } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
         aria-label='Toggle favorites'
       >
         <span className='text-lg sm:text-xl'>⭐</span>
@@ -187,11 +186,10 @@ export default function EmojiSelector({
             animate={{ scale: isAllCategoriesMode ? 1.1 : 1 }}
             onClick={toggleAllCategories}
             disabled={isLoading}
-            className={`all-button flex items-center justify-center min-w-[36px] sm:min-w-[44px] h-8 sm:h-11 rounded-full ${
-              isAllCategoriesMode
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-            } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+            className={`all-button flex items-center justify-center min-w-[36px] sm:min-w-[44px] h-8 sm:h-11 rounded-full ${isAllCategoriesMode
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+              } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
             data-category='all'
             aria-label='All categories'
           >
@@ -205,22 +203,21 @@ export default function EmojiSelector({
             {categories.map((category) => {
               const isSelected =
                 !isAllCategoriesMode &&
-                selectedCategories.includes(category.name);
+                selectedCategoryKeys.includes(category.key);
 
               return (
                 <motion.button
-                  key={category.name}
+                  key={category.key}
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.05 }}
                   animate={{ scale: isSelected ? 1.1 : 1 }}
-                  onClick={() => toggleCategory(category.name)}
+                  onClick={() => handleCategoryToggle(category.key)}
                   disabled={isLoading}
-                  className={`flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full ${
-                    isSelected
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                  } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                  data-category={category.name}
+                  className={`flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full ${isSelected
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                    } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                  data-category={category.key}
                   aria-label={`${category.name} category`}
                 >
                   <span className='text-base sm:text-xl'>{category.emoji}</span>
@@ -242,11 +239,10 @@ export default function EmojiSelector({
         transition={{ type: 'spring', stiffness: 300, damping: 15 }}
         onClick={handleShuffleClick}
         disabled={isLoading}
-        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${
-          isLoading
-            ? 'opacity-70 cursor-not-allowed'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-        }`}
+        className={`flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${isLoading
+          ? 'opacity-70 cursor-not-allowed'
+          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
         aria-label='Shuffle'
       >
         <svg

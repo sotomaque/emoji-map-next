@@ -1,21 +1,5 @@
-// Basic coordinate interface
-export interface Coordinate {
-  latitude: number;
-  longitude: number;
-}
-
-// Basic place interface
-export interface Place {
-  placeId: string;
-  name: string;
-  coordinate: Coordinate;
-  category: string;
-  description?: string;
-  priceLevel?: number;
-  openNow?: boolean;
-  rating?: number;
-  sourceKeyword?: string;
-}
+import { env } from '@/env';
+import type { PlacesResponse, SimplifiedMapPlace } from '@/types/local-places-types';
 
 // Parameters for fetching places
 export interface PlacesParams {
@@ -26,168 +10,82 @@ export interface PlacesParams {
     ne: { lat: number; lng: number };
     sw: { lat: number; lng: number };
   };
-  categories?: string[];
+  categoryKeys?: number[];
   openNow?: boolean;
   priceLevel?: number[];
   minimumRating?: number;
   refetchTrigger?: number;
 }
 
-// Map data point interface for Google Maps
-export interface MapDataPoint {
+// Google Maps compatible marker interface
+export interface GoogleMapsMarker {
   id: string;
   position: { lat: number; lng: number };
   emoji: string;
   title: string;
   category?: string;
-  priceLevel?: number;
-  openNow?: boolean;
-  rating?: number;
 }
 
-// Define a shared categories constant similar to the Swift app
-export const categories: [string, string, string][] = [
-  ['🍕', 'pizza', 'restaurant'],
-  ['🍺', 'beer', 'bar'],
-  ['🍣', 'sushi', 'restaurant'],
-  ['☕️', 'coffee', 'cafe'],
-  ['🍔', 'burger', 'restaurant'],
-  ['🌮', 'mexican', 'restaurant'],
-  ['🍜', 'ramen', 'restaurant'],
-  ['🥗', 'salad', 'restaurant'],
-  ['🍦', 'dessert', 'restaurant'],
-  ['🍷', 'wine', 'bar'],
-  ['🍲', 'asian_fusion', 'restaurant'],
-  ['🥪', 'sandwich', 'restaurant'],
-  // Add more common categories
-  ['🍝', 'italian', 'restaurant'],
-  ['🥩', 'steak', 'restaurant'],
-  ['🍗', 'chicken', 'restaurant'],
-  ['🍤', 'seafood', 'restaurant'],
-  ['🍛', 'indian', 'restaurant'],
-  ['🥘', 'spanish', 'restaurant'],
-  ['🍱', 'japanese', 'restaurant'],
-  ['🥟', 'chinese', 'restaurant'],
-  ['🧆', 'middle_eastern', 'restaurant'],
-  ['🥐', 'bakery', 'bakery'],
-  ['🍨', 'ice_cream', 'ice_cream_shop'],
-  ['🍹', 'cocktail', 'bar'],
-  ['🏪', 'convenience_store', 'store'],
-  ['🛒', 'supermarket', 'store'],
-  ['🏥', 'hospital', 'health'],
-  ['💊', 'pharmacy', 'health'],
-  ['⛽', 'gas_station', 'gas_station'],
-  ['🏦', 'bank', 'bank'],
-  ['📱', 'electronics', 'store'],
-  ['👕', 'clothing', 'store'],
-  ['📚', 'book_store', 'store'],
-  ['🎬', 'movie_theater', 'entertainment'],
-  ['🎮', 'game', 'entertainment'],
-  ['🏋️', 'gym', 'fitness'],
-  ['🏊', 'swimming_pool', 'fitness'],
-  ['🏨', 'hotel', 'lodging'],
-  ['🏫', 'school', 'education'],
-  ['🎓', 'university', 'education'],
-  ['📍', 'place', 'place'], // Generic fallback
-];
-
-// Map of categories to emojis
-export const categoryEmojis: Record<string, string> = Object.fromEntries(
-  categories.map(([emoji, keyword]) => [keyword, emoji])
-);
-
-// Map of categories to types
-export const categoryTypes: Record<string, string> = Object.fromEntries(
-  categories.map(([, keyword, type]) => [keyword, type])
-);
-
-// Function to fetch places from the API
-export async function fetchPlaces(
-  params: Omit<PlacesParams, 'refetchTrigger'>
-): Promise<Place[]> {
-  console.log('[places] Fetching places with params:', params);
-
-  // Build the API URL
-  const searchParams = new URLSearchParams();
-
-  // Add required parameters
-  searchParams.append('location', `${params.latitude},${params.longitude}`);
-  searchParams.append('type', 'restaurant'); // Default type
-
-  // Add optional parameters
-  if (params.radius) {
-    searchParams.append('radius', params.radius.toString());
-  }
-
-  if (params.bounds) {
-    const { ne, sw } = params.bounds;
-    searchParams.append('bounds', `${ne.lat},${ne.lng}|${sw.lat},${sw.lng}`);
-  }
-
-  if (params.categories && params.categories.length > 0) {
-    searchParams.append('keywords', params.categories.join(','));
-  }
-
-  if (params.openNow) {
-    searchParams.append('openNow', 'true');
-  }
-
-  if (params.priceLevel && params.priceLevel.length > 0) {
-    searchParams.append('priceLevel', params.priceLevel.join(','));
-  }
-
-  if (params.minimumRating) {
-    searchParams.append('minimumRating', params.minimumRating.toString());
-  }
-
-  // Make the request to our API
-  const url = `/api/places/nearby?${searchParams.toString()}`;
-  console.log('[places] API URL:', url);
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('[places] API error:', data);
-      throw new Error(data.error || 'Failed to fetch places');
+/**
+ * Fetches places from the API based on the provided parameters
+ */
+export async function fetchPlaces(params: PlacesParams): Promise<SimplifiedMapPlace[]> {
+  const { latitude, longitude, categoryKeys, openNow } = params;
+  
+  // Build the URL with query parameters
+  const url = new URL(`${env.NEXT_PUBLIC_SITE_URL}/api/places/nearby`);
+  
+  // Add location parameter (required)
+  url.searchParams.append('location', `${latitude},${longitude}`);
+  
+  // Add keys parameter only if specific categories are selected
+  if (categoryKeys && categoryKeys.length > 0) {
+    // Filter out any invalid keys (should be numbers between 1-25 based on CATEGORY_MAP)
+    const validKeys = categoryKeys.filter(key => 
+      typeof key === 'number' && key >= 1 && key <= 25
+    );
+    
+    if (validKeys.length > 0) {
+      // Add each key as a separate 'key' parameter instead of a single comma-separated 'keys' parameter
+      validKeys.forEach(key => {
+        url.searchParams.append('key', key.toString());
+      });
     }
-
-    return data.places || [];
+  }
+  
+  // Add optional parameters
+  if (openNow !== undefined) {
+    url.searchParams.append('openNow', openNow.toString());
+  }
+  
+  // Fetch data from the API
+  try {
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json() as PlacesResponse;
+    return data.places;
   } catch (error) {
-    console.error('[places] Fetch error:', error);
+    console.error('Error fetching places:', error);
     throw error;
   }
 }
 
-// Function to convert places to map data points
-export function placesToMapDataPoints(places: Place[]): MapDataPoint[] {
-  return places
-    .map((place) => {
-      // Get the emoji for the category
-      const emoji = categoryEmojis[place.category];
-
-      if (!emoji) {
-        console.error(
-          `[places] No emoji found for category: ${place.category}`
-        );
-
-        return {};
-      }
-
-      return {
-        id: place.placeId,
-        position: {
-          lat: place.coordinate.latitude,
-          lng: place.coordinate.longitude,
-        },
-        emoji,
-        title: place.name,
-        category: place.category,
-        priceLevel: place.priceLevel,
-        openNow: place.openNow,
-        rating: place.rating,
-      };
-    })
-    .filter((point) => point.id !== undefined);
+/**
+ * Converts SimplifiedMapPlace objects to GoogleMapsMarker objects for use with Google Maps
+ */
+export function placesToGoogleMapsMarkers(places: SimplifiedMapPlace[]): GoogleMapsMarker[] {
+  return places.map(place => ({
+    id: place.id,
+    position: { 
+      lat: place.location.latitude, 
+      lng: place.location.longitude 
+    },
+    emoji: place.emoji,
+    title: place.id,
+    category: place.category,
+  }));
 }

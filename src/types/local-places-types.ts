@@ -1,6 +1,4 @@
-export interface PlacesSearchTextResponse {
-  places: GooglePlace[];
-}
+// GOOGLE RESPONSE TYPES
 
 export interface GooglePlace {
   name: string;
@@ -116,70 +114,6 @@ export interface GooglePlace {
   businessStatus?: string;
 }
 
-// Return Type (Simplified Version of GooglePlace)
-export interface NearbyPlace {
-  id: string;
-  name: string;
-  nationalPhoneNumber?: string;
-  formattedAddress: string;
-  location: {
-    latitude: number;
-    longitude: number;
-  };
-  rating?: number;
-  googleMapsUri?: string;
-  websiteUri?: string;
-  displayName?: {
-    text: string;
-    languageCode: string;
-  };
-  primaryTypeDisplayName?: {
-    text: string;
-    languageCode: string;
-  };
-  takeout?: boolean;
-  delivery?: boolean;
-  dineIn?: boolean;
-  servesBeer?: boolean;
-  servesWine?: boolean;
-  userRatingCount?: number;
-  iconMaskBaseUri?: string;
-  iconBackgroundColor?: string;
-  businessStatus?: string;
-  primaryType?: string;
-  reviews?: Review[];
-  photos?: Photo[];
-  outdoorSeating?: boolean;
-  liveMusic?: boolean;
-  menuForChildren?: boolean;
-  servesCocktails?: boolean;
-  servesDessert?: boolean;
-  servesCoffee?: boolean;
-  allowsDogs?: boolean;
-  restroom?: boolean;
-  goodForWatchingSports?: boolean;
-  acceptsCreditCards?: boolean;
-  acceptsCashOnly?: boolean;
-  valetParking?: boolean;
-  wheelchairAccessibleEntrance?: boolean;
-  wheelchairAccessibleSeating?: boolean;
-  priceRange?: {
-    startPrice?: {
-      currencyCode: string;
-      units: string;
-    };
-    endPrice?: {
-      currencyCode: string;
-      units: string;
-    };
-  };
-  priceLevel?: string | null;
-  openNow?: boolean;
-  openingPeriods?: OpeningPeriod[];
-  category: string;
-  emoji: string;
-}
-
 export interface OpeningPeriod {
   open: {
     day: number;
@@ -231,28 +165,47 @@ export interface Photo {
   googleMapsUri: string;
 }
 
-export interface PlacesSearchTextRequest {
-  textQuery: string;
-  locationBias?: {
-    circle?: {
-      center: {
-        latitude: number;
-        longitude: number;
-      };
-      radius: number;
-    };
-    rectangle?: {
-      low: {
-        latitude: number;
-        longitude: number;
-      };
-      high: {
-        latitude: number;
-        longitude: number;
-      };
-    };
+// LOCAL RESPONSE TYPES
+
+//
+// Google Places Response
+// Raw data from Google Places API
+// With count + cache hit
+//
+export type GooglePlacesResponse = {
+  cacheHit: boolean;
+  count: number;
+  places: GooglePlace[];
+};
+
+//
+// Simplified Map Place
+// Simplified data for the map
+// With count + cache hit
+//
+export type SimplifiedMapPlace = {
+  id: string;
+  location: {
+    latitude: number;
+    longitude: number;
   };
-  pageSize?: number;
-  pageToken?: string;
-  rankPreference?: 'DISTANCE' | 'POPULARITY' | 'RANK_PREFERENCE_UNSPECIFIED'
+  category: string;
+  emoji: string;
+};
+
+export type PlacesResponse = {
+  cacheHit: boolean;
+  count: number;
+  places: SimplifiedMapPlace[];
+};
+
+// @deprecated TODO REMOVE
+// Filter Reasons
+// Reasons for filtering places
+//
+export interface FilterReasons {
+  noKeywordMatch: number;
+  defaultedToPlace: number;
+  mappedToMainCategory: number;
+  noEmoji: number;
 }
