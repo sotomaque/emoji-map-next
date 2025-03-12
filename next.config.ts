@@ -31,23 +31,13 @@ const nextConfig: NextConfig = {
     },
   },
   // Configure webpack for better tree shaking
-  webpack: (config, { isServer }) => {
-    // Only apply these optimizations for client-side bundles
-    if (!isServer) {
-      // Alias lodash to lodash-es for better tree shaking
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        lodash: 'lodash-es',
-      };
-    }
-
+  webpack: (config) => {
     // Enable proper tree shaking for all packages
     config.optimization = {
       ...config.optimization,
-      // Ensure unused exports are removed
-      usedExports: true,
       // Enable module concatenation for better tree shaking
       concatenateModules: true,
+      // Remove usedExports as it conflicts with cacheUnaffected
     };
 
     return config;
