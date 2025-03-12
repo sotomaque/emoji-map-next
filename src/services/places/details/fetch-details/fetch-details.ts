@@ -1,5 +1,5 @@
 import { env } from '@/env';
-import type { GooglePlaceDetails } from '@/types/google-places-details';
+import type { Detail } from '@/types/details';
 import { log } from '@/utils/log';
 
 /**
@@ -19,34 +19,64 @@ export async function fetchDetails(id: string) {
   try {
     // Build the Details URL
     const apiKey = env.GOOGLE_PLACES_API_KEY;
-    const baseUrl = env.GOOGLE_PLACES_DETAILS_URL;
+    const baseUrl = env.GOOGLE_PLACES_URL;
+
+    const fields = [
+      'name',
+      'rating',
+      'priceLevel',
+      'userRatingCount',
+      'currentOpeningHours.openNow',
+      'primaryTypeDisplayName.text',
+      'takeout',
+      'delivery',
+      'dineIn',
+      'editorialSummary.text',
+      'outdoorSeating',
+      'liveMusic',
+      'menuForChildren',
+      'servesDessert',
+      'servesCoffee',
+      'goodForChildren',
+      'goodForGroups',
+      'allowsDogs',
+      'restroom',
+      'paymentOptions',
+      'generativeSummary.overview.text',
+    ];
 
     const params = new URLSearchParams({
-      place_id: id,
-      fields: 'name,photos,reviews',
+      fields: fields.join(','),
       key: apiKey,
     });
 
+    const fullUrl = `${baseUrl}/places/${id}?${params.toString()}`;
+
     // Make the request
-    log.debug('Fetching details', { url: `${baseUrl}?${params.toString()}` });
-    const response = await fetch(`${baseUrl}?${params.toString()}`);
+    log.info('Fetching details from Google Places API', { url: fullUrl });
+
+    const response = await fetch(fullUrl);
 
     if (!response.ok) {
+      log.error('API Error', {
+        status: response.status,
+        statusText: response.statusText,
+      });
       throw new Error(`API Error: ${response.statusText}`);
     }
 
-    const data: {
-      result: Pick<GooglePlaceDetails, 'name' | 'photos' | 'reviews'>;
-    } = await response.json();
+    const data: Detail = await response.json();
 
-    if (!data?.result) {
+    log.success('Details fetched1', { ...data });
+
+    if (!data) {
       log.error('No result found', { requestResult: Object.keys(data) });
       throw new Error('No result found');
     }
 
     log.success('Details fetched', { ...data });
 
-    return data.result;
+    return data;
   } catch (error) {
     log.error('Error fetching details', { error });
     throw error;

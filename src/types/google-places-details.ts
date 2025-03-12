@@ -58,6 +58,8 @@ export interface GooglePlaceDetails {
   googleMapsLinks: GoogleMapsLinks;
   priceRange: PriceRange;
   timeZone: TimeZone;
+  delivery?: boolean;
+  allowsDogs?: boolean;
 }
 
 export interface AddressComponent {

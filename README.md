@@ -89,13 +89,7 @@ NEXT_PUBLIC_SITE_ENV=development
 
 # Google Places API
 GOOGLE_PLACES_API_KEY=your_api_key_here
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-
-# Google Places API URLs
-GOOGLE_PLACES_URL=https://maps.googleapis.com/maps/api/place/nearbysearch/json
-GOOGLE_PLACES_V2_URL=https://places.googleapis.com/v1/places:searchText
-GOOGLE_PLACES_DETAILS_URL=https://maps.googleapis.com/maps/api/place/details/json
-GOOGLE_PLACES_PHOTO_URL=https://maps.googleapis.com/maps/api/place/photo
+GOOGLE_PLACES_URL=https://places.googleapis.com/v1
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
@@ -123,6 +117,11 @@ KV_REST_API_URL=your_upstash_redis_url
 EXPERIMENTATION_CONFIG_ITEM_KEY=your_statsig_config_key
 NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
 STATSIG_SERVER_API_KEY=your_statsig_server_key
+
+# Cache Keys 
+NEARBY_CACHE_KEY_VERSION
+DETAILS_CACHE_KEY_VERSION
+PHOTOS_CACHE_KEY_VERSION
 ```
 
 ### Type-Safe Environment Variables

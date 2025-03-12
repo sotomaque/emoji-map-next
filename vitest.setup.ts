@@ -44,15 +44,11 @@ vi.mock('@/env', () => ({
   env: {
     // Google Places API
     GOOGLE_PLACES_API_KEY: 'test-api-key',
-    GOOGLE_PLACES_URL:
-      'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-    GOOGLE_PLACES_DETAILS_URL:
-      'https://maps.googleapis.com/maps/api/place/details/json',
+    GOOGLE_PLACES_URL: 'https://places.googleapis.com/v1',
 
     // Next.js public env vars
     NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
     NEXT_PUBLIC_SITE_ENV: 'test',
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'test-maps-api-key',
 
     // Clerk
     CLERK_SECRET_KEY: 'test-clerk-secret',

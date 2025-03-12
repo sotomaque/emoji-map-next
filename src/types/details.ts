@@ -3,14 +3,28 @@ import type { GooglePlaceDetails } from './google-places-details';
 
 export type Detail = {
   name: GooglePlaceDetails['name'];
-  // id: GooglePlaceDetails['id']; TODO add id to our result
-  // location: GooglePlaceDetails['location']; TODO add location to our result
-  photos: GooglePlaceDetails['photos'];
   reviews: GooglePlaceDetails['reviews'];
-  // rating: GooglePlaceDetails['rating']; TODO add rating to our result
-  // priceLevel: GooglePlaceDetails['priceLevel']; TODO add priceLevel to our result
-  // userRatingCount: GooglePlaceDetails['userRatingCount']; TODO add userRatingCount to our result
-  // websiteUri: GooglePlaceDetails['websiteUri']; TODO add websiteUri to our result
+  rating: GooglePlaceDetails['rating'];
+  priceLevel: GooglePlaceDetails['priceLevel'];
+  userRatingCount: GooglePlaceDetails['userRatingCount'];
+  openNow: GooglePlaceDetails['currentOpeningHours']['openNow'];
+  displayName: GooglePlaceDetails['displayName']['text'];
+  primaryTypeDisplayName: GooglePlaceDetails['primaryTypeDisplayName']['text'];
+  takeout: GooglePlaceDetails['takeout'];
+  delivery: GooglePlaceDetails['delivery'];
+  dineIn: GooglePlaceDetails['dineIn'];
+  editorialSummary: GooglePlaceDetails['editorialSummary']['text'];
+  outdoorSeating: GooglePlaceDetails['outdoorSeating'];
+  liveMusic: GooglePlaceDetails['liveMusic'];
+  menuForChildren: GooglePlaceDetails['menuForChildren'];
+  servesDessert: GooglePlaceDetails['servesDessert'];
+  servesCoffee: GooglePlaceDetails['servesCoffee'];
+  goodForChildren: GooglePlaceDetails['goodForChildren'];
+  goodForGroups: GooglePlaceDetails['goodForGroups'];
+  allowsDogs: GooglePlaceDetails['allowsDogs'];
+  restroom: GooglePlaceDetails['restroom'];
+  paymentOptions: GooglePlaceDetails['paymentOptions'];
+  generativeSummary: GooglePlaceDetails['generativeSummary']['overview']['text'];
 };
 
 /**

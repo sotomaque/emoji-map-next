@@ -12,10 +12,6 @@ export const env = createEnv({
       .string()
       .url()
       .default('https://places.googleapis.com/v1'),
-    GOOGLE_PLACES_DETAILS_URL: z
-      .string()
-      .url()
-      .default('https://maps.googleapis.com/maps/api/place/details/json'),
 
     // NODE
     NODE_ENV: z
@@ -62,9 +58,6 @@ export const env = createEnv({
       .enum(['development', 'test', 'production'])
       .default('development'),
 
-    // GOOGLE MAPS
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1),
-
     // CLERK
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
 
@@ -84,9 +77,6 @@ export const env = createEnv({
     // GOOGLE PLACES
     GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
     GOOGLE_PLACES_URL: process.env.GOOGLE_PLACES_URL,
-    GOOGLE_PLACES_DETAILS_URL: process.env.GOOGLE_PLACES_DETAILS_URL,
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
 
     // NODE
     NODE_ENV: process.env.NODE_ENV,

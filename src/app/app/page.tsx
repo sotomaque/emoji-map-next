@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +13,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import type { DetailResponse } from '@/types/details';
-import type { PlacesResponse } from '@/types/places';
+import type { PhotosResponse } from '@/types/google-photos';
+import type { PlacesResponse, Place } from '@/types/places';
+import type { UseQueryResult } from '@tanstack/react-query';
+
+// Define interfaces for the nested objects in the response
+interface TextObject {
+  text: string;
+  languageCode?: string;
+}
+
+interface CurrentOpeningHours {
+  openNow: boolean;
+  periods?: unknown[];
+  weekdayDescriptions?: string[];
+}
+
+interface GenerativeSummary {
+  overview: TextObject;
+}
+
+// Define an interface for the enhanced response that includes version and meta
+interface EnhancedDetailResponse extends DetailResponse {
+  version?: string;
+  meta?: {
+    timestamp: string;
+    requestId: string;
+    params: {
+      id: string;
+      bypassCache: boolean;
+      version: string;
+    };
+  };
+}
+
+// Define an interface for the enhanced places response
+interface EnhancedPlacesResponse extends PlacesResponse {
+  version?: string;
+  meta?: {
+    timestamp: string;
+    requestId: string;
+    params: {
+      location: string;
+      textQuery: string;
+      limit: number;
+      bypassCache: boolean;
+      openNow: boolean;
+      version: string;
+    };
+  };
+}
 
 // Default location (New York City)
 const DEFAULT_LOCATION = '40.7128,-74.0060';
@@ -20,34 +70,6 @@ const DEFAULT_TEXT_QUERY = 'pizza|beer';
 const DEFAULT_LIMIT = 20;
 const DEFAULT_PHOTO_ID = '';
 const DEFAULT_PLACE_ID = '';
-
-// Photo response type (simplified from the API response)
-type PhotoResponse = {
-  data: string[];
-  cacheHit: boolean;
-  count: number;
-};
-
-// Types for the place details response
-type PlaceReview = {
-  author_name: string;
-  author_url: string;
-  language: string;
-  original_language: string;
-  profile_photo_url: string;
-  rating: number;
-  relative_time_description: string;
-  text: string;
-  time: number;
-  translated: boolean;
-};
-
-type PlacePhoto = {
-  height: number;
-  html_attributions: string[];
-  photo_reference: string;
-  width: number;
-};
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -64,7 +86,15 @@ const LoadingSpinner = () => (
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const JsonDisplay = ({ data }: { data: any }) => {
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    navigator.clipboard
+      .writeText(JSON.stringify(data, null, 2))
+      .then(() => {
+        toast.success('JSON copied to clipboard');
+      })
+      .catch((error) => {
+        console.error('Failed to copy JSON:', error);
+        toast.error('Failed to copy JSON to clipboard');
+      });
   };
 
   return (
@@ -87,7 +117,15 @@ const JsonDisplay = ({ data }: { data: any }) => {
 // URL display component for showing API request URLs
 const RequestUrlDisplay = ({ url }: { url: string }) => {
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(url);
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success('URL copied to clipboard');
+      })
+      .catch((error) => {
+        console.error('Failed to copy URL:', error);
+        toast.error('Failed to copy URL to clipboard');
+      });
   };
 
   return (
@@ -214,13 +252,7 @@ const NearbyPlacesSection = ({
   getCurrentLocation: () => void;
   showRawJson: boolean;
   setShowRawJson: (value: boolean) => void;
-  nearbyPlacesQuery: {
-    data: PlacesResponse | undefined;
-    error: Error | null;
-    isLoading: boolean;
-    isError: boolean;
-    refetch: () => Promise<unknown>;
-  };
+  nearbyPlacesQuery: UseQueryResult<EnhancedPlacesResponse, Error>;
   handleGetDetails: (id: string) => void;
   handleGetPhotos: (id: string) => void;
 }) => {
@@ -242,6 +274,48 @@ const NearbyPlacesSection = ({
 
     return `/api/places/nearby?${params.toString()}`;
   };
+
+  // Helper function to render a place card
+  const renderPlaceCard = (place: Place) => (
+    <li
+      key={place.id}
+      className='p-4 border border-cyan-800 rounded-sm bg-zinc-950 hover:bg-zinc-900 transition-colors duration-200'
+    >
+      <div className='flex items-start justify-between'>
+        <div className='space-y-2'>
+          <div className='flex items-center space-x-2'>
+            <span className='text-xl'>{place.emoji}</span>
+            <span className='font-medium text-cyan-300'>ID: {place.id}</span>
+          </div>
+
+          <div className='text-sm text-cyan-400'>
+            <div className='flex items-center space-x-2'>
+              <span className='font-medium'>Location:</span>
+              <span>
+                {place.location?.latitude.toFixed(4)},{' '}
+                {place.location?.longitude.toFixed(4)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className='flex flex-col space-y-2'>
+          <HackerButton
+            className='text-xs w-full'
+            onClick={() => handleGetDetails(place.id)}
+          >
+            [GET_DETAILS]
+          </HackerButton>
+          <HackerButton
+            className='text-xs w-full'
+            onClick={() => handleGetPhotos(place.id)}
+          >
+            [GET_PHOTOS]
+          </HackerButton>
+        </div>
+      </div>
+    </li>
+  );
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -414,73 +488,49 @@ const NearbyPlacesSection = ({
             ) : nearbyPlacesQuery.data ? (
               <>
                 {showRawJson ? (
-                  <JsonDisplay data={nearbyPlacesQuery?.data} />
+                  <JsonDisplay data={nearbyPlacesQuery.data} />
                 ) : (
                   <div className='space-y-5 text-cyan-400 dark:text-cyan-400 font-mono'>
-                    <div className='flex justify-between'>
-                      <span className='font-medium'>Cache Hit:</span>
-                      <span>
-                        {nearbyPlacesQuery?.data?.cacheHit ? 'Yes' : 'No'}
-                      </span>
+                    {/* API Response Metadata */}
+                    <div className='p-3 border border-purple-800 rounded-sm bg-zinc-950 mb-4'>
+                      <div className='flex justify-between items-center mb-2'>
+                        <span className='font-medium text-purple-400'>
+                          Cache Hit:
+                        </span>
+                        <span className='text-purple-300'>
+                          {nearbyPlacesQuery.data.cacheHit ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className='flex justify-between items-center'>
+                        <span className='font-medium text-purple-400'>
+                          Total Places:
+                        </span>
+                        <span className='text-purple-300'>
+                          {nearbyPlacesQuery.data.count}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className='flex justify-between'>
-                      <span className='font-medium'>Total Places:</span>
-                      <span>{nearbyPlacesQuery.data.count}</span>
-                    </div>
-
+                    {/* Places list */}
                     <div className='space-y-3'>
-                      <p className='font-medium'>Places:</p>
-                      <div className='max-h-96 overflow-y-auto border rounded-sm p-3 border-cyan-800 bg-zinc-950 dark:bg-zinc-950 shadow-[0_0_10px_rgba(6,182,212,0.15)]'>
+                      <h3 className='text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500'>
+                        Places Found: {nearbyPlacesQuery.data.count}
+                      </h3>
+
+                      <div className='max-h-96 overflow-y-auto'>
                         {nearbyPlacesQuery.data.data &&
-                          nearbyPlacesQuery.data.data.length > 0 ? (
-                          <ul className='space-y-3'>
-                            {nearbyPlacesQuery.data.data.map((place) => (
-                              <li
-                                key={place.id}
-                                className='p-3 border-b last:border-b-0 border-cyan-800'
-                              >
-                                <div className='flex items-center justify-between space-x-3'>
-                                  <div className=''>
-                                    <div className='space-x-4'>
-                                      <span>ID:</span>
-                                      <span>{place.id}</span>
-                                    </div>
-
-                                    <div className='space-x-4'>
-                                      <span>Emoji:</span>
-                                      <span>{place.emoji}</span>
-                                    </div>
-
-                                    <div className='text-sm text-cyan-700 dark:text-cyan-700 mt-2'>
-                                      <span>Location</span>
-                                      {place.location?.latitude},{' '}
-                                      {place.location?.longitude}
-                                    </div>
-                                  </div>
-
-                                  <div className='space-x-3'>
-                                    <HackerButton
-                                      className='ml-auto text-xs'
-                                      onClick={() => handleGetDetails(place.id)}
-                                    >
-                                      [GET_DETAILS]
-                                    </HackerButton>
-                                    <HackerButton
-                                      className='ml-auto text-xs'
-                                      onClick={() => handleGetPhotos(place.id)}
-                                    >
-                                      [GET_PHOTOS]
-                                    </HackerButton>
-                                  </div>
-                                </div>
-                              </li>
-                            ))}
+                        nearbyPlacesQuery.data.data.length > 0 ? (
+                          <ul className='grid grid-cols-1 gap-3'>
+                            {nearbyPlacesQuery.data.data.map((place) =>
+                              renderPlaceCard(place)
+                            )}
                           </ul>
                         ) : (
-                          <p className='text-cyan-700 dark:text-cyan-700 text-center py-4'>
-                            No places found
-                          </p>
+                          <div className='p-4 border border-cyan-800 rounded-sm bg-zinc-950 text-center'>
+                            <p className='text-cyan-700 dark:text-cyan-700'>
+                              No places found
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -515,13 +565,7 @@ const PlaceDetailsSection = ({
   setPlaceId: (value: string) => void;
   showRawJson: boolean;
   setShowRawJson: (value: boolean) => void;
-  placeDetailsQuery: {
-    data: DetailResponse | undefined;
-    error: Error | null;
-    isLoading: boolean;
-    isError: boolean;
-    refetch: () => Promise<unknown>;
-  };
+  placeDetailsQuery: UseQueryResult<EnhancedDetailResponse, Error>;
   bypassCache: boolean;
   setBypassCache: (value: boolean) => void;
 }) => {
@@ -537,6 +581,40 @@ const PlaceDetailsSection = ({
     }
 
     return `/api/places/details?${params.toString()}`;
+  };
+
+  // Helper function to render a detail field if it exists
+  const renderDetailField = (label: string, value: unknown) => {
+    if (value === undefined || value === null) return null;
+
+    // Format the value based on its type
+    let formattedValue: string;
+    if (typeof value === 'boolean') {
+      formattedValue = value ? 'Yes' : 'No';
+    } else if (typeof value === 'object') {
+      // Handle objects that might have a text property
+      if (
+        value &&
+        'text' in value &&
+        typeof (value as { text: unknown }).text === 'string'
+      ) {
+        formattedValue = (value as { text: string }).text;
+      } else {
+        // For other objects, stringify them
+        formattedValue = JSON.stringify(value);
+      }
+    } else {
+      formattedValue = String(value);
+    }
+
+    return (
+      <div className='flex justify-between items-start py-2 border-b border-cyan-800 last:border-b-0'>
+        <span className='font-medium text-cyan-400'>{label}:</span>
+        <span className='text-right text-cyan-300 max-w-[60%]'>
+          {formattedValue}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -654,26 +732,195 @@ const PlaceDetailsSection = ({
                   <JsonDisplay data={placeDetailsQuery.data} />
                 ) : (
                   <div className='space-y-5 max-h-96 overflow-y-auto text-cyan-400 dark:text-cyan-400 font-mono'>
-                    {/* Cache information */}
-                    <div className='flex justify-between'>
-                      <span className='font-medium'>Cache Hit:</span>
-                      <span>
-                        {placeDetailsQuery.data.cacheHit ? 'Yes' : 'No'}
-                      </span>
+                    {/* API Response Metadata */}
+                    <div className='p-3 border border-purple-800 rounded-sm bg-zinc-950 mb-4'>
+                      <div className='flex justify-between items-center mb-2'>
+                        <span className='font-medium text-purple-400'>
+                          Cache Hit:
+                        </span>
+                        <span className='text-purple-300'>
+                          {placeDetailsQuery.data.cacheHit ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className='flex justify-between items-center'>
+                        <span className='font-medium text-purple-400'>
+                          Count:
+                        </span>
+                        <span className='text-purple-300'>
+                          {placeDetailsQuery.data.count}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className='flex justify-between'>
-                      <span className='font-medium'>Count:</span>
-                      <span>{placeDetailsQuery.data.count}</span>
-                    </div>
-
-                    {/* Place details - only name is available */}
+                    {/* Place details */}
                     {placeDetailsQuery.data.data && (
-                      <div className='space-y-3'>
+                      <div className='space-y-3 mt-4'>
+                        {/* Name */}
                         <h3 className='text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500'>
                           {placeDetailsQuery.data.data.name ||
                             'Name not available'}
                         </h3>
+
+                        <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                          <div className='space-y-1'>
+                            {renderDetailField(
+                              'Name',
+                              placeDetailsQuery.data.data.name
+                            )}
+                            {renderDetailField(
+                              'Primary Type',
+                              typeof placeDetailsQuery.data.data
+                                .primaryTypeDisplayName === 'object'
+                                ? (
+                                    placeDetailsQuery.data.data
+                                      .primaryTypeDisplayName as TextObject
+                                  ).text
+                                : placeDetailsQuery.data.data
+                                    .primaryTypeDisplayName
+                            )}
+                            {renderDetailField(
+                              'Rating',
+                              placeDetailsQuery.data.data.rating
+                            )}
+                            {renderDetailField(
+                              'Price Level',
+                              placeDetailsQuery.data.data.priceLevel
+                            )}
+                            {renderDetailField(
+                              'User Rating Count',
+                              placeDetailsQuery.data.data.userRatingCount
+                            )}
+                            {renderDetailField(
+                              'Currently Open',
+                              'currentOpeningHours' in
+                                placeDetailsQuery.data.data
+                                ? (
+                                    placeDetailsQuery.data.data as {
+                                      currentOpeningHours: CurrentOpeningHours;
+                                    }
+                                  ).currentOpeningHours.openNow
+                                : placeDetailsQuery.data.data.openNow
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Service Options */}
+                        <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                          <p className='text-sm font-medium mb-2 text-cyan-400'>
+                            Service Options:
+                          </p>
+                          <div className='space-y-1'>
+                            {renderDetailField(
+                              'Takeout',
+                              placeDetailsQuery.data.data.takeout
+                            )}
+                            {renderDetailField(
+                              'Delivery',
+                              placeDetailsQuery.data.data.delivery
+                            )}
+                            {renderDetailField(
+                              'Dine In',
+                              placeDetailsQuery.data.data.dineIn
+                            )}
+                            {renderDetailField(
+                              'Outdoor Seating',
+                              placeDetailsQuery.data.data.outdoorSeating
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                          <p className='text-sm font-medium mb-2 text-cyan-400'>
+                            Features:
+                          </p>
+                          <div className='space-y-1'>
+                            {renderDetailField(
+                              'Live Music',
+                              placeDetailsQuery.data.data.liveMusic
+                            )}
+                            {renderDetailField(
+                              'Menu For Children',
+                              placeDetailsQuery.data.data.menuForChildren
+                            )}
+                            {renderDetailField(
+                              'Serves Dessert',
+                              placeDetailsQuery.data.data.servesDessert
+                            )}
+                            {renderDetailField(
+                              'Serves Coffee',
+                              placeDetailsQuery.data.data.servesCoffee
+                            )}
+                            {renderDetailField(
+                              'Good For Children',
+                              placeDetailsQuery.data.data.goodForChildren
+                            )}
+                            {renderDetailField(
+                              'Good For Groups',
+                              placeDetailsQuery.data.data.goodForGroups
+                            )}
+                            {renderDetailField(
+                              'Allows Dogs',
+                              placeDetailsQuery.data.data.allowsDogs
+                            )}
+                            {renderDetailField(
+                              'Restroom',
+                              placeDetailsQuery.data.data.restroom
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Payment Options */}
+                        {placeDetailsQuery.data.data.paymentOptions && (
+                          <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                            <p className='text-sm font-medium mb-2 text-cyan-400'>
+                              Payment Options:
+                            </p>
+                            <div className='space-y-1'>
+                              {Object.entries(
+                                placeDetailsQuery.data.data.paymentOptions
+                              ).map(([key, value]) =>
+                                renderDetailField(key, value)
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Editorial Summary */}
+                        {placeDetailsQuery.data.data.editorialSummary && (
+                          <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                            <p className='text-sm font-medium mb-2 text-cyan-400'>
+                              Editorial Summary:
+                            </p>
+                            <p className='text-sm text-cyan-300'>
+                              {typeof placeDetailsQuery.data.data
+                                .editorialSummary === 'object'
+                                ? (
+                                    placeDetailsQuery.data.data
+                                      .editorialSummary as TextObject
+                                  ).text
+                                : placeDetailsQuery.data.data.editorialSummary}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Generative Summary */}
+                        {placeDetailsQuery.data.data.generativeSummary && (
+                          <div className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'>
+                            <p className='text-sm font-medium mb-2 text-cyan-400'>
+                              Generative Summary:
+                            </p>
+                            <p className='text-sm text-cyan-300'>
+                              {typeof placeDetailsQuery.data.data
+                                .generativeSummary === 'object'
+                                ? (
+                                    placeDetailsQuery.data.data
+                                      .generativeSummary as GenerativeSummary
+                                  ).overview.text
+                                : placeDetailsQuery.data.data.generativeSummary}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -681,62 +928,38 @@ const PlaceDetailsSection = ({
                     {placeDetailsQuery.data.data?.reviews &&
                       placeDetailsQuery.data.data.reviews.length > 0 && (
                         <div className='mt-5'>
-                          <p className='text-sm font-medium mb-3'>Reviews:</p>
+                          <p className='text-sm font-medium mb-3 text-cyan-400'>
+                            Reviews:
+                          </p>
                           <div className='space-y-4'>
-                            {(
-                              placeDetailsQuery.data.data
-                                .reviews as unknown as PlaceReview[]
-                            )
-                              .slice(0, 3)
-                              .map((review, index) => (
+                            {placeDetailsQuery.data.data.reviews.map(
+                              (review, index) => (
                                 <div
                                   key={index}
                                   className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'
                                 >
                                   <div className='flex items-center justify-between mb-2'>
                                     <span className='font-medium'>
-                                      {review.author_name}
+                                      {review.authorAttribution?.displayName ||
+                                        'Anonymous'}
                                     </span>
                                     <span>{review.rating} ⭐</span>
                                   </div>
                                   <p className='text-xs text-cyan-600 mb-2'>
-                                    {review.relative_time_description}
+                                    {review.relativePublishTimeDescription ||
+                                      'Unknown date'}
                                   </p>
-                                  <p className='text-sm'>{review.text}</p>
+                                  <p className='text-sm'>
+                                    {typeof review.text === 'object' &&
+                                    review.text?.text
+                                      ? review.text.text
+                                      : typeof review.text === 'string'
+                                      ? review.text
+                                      : 'No review text'}
+                                  </p>
                                 </div>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Photos preview */}
-                    {placeDetailsQuery.data.data?.photos &&
-                      placeDetailsQuery.data.data.photos.length > 0 && (
-                        <div className='mt-5'>
-                          <p className='text-sm font-medium mb-3'>Photos:</p>
-                          <div className='grid grid-cols-3 gap-2'>
-                            {(
-                              placeDetailsQuery.data.data
-                                .photos as unknown as PlacePhoto[]
-                            )
-                              .slice(0, 3)
-                              .map((photo, index) => (
-                                <div
-                                  key={index}
-                                  className='border border-cyan-800 rounded-sm overflow-hidden'
-                                >
-                                  <div className='text-xs p-1 text-center bg-zinc-950'>
-                                    <span className='block truncate'>
-                                      {photo.width}x{photo.height}
-                                    </span>
-                                    <span className='block truncate text-cyan-700'>
-                                      ID:{' '}
-                                      {photo.photo_reference.substring(0, 10)}
-                                      ...
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -771,13 +994,7 @@ const PhotosSection = ({
   setPhotoId: (value: string) => void;
   showRawJson: boolean;
   setShowRawJson: (value: boolean) => void;
-  photoQuery: {
-    data: PhotoResponse | undefined;
-    error: Error | null;
-    isLoading: boolean;
-    isError: boolean;
-    refetch: () => Promise<unknown>;
-  };
+  photoQuery: UseQueryResult<PhotosResponse, Error>;
   bypassCache: boolean;
   setBypassCache: (value: boolean) => void;
 }) => {
@@ -934,7 +1151,7 @@ const PhotosSection = ({
                                   onClick={() => setSelectedPhotoIndex(index)}
                                 >
                                   <Image
-                                    src={photoUrl}
+                                    src={photoUrl.toString()}
                                     alt={`Photo ${index + 1}`}
                                     width={200}
                                     height={96}
@@ -967,7 +1184,9 @@ const PhotosSection = ({
                           </div>
                           <div className='border rounded-sm p-3 overflow-hidden border-cyan-800 bg-zinc-950 dark:bg-zinc-950 shadow-[0_0_15px_rgba(6,182,212,0.2)]'>
                             <Image
-                              src={photoQuery.data.data[selectedPhotoIndex]}
+                              src={photoQuery.data.data[
+                                selectedPhotoIndex
+                              ].toString()}
                               alt={`Selected photo ${selectedPhotoIndex + 1}`}
                               width={800}
                               height={600}
@@ -1063,15 +1282,26 @@ export default function AppPage() {
         params.append('openNow', 'true');
       }
 
-      const response = await fetch(`/api/places/nearby?${params.toString()}`);
+      // Add version parameter to test the v2 API
+      params.append('version', 'v2');
 
-      if (!response.ok) {
-        throw new Error(
-          `API returned ${response.status}: ${response.statusText}`
-        );
+      try {
+        const response = await fetch(`/api/places/nearby?${params.toString()}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
+          );
+        }
+
+        return response.json() as Promise<EnhancedPlacesResponse>;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Nearby places query failed: ${errorMessage}`);
+        throw error;
       }
-
-      return response.json() as Promise<PlacesResponse>;
     },
     enabled: false, // Don't run automatically on mount or when params change
     retry: 1,
@@ -1082,6 +1312,7 @@ export default function AppPage() {
     queryKey: ['placeDetails', placeId, bypassCacheDetails],
     queryFn: async () => {
       if (!placeId) {
+        toast.error('Place ID is required');
         throw new Error('ID is required');
       }
 
@@ -1093,15 +1324,25 @@ export default function AppPage() {
         params.append('bypassCache', 'true');
       }
 
-      const response = await fetch(`/api/places/details?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(
-          `API returned ${response.status}: ${response.statusText}`
+      try {
+        const response = await fetch(
+          `/api/places/details?${params.toString()}`
         );
-      }
 
-      return response.json() as Promise<DetailResponse>;
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
+          );
+        }
+
+        return response.json() as Promise<EnhancedDetailResponse>;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Place details query failed: ${errorMessage}`);
+        throw error;
+      }
     },
     enabled: false, // Don't run automatically on mount or when placeId changes
     retry: 1,
@@ -1112,6 +1353,7 @@ export default function AppPage() {
     queryKey: ['photo', photoId, bypassCachePhotos],
     queryFn: async () => {
       if (!photoId) {
+        toast.error('Photo ID is required');
         throw new Error('Photo ID is required');
       }
 
@@ -1123,15 +1365,23 @@ export default function AppPage() {
         params.append('bypassCache', 'true');
       }
 
-      const response = await fetch(`/api/places/photos?${params.toString()}`);
+      try {
+        const response = await fetch(`/api/places/photos?${params.toString()}`);
 
-      if (!response.ok) {
-        throw new Error(
-          `API returned ${response.status}: ${response.statusText}`
-        );
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
+          );
+        }
+
+        return response.json() as Promise<PhotosResponse>;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Photo query failed: ${errorMessage}`);
+        throw error;
       }
-
-      return response.json() as Promise<PhotoResponse>;
     },
     enabled: false, // Don't run automatically on mount or when photoId changes
     retry: 1,
@@ -1142,6 +1392,7 @@ export default function AppPage() {
     setPlaceId(id);
     // Use setTimeout with 0 delay to ensure the state is updated before refetching
     setTimeout(() => {
+      toast.info(`Fetching details for place ID: ${id}`);
       placeDetailsQuery.refetch();
     }, 0);
   };
@@ -1151,6 +1402,7 @@ export default function AppPage() {
     setPhotoId(id);
     // Use setTimeout with 0 delay to ensure the state is updated before refetching
     setTimeout(() => {
+      toast.info(`Fetching photos for place ID: ${id}`);
       photoQuery.refetch();
     }, 0);
   };
@@ -1160,7 +1412,9 @@ export default function AppPage() {
     setLocationError(null);
 
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
+      const errorMsg = 'Geolocation is not supported by your browser';
+      setLocationError(errorMsg);
+      toast.error(errorMsg);
       setGettingLocation(false);
       return;
     }
@@ -1171,7 +1425,9 @@ export default function AppPage() {
         // Format to 4 decimal places for consistency
         const formattedLat = latitude.toFixed(4);
         const formattedLng = longitude.toFixed(4);
-        setLocation(`${formattedLat},${formattedLng}`);
+        const locationString = `${formattedLat},${formattedLng}`;
+        setLocation(locationString);
+        toast.success(`Location set to: ${locationString}`);
         setGettingLocation(false);
       },
       (error) => {
@@ -1190,6 +1446,7 @@ export default function AppPage() {
         }
 
         setLocationError(errorMessage);
+        toast.error(errorMessage);
         setGettingLocation(false);
       },
       {

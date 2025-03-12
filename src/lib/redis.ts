@@ -16,4 +16,3 @@ export const redis = new Redis({
 
 // TODO: store pictures in redis? not just the urls?
 // TODO: store stuff as json?
-// Cache expiration time (7 days in seconds) for places
