@@ -22,6 +22,11 @@ export const env = createEnv({
       .enum(['development', 'test', 'production'])
       .default('development'),
 
+    // LOGGING
+    LOG_LEVEL: z
+      .enum(['NONE', 'ERROR', 'WARN', 'SUCCESS', 'INFO', 'DEBUG'])
+      .optional(),
+
     // CLERK
     CLERK_SECRET_KEY: z.string().min(1),
     CLERK_SIGNING_SECRET: z.string().min(1),
@@ -87,6 +92,9 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SITE_ENV: process.env.NEXT_PUBLIC_SITE_ENV,
+
+    // LOGGING
+    LOG_LEVEL: process.env.LOG_LEVEL,
 
     // CLERK
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,

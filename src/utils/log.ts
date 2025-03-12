@@ -1,6 +1,51 @@
 import { env } from '@/env';
 
 /**
+ * Log levels enum in order of increasing verbosity
+ */
+export enum LogLevel {
+  NONE = 0, // No logs
+  ERROR = 1, // Only errors
+  WARN = 2, // Errors and warnings
+  SUCCESS = 3, // Errors, warnings, and success messages
+  INFO = 4, // Errors, warnings, success, and info messages
+  DEBUG = 5, // All logs including debug messages
+}
+
+/**
+ * Parse log level from environment variable or default to INFO in production and DEBUG in development
+ */
+const getLogLevel = (): LogLevel => {
+  const envLogLevel = env.LOG_LEVEL?.toUpperCase();
+
+  if (!envLogLevel) {
+    // Default to DEBUG in development, INFO in production
+    return env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO;
+  }
+
+  switch (envLogLevel) {
+    case 'NONE':
+      return LogLevel.NONE;
+    case 'ERROR':
+      return LogLevel.ERROR;
+    case 'WARN':
+      return LogLevel.WARN;
+    case 'SUCCESS':
+      return LogLevel.SUCCESS;
+    case 'INFO':
+      return LogLevel.INFO;
+    case 'DEBUG':
+      return LogLevel.DEBUG;
+    default:
+      // If invalid value, use default based on environment
+      return env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO;
+  }
+};
+
+// Current log level based on environment
+const currentLogLevel = getLogLevel();
+
+/**
  * ANSI color codes for terminal styling
  */
 const colors = {
@@ -35,21 +80,25 @@ const colors = {
 const isBrowser = typeof window !== 'undefined';
 
 /**
- * Check if we're in development mode
- */
-const isDevelopment = env.NODE_ENV === 'development';
-
-/**
- * Enhanced logger with color support and debug mode
+ * Enhanced logger with color support, debug mode, and log levels
  */
 export const log = {
   /**
-   * Log informational messages
+   * Get the current log level
+   *
+   * @returns The current log level
+   */
+  getLevel: () => currentLogLevel,
+
+  /**
+   * Log informational messages (level: INFO)
    *
    * @param message - The message to log
    * @param meta - Optional metadata to include with the log
    */
   info: (message: string, meta?: Record<string, unknown>) => {
+    if (currentLogLevel < LogLevel.INFO) return;
+
     if (isBrowser) {
       console.log(`%c[INFO] ${message}`, 'color: #0066cc', meta || '');
     } else {
@@ -61,12 +110,14 @@ export const log = {
   },
 
   /**
-   * Log error messages with prominent styling
+   * Log error messages with prominent styling (level: ERROR)
    *
    * @param message - The error message to log
    * @param error - The error object or details
    */
   error: (message: string, error: unknown) => {
+    if (currentLogLevel < LogLevel.ERROR) return;
+
     if (isBrowser) {
       console.error(
         `%c[ERROR] ${message}`,
@@ -82,14 +133,14 @@ export const log = {
   },
 
   /**
-   * Log debug messages (only shown in development mode)
+   * Log debug messages (level: DEBUG)
    *
    * @param message - The debug message to log
    * @param meta - Optional metadata to include with the log
    */
   debug: (message: string, meta?: Record<string, unknown>) => {
-    // Only log in development mode
-    if (!isDevelopment) return;
+    // Check log level
+    if (currentLogLevel < LogLevel.DEBUG) return;
 
     if (isBrowser) {
       console.log(
@@ -106,12 +157,14 @@ export const log = {
   },
 
   /**
-   * Log warning messages
+   * Log warning messages (level: WARN)
    *
    * @param message - The warning message to log
    * @param meta - Optional metadata to include with the log
    */
   warn: (message: string, meta?: Record<string, unknown>) => {
+    if (currentLogLevel < LogLevel.WARN) return;
+
     if (isBrowser) {
       console.warn(
         `%c[WARN] ${message}`,
@@ -127,12 +180,14 @@ export const log = {
   },
 
   /**
-   * Log success messages
+   * Log success messages (level: SUCCESS)
    *
    * @param message - The success message to log
    * @param meta - Optional metadata to include with the log
    */
   success: (message: string, meta?: Record<string, unknown>) => {
+    if (currentLogLevel < LogLevel.SUCCESS) return;
+
     if (isBrowser) {
       console.log(
         `%c[SUCCESS] ${message}`,
