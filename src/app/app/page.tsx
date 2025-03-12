@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
@@ -433,7 +433,7 @@ const NearbyPlacesSection = ({
                       <p className='font-medium'>Places:</p>
                       <div className='max-h-96 overflow-y-auto border rounded-sm p-3 border-cyan-800 bg-zinc-950 dark:bg-zinc-950 shadow-[0_0_10px_rgba(6,182,212,0.15)]'>
                         {nearbyPlacesQuery.data.data &&
-                        nearbyPlacesQuery.data.data.length > 0 ? (
+                          nearbyPlacesQuery.data.data.length > 0 ? (
                           <ul className='space-y-3'>
                             {nearbyPlacesQuery.data.data.map((place) => (
                               <li
@@ -1022,6 +1022,13 @@ export default function AppPage() {
   const [placeId, setPlaceId] = useState(DEFAULT_PLACE_ID);
   const [bypassCacheDetails, setBypassCacheDetails] = useState(false);
 
+  // Use useEffect for navigation to avoid "location is not defined" error
+  useEffect(() => {
+    if (!IS_APP_ENABLED) {
+      router.push('/');
+    }
+  }, [IS_APP_ENABLED, router]);
+
   // Function to toggle all raw JSON views at once
   const handleToggleAllRawJson = (checked: boolean) => {
     setShowAllRawJson(checked);
@@ -1194,8 +1201,7 @@ export default function AppPage() {
   };
 
   if (!IS_APP_ENABLED) {
-    router.push('/');
-    return null;
+    return null; // Return null while the redirect happens in useEffect
   }
 
   return (
