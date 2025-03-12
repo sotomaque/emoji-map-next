@@ -1,5 +1,7 @@
+import { NEARBY_CONFIG } from '@/constants/nearby';
 import type { LocationRestriction } from '@/types/geo-types';
 import { createLocationBuffer, isValidLocation } from '@/utils/geo/geo';
+import { log } from '@/utils/log';
 
 export interface GoogleRequestBody {
   textQuery: string;
@@ -28,8 +30,8 @@ export function prepareGoogleRequestBody({
   textQuery,
   location,
   openNow,
-  limit,
-  bufferMiles = 10,
+  limit = NEARBY_CONFIG.DEFAULT_LIMIT,
+  bufferMiles = NEARBY_CONFIG.DEFAULT_BUFFER_MILES,
 }: {
   textQuery: string;
   location: string;
@@ -40,7 +42,7 @@ export function prepareGoogleRequestBody({
   // Initialize the request body
   const requestBody: GoogleRequestBody = {
     textQuery,
-    pageSize: limit || 20,
+    pageSize: Math.min(limit, NEARBY_CONFIG.ABSOLUT_MAX_LIMIT),
   };
 
   // Add openNow if provided
@@ -49,12 +51,15 @@ export function prepareGoogleRequestBody({
   }
 
   // Set rankPreference to DISTANCE by default
-  requestBody.rankPreference = 'DISTANCE';
+  requestBody.rankPreference = NEARBY_CONFIG.DEFAULT_RANK_PREFERENCE;
 
   // Add location restriction if location is valid
   if (isValidLocation(location)) {
     // Create a buffer around the location
-    const locationBuffer = createLocationBuffer(location, bufferMiles);
+    const locationBuffer = createLocationBuffer(
+      location,
+      Math.min(bufferMiles, NEARBY_CONFIG.ABSOLUT_MAX_BUFFER_MILES)
+    );
 
     // Add the location buffer as a rectangle restriction if valid
     if (locationBuffer) {
@@ -62,19 +67,14 @@ export function prepareGoogleRequestBody({
         rectangle: locationBuffer,
       };
 
-      console.log(
+      log.debug(
         `[API] Using locationRestriction with rectangle: SW=(${locationBuffer.low.latitude},${locationBuffer.low.longitude}), NE=(${locationBuffer.high.latitude},${locationBuffer.high.longitude})`
       );
     }
   } else {
-    console.warn(
+    log.warn(
       `[API] Invalid location format: ${location}, not using locationRestriction`
     );
-  }
-
-  // Log the request body in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log({ requestBody });
   }
 
   return requestBody;

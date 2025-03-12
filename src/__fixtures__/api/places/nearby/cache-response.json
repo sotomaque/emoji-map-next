@@ -1,56 +1,162 @@
-{
-  "cacheHit": false,
-  "count": 5,
-  "places": [
-    {
-      "id": "ChIJK5A1pGcB3IARpnAUhqK3-KI",
-      "location": {
-        "latitude": 32.8652237,
-        "longitude": -117.23177679999999
-      },
-      "category": "restaurant",
-      "emoji": "🍣",
-      "openNow": true
+[
+  {
+    "id": "ChIJI_Wz8mpVwokRuoOKooC5H8Q",
+    "location": {
+      "latitude": 40.806427,
+      "longitude": -74.1931
     },
-    {
-      "id": "ChIJ69eyrtIG3IARa7yJ-BqAuRo",
-      "location": {
-        "latitude": 32.8652656,
-        "longitude": -117.231528
-      },
-      "category": "restaurant",
-      "emoji": "🍕",
-      "openNow": true
+    "emoji": "🍕"
+  },
+  {
+    "id": "ChIJV_U7LED_wokRul5d4R2YP_g",
+    "location": {
+      "latitude": 40.8368651,
+      "longitude": -74.15234099999999
     },
-    {
-      "id": "ChIJDw815ysB3IAREi91y9RtP44",
-      "location": {
-        "latitude": 32.8623967,
-        "longitude": -117.22475729999998
-      },
-      "category": "restaurant",
-      "emoji": "🍕",
-      "openNow": true
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJvwxO50L_wokRLdVaTC5gtG0",
+    "location": {
+      "latitude": 40.830126799999995,
+      "longitude": -74.1430647
     },
-    {
-      "id": "ChIJdaiJxisB3IARFKA2YZEqsXI",
-      "location": {
-        "latitude": 32.8627924,
-        "longitude": -117.22427909999998
-      },
-      "category": "restaurant",
-      "emoji": "🌮",
-      "openNow": true
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJC3Zadgf8wokRMm_cOqwMbKs",
+    "location": {
+      "latitude": 40.900935499999996,
+      "longitude": -74.1247782
     },
-    {
-      "id": "ChIJdfB6gSkB3IARVQ1nD3P0Gu8",
-      "location": {
-        "latitude": 32.861710699999996,
-        "longitude": -117.22336589999999
-      },
-      "category": "restaurant",
-      "emoji": "🍕",
-      "openNow": true
-    }
-  ]
-}
+    "emoji": "🍝"
+  },
+  {
+    "id": "ChIJueUCrBBawokRiw9LMJFm0_o",
+    "location": {
+      "latitude": 40.7095008,
+      "longitude": -74.0126642
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJYQETKB5awokRuT9t2AwszRM",
+    "location": {
+      "latitude": 40.7193118,
+      "longitude": -74.0101133
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJYQgB1pRZwokRhUb5IBPEl6A",
+    "location": {
+      "latitude": 40.736111099999995,
+      "longitude": -74.0061111
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJEXPuhotZwokRa4EDU1xXe8E",
+    "location": {
+      "latitude": 40.7231568,
+      "longitude": -74.0029053
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJJ0KwSzBZwokRZBEwqbaFtjU",
+    "location": {
+      "latitude": 40.7345416,
+      "longitude": -74.0015246
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJs9RDeJZZwokRGrSKFEVs4o0",
+    "location": {
+      "latitude": 40.735879,
+      "longitude": -74.00046499999999
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJPxCEeZFZwokRFI8chYojzr0",
+    "location": {
+      "latitude": 40.7306866,
+      "longitude": -74.0000953
+    },
+    "emoji": "🍕"
+  },
+  {
+    "id": "ChIJWbbWh7xZwokRZNl-bzhPR5E",
+    "location": {
+      "latitude": 40.741844,
+      "longitude": -73.997613
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJEUf6rIlZwokRHhWVMHCKqCY",
+    "location": {
+      "latitude": 40.7196972,
+      "longitude": -73.9978939
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJDUiwlK9ZwokRgEzA-oCI9a4",
+    "location": {
+      "latitude": 40.747716,
+      "longitude": -73.993389
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJS-5BUlJYwokRgwjgB85p7vM",
+    "location": {
+      "latitude": 40.759392999999996,
+      "longitude": -73.992141
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJkQhyD4VZwokRkuLC_HdUQsU",
+    "location": {
+      "latitude": 40.7247919,
+      "longitude": -73.9927436
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJscoCyFNYwokRDMEEfPoNM8o",
+    "location": {
+      "latitude": 40.760180000000005,
+      "longitude": -73.9910951
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJMUiKI6xZwokRDEokmGYpJK8",
+    "location": {
+      "latitude": 40.7516532,
+      "longitude": -73.9907024
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJL3MqLUlawokRhjCRuHT-sts",
+    "location": {
+      "latitude": 40.6921197,
+      "longitude": -73.9915367
+    },
+    "emoji": "🍺"
+  },
+  {
+    "id": "ChIJafe8xpxZwokRMi8VezCpLWs",
+    "location": {
+      "latitude": 40.7444421,
+      "longitude": -73.9892065
+    },
+    "emoji": "🍺"
+  }
+]

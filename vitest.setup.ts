@@ -4,8 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import healthResponse from '@/__fixtures__/api/health/response.json';
-import placesDetailsResponse from '@/__fixtures__/api/places/details/response.json';
-import placesV2Response from '@/__fixtures__/api/places/nearby/cache-response.json';
+import placesDetailsResponse from '@/__fixtures__/api/places/details/server-response.json';
 import googleMapsResponse from '@/__fixtures__/api/places/nearby/google-response.json';
 import placesNearbyResponse from '@/__fixtures__/api/places/nearby/response.json';
 import userCreateFixture from '@/__fixtures__/api/webhooks/create.json';
@@ -47,10 +46,8 @@ vi.mock('@/env', () => ({
     GOOGLE_PLACES_API_KEY: 'test-api-key',
     GOOGLE_PLACES_URL:
       'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-    GOOGLE_PLACES_V2_URL: 'https://places.googleapis.com/v1/places:searchText',
     GOOGLE_PLACES_DETAILS_URL:
       'https://maps.googleapis.com/maps/api/place/details/json',
-    GOOGLE_PLACES_PHOTO_URL: 'https://maps.googleapis.com/maps/api/place/photo',
 
     // Next.js public env vars
     NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
@@ -81,6 +78,30 @@ vi.mock('@/env', () => ({
 
     // Statsig
     NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'test-statsig-client-key',
+
+    // Cache keys
+    NEARBY_CACHE_KEY_VERSION: 'test-nearby-cache-key-version',
+    DETAILS_CACHE_KEY_VERSION: 'test-details-cache-key-version',
+    PHOTOS_CACHE_KEY_VERSION: 'test-photos-cache-key-version',
+  },
+}));
+
+// Mock our logger
+vi.mock('@/utils/log', () => ({
+  log: {
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+// Mock redis
+vi.mock('@/lib/redis', () => ({
+  CACHE_EXPIRATION_TIME: 3600,
+  redis: {
+    set: vi.fn(),
   },
 }));
 
@@ -146,10 +167,6 @@ export const internalApiHandlers = [
 
   http.get('*/api/places/details*', () => {
     return HttpResponse.json(placesDetailsResponse, { status: 200 });
-  }),
-
-  http.get('*/api/places/v2*', () => {
-    return HttpResponse.json(placesV2Response, { status: 200 });
   }),
 
   // Webhook API

@@ -3,9 +3,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About | Emoji Map',
-  description:
-    'Learn about Emoji Map - find places on a map with emoji markers',
+  title: 'Emoji Map | About',
+  description: 'Learn about Emoji Map - Smooth Brain? Smooth Map.',
 };
 
 export default function About() {

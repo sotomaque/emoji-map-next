@@ -39,15 +39,3 @@ export function normalizeLocation(
 
   return `${roundedLat},${roundedLng}`;
 }
-
-/**
- * Generate a cache key for the place details API
- * We only cache based on placeId
- */
-export function generatePlaceDetailsCacheKey(placeId: string | null): string {
-  if (!placeId) {
-    throw new Error('PlaceId is required for generating a cache key');
-  }
-
-  return `place-details:${placeId}`;
-}

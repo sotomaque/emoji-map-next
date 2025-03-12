@@ -1,3 +1,15 @@
+/**
+ * Category mapping for places
+ *
+ * This map defines categories for places with associated emojis and keywords.
+ * Used for categorizing and displaying places on the map and in search results.
+ *
+ * Each category has:
+ * @property {number} key - Unique identifier for the category
+ * @property {string} emoji - Emoji representation of the category
+ * @property {string} name - Name of the category
+ * @property {string[]} keywords - Related keywords for matching places to this category
+ */
 export const CATEGORY_MAP = [
   {
     key: 1,

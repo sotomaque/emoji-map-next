@@ -1,6 +1,8 @@
-import { CACHE_EXPIRATION_TIME, redis } from '@/lib/redis';
-import type { PlacesResponse } from '@/types/local-places-types';
+import { NEARBY_CONFIG } from '@/constants/nearby';
+import { redis } from '@/lib/redis';
+import type { PlacesResponse } from '@/types/places';
 import { isValidLocation } from '@/utils/geo/geo';
+import { log } from '@/utils/log';
 
 /**
  * Props for the cacheResults function
@@ -8,7 +10,7 @@ import { isValidLocation } from '@/utils/geo/geo';
 type Props = {
   /**
    * The cache key to store the results under.
-   * Should be in the format 'places-v2:{latitude},{longitude}'
+   * Should be in the format 'places:v2:{latitude},{longitude}'
    */
   cacheKey: string;
 
@@ -22,19 +24,25 @@ type Props = {
  * @returns True if the key is valid, false otherwise
  *
  * A valid key must:
- * 1. Start with 'places-v2:' prefix
+ * 1. Start with 'places:v1:' prefix
  * 2. Have a location suffix in the format '{latitude},{longitude}'
  *    - Both latitude and longitude must be present
  *    - At least one of them must be a valid number
  */
 function isValidCacheKey(key: string): boolean {
-  // Key should start with 'places-v2:' prefix
-  if (!key.startsWith('places-v2:')) {
+  // Key should start with 'places:${version}:' prefix
+  if (
+    !key.startsWith(
+      `${NEARBY_CONFIG.CACHE_KEY}:${NEARBY_CONFIG.CACHE_KEY_VERSION}:`
+    )
+  ) {
     return false;
   }
 
   // Extract the location part (after the prefix)
-  const locationPart = key.substring('places-v2:'.length);
+  const locationPart = key.substring(
+    `${NEARBY_CONFIG.CACHE_KEY}:${NEARBY_CONFIG.CACHE_KEY_VERSION}:`.length
+  );
 
   // Validate the location part using the shared utility function
   return isValidLocation(locationPart);
@@ -51,25 +59,33 @@ function isValidCacheKey(key: string): boolean {
  * - The processedPlaces array is empty or null
  * - The cacheKey is not properly formatted (should be 'places-v2:{latitude},{longitude}')
  *   where both latitude and longitude are present and at least one is a valid number
+ * - sets the entire processedPlaces object in redis
+ *
+ * @remarks
+ * - This function sets the entire processedPlaces object in redis
+ * - i.e. { cacheHit: true, count: 10, data: [{id: '123', location: {latitude: 123, longitude: 456}, photo_id: '123', emoji: '🍕'}, ...]}
  */
 export async function setCacheResults({ cacheKey, processedPlaces }: Props) {
   // Validate input parameters
   if (!processedPlaces || !processedPlaces.count) {
-    console.error('[API] No processed places to cache');
+    log.error('[API] No processed places to cache', { processedPlaces });
     return;
   }
 
   if (!isValidCacheKey(cacheKey)) {
-    console.error('[API] Invalid cache key format:', cacheKey);
+    log.error('[API] Invalid cache key format:', { cacheKey });
     return;
   }
 
   try {
-    await redis.set(cacheKey, processedPlaces, { ex: CACHE_EXPIRATION_TIME });
-    console.log(
-      `[API] Successfully cached ${processedPlaces.count} places with key: ${cacheKey}`
-    );
+    await redis.set(cacheKey, processedPlaces.data, {
+      ex: NEARBY_CONFIG.CACHE_EXPIRATION_TIME,
+    });
+    log.info('[API] Successfully cached', {
+      cacheKey,
+      count: processedPlaces.count,
+    });
   } catch (error) {
-    console.error('[API] Error caching results:', error);
+    log.error('[API] Error caching results:', { error });
   }
 }

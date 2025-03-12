@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type {
-  GooglePlace,
-  GooglePlacesResponse,
-  SimplifiedMapPlace,
-} from '@/types/local-places-types';
+import {
+  MOCK_GOOGLE_PLACES,
+  MOCK_PLACES,
+} from '@/__tests__/mocks/places/mock-places';
+import type { GooglePlacesResponse } from '@/types/google-places';
 import { fetchAndProcessGoogleData } from './fetch-and-process-google-data';
 import { fetchFromGoogle } from '../fetch-from-google-places/fetch-from-google-places';
 import { processGoogleResponse } from '../process-entire-response/process-entire-response';
@@ -25,31 +25,8 @@ describe('fetchAndProcessGoogleData', () => {
   const mockLimit = 20;
   const mockBufferMiles = 10;
 
-  const mockGooglePlace: GooglePlace = {
-    id: 'place123',
-    name: 'Test Pizza Place',
-    formattedAddress: '123 Test St, Test City, TS 12345',
-    location: {
-      latitude: 32.8662,
-      longitude: -117.2268,
-    },
-    types: ['restaurant', 'food', 'point_of_interest'],
-  };
-
   const mockGoogleResponse: GooglePlacesResponse = {
-    places: [mockGooglePlace],
-    count: 1,
-    cacheHit: false,
-  };
-
-  const mockSimplifiedPlace: SimplifiedMapPlace = {
-    id: 'place123',
-    location: {
-      latitude: 32.8662,
-      longitude: -117.2268,
-    },
-    category: 'restaurant',
-    emoji: '🍕',
+    places: MOCK_GOOGLE_PLACES,
   };
 
   // Reset mocks before each test
@@ -62,7 +39,7 @@ describe('fetchAndProcessGoogleData', () => {
   it('should fetch and process Google data successfully', async () => {
     // Mock the dependencies
     vi.mocked(fetchFromGoogle).mockResolvedValue(mockGoogleResponse);
-    vi.mocked(processGoogleResponse).mockReturnValue([mockSimplifiedPlace]);
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
 
     // Call the function
     const result = await fetchAndProcessGoogleData({
@@ -90,8 +67,8 @@ describe('fetchAndProcessGoogleData', () => {
 
     // Verify the result
     expect(result).toEqual({
-      places: [mockSimplifiedPlace],
-      count: 1,
+      data: MOCK_PLACES,
+      count: MOCK_PLACES.length,
       cacheHit: false,
     });
   });
@@ -100,8 +77,6 @@ describe('fetchAndProcessGoogleData', () => {
     // Mock empty response from Google
     const emptyResponse: GooglePlacesResponse = {
       places: [],
-      count: 0,
-      cacheHit: false,
     };
 
     vi.mocked(fetchFromGoogle).mockResolvedValue(emptyResponse);
@@ -115,7 +90,7 @@ describe('fetchAndProcessGoogleData', () => {
 
     // Verify the result
     expect(result).toEqual({
-      places: [],
+      data: [],
       count: 0,
       cacheHit: false,
     });
@@ -124,7 +99,7 @@ describe('fetchAndProcessGoogleData', () => {
   it('should pass optional parameters correctly', async () => {
     // Mock the dependencies
     vi.mocked(fetchFromGoogle).mockResolvedValue(mockGoogleResponse);
-    vi.mocked(processGoogleResponse).mockReturnValue([mockSimplifiedPlace]);
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
 
     // Call with only required parameters
     await fetchAndProcessGoogleData({
@@ -144,7 +119,7 @@ describe('fetchAndProcessGoogleData', () => {
     // Reset mocks
     vi.resetAllMocks();
     vi.mocked(fetchFromGoogle).mockResolvedValue(mockGoogleResponse);
-    vi.mocked(processGoogleResponse).mockReturnValue([mockSimplifiedPlace]);
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
 
     // Call with some optional parameters
     await fetchAndProcessGoogleData({
@@ -193,46 +168,13 @@ describe('fetchAndProcessGoogleData', () => {
   });
 
   it('should handle multiple places correctly', async () => {
-    // Create a response with multiple places
-    const multipleGooglePlaces: GooglePlace[] = [
-      mockGooglePlace,
-      {
-        ...mockGooglePlace,
-        id: 'place456',
-        name: 'Test Coffee Shop',
-      },
-      {
-        ...mockGooglePlace,
-        id: 'place789',
-        name: 'Test Bakery',
-      },
-    ];
-
     const multipleGoogleResponse: GooglePlacesResponse = {
-      places: multipleGooglePlaces,
-      count: multipleGooglePlaces.length,
-      cacheHit: false,
+      places: MOCK_GOOGLE_PLACES,
     };
-
-    const multipleSimplifiedPlaces: SimplifiedMapPlace[] = [
-      mockSimplifiedPlace,
-      {
-        ...mockSimplifiedPlace,
-        id: 'place456',
-        category: 'cafe',
-        emoji: '☕',
-      },
-      {
-        ...mockSimplifiedPlace,
-        id: 'place789',
-        category: 'bakery',
-        emoji: '🥐',
-      },
-    ];
 
     // Mock the dependencies
     vi.mocked(fetchFromGoogle).mockResolvedValue(multipleGoogleResponse);
-    vi.mocked(processGoogleResponse).mockReturnValue(multipleSimplifiedPlaces);
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
 
     // Call the function
     const result = await fetchAndProcessGoogleData({
@@ -242,8 +184,8 @@ describe('fetchAndProcessGoogleData', () => {
 
     // Verify the result
     expect(result).toEqual({
-      places: multipleSimplifiedPlaces,
-      count: multipleGooglePlaces.length,
+      data: MOCK_PLACES,
+      count: MOCK_GOOGLE_PLACES.length,
       cacheHit: false,
     });
   });

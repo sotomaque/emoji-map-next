@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NEARBY_CONFIG } from '@/constants/nearby';
 import { createLocationBuffer, isValidLocation } from '@/utils/geo/geo';
+import { log } from '@/utils/log';
 import { prepareGoogleRequestBody } from './prepare-google-request-body';
 
 // Mock the geo utilities
@@ -11,8 +13,6 @@ vi.mock('@/utils/geo/geo', () => ({
 describe('prepareGoogleRequestBody', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Default mock implementations
     vi.mocked(isValidLocation).mockReturnValue(true);
@@ -89,7 +89,10 @@ describe('prepareGoogleRequestBody', () => {
     expect(isValidLocation).toHaveBeenCalledWith('40.7128,-74.0060');
 
     // Verify createLocationBuffer was called with the correct parameters
-    expect(createLocationBuffer).toHaveBeenCalledWith('40.7128,-74.0060', 10);
+    expect(createLocationBuffer).toHaveBeenCalledWith(
+      '40.7128,-74.0060',
+      NEARBY_CONFIG.DEFAULT_BUFFER_MILES // Since no bufferMiles was provided
+    );
 
     // Verify the locationRestriction was set correctly
     expect(result.locationRestriction).toEqual({
@@ -116,7 +119,7 @@ describe('prepareGoogleRequestBody', () => {
     expect(result.locationRestriction).toBeUndefined();
 
     // Verify a warning was logged
-    expect(console.warn).toHaveBeenCalledWith(
+    expect(log.warn).toHaveBeenCalledWith(
       expect.stringContaining('Invalid location format')
     );
   });

@@ -1,264 +1,203 @@
 import { NextRequest } from 'next/server';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { redis } from '@/lib/redis';
-import { generatePlaceDetailsCacheKey } from '@/utils/redis/cache-utils';
-import { GET } from '../../../../app/api/places/details/route';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { GET } from '@/app/api/places/details/route';
+import { getPlaceDetailsWithCache } from '@/services/places/details/get-place-details-with-cache/get-place-details-with-cache';
+import { getSearchParams } from '@/services/places/details/get-search-params/get-search-params';
+import type { DetailResponse } from '@/types/details';
+import { log } from '@/utils/log';
 
-// Mock the Redis module
-vi.mock('@/lib/redis', () => {
-  return {
-    redis: {
-      get: vi.fn(),
-      set: vi.fn(),
+// Mock all the dependencies
+vi.mock(
+  '@/services/places/details/get-place-details-with-cache/get-place-details-with-cache',
+  () => ({
+    getPlaceDetailsWithCache: vi.fn(),
+  })
+);
+
+vi.mock(
+  '@/services/places/details/get-search-params/get-search-params',
+  () => ({
+    getSearchParams: vi.fn(),
+  })
+);
+
+describe('Places Details API', () => {
+  // Sample data for tests
+  const mockPlaceId = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
+
+  const mockDetailsResponse: DetailResponse = {
+    data: {
+      name: 'Test Place',
+      photos: [],
+      reviews: [],
     },
-    PLACE_DETAILS_CACHE_EXPIRATION_TIME: 3600, // 1 hour in seconds
+    count: 1,
+    cacheHit: false,
   };
-});
 
-vi.mock('@/utils/redis/cache-utils', () => {
-  return {
-    generatePlaceDetailsCacheKey: vi.fn().mockImplementation((placeId) => {
-      return `place-details:${placeId}`;
-    }),
-  };
-});
-
-// Mock the fetch function
-const mockPlaceDetailsResponse = {
-  status: 'OK',
-  result: {
-    photos: [{ photo_reference: 'photo1' }, { photo_reference: 'photo2' }],
-    reviews: [
-      {
-        author_name: 'John Doe',
-        text: 'Great place!',
-        rating: 5,
-      },
-      {
-        author_name: 'Jane Smith',
-        text: 'Good food, but a bit pricey.',
-        rating: 4,
-      },
-    ],
-  },
-};
-
-// Mock cached place details
-const mockCachedPlaceDetails = {
-  photos: [
-    'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=photo-reference-1&key=test-api-key',
-    'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=photo-reference-2&key=test-api-key',
-  ],
-  reviews: [
-    {
-      author: 'Test User 1',
-      text: 'Great place!',
-      rating: 5,
-    },
-    {
-      author: 'Test User 2',
-      text: 'Good food.',
-      rating: 4,
-    },
-  ],
-};
-
-describe('Place Details API Route', () => {
+  // Reset mocks before each test
   beforeEach(() => {
-    // Reset all mocks before each test
     vi.resetAllMocks();
 
-    // Mock the global fetch function
-    global.fetch = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue(mockPlaceDetailsResponse),
+    // Default mock implementations
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: mockPlaceId,
+      bypassCache: false,
     });
 
-    // Mock Redis get to return null (cache miss)
-    vi.mocked(redis.get).mockResolvedValue(null);
-
-    // Mock console.log and console.error to keep test output clean
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    (
+      getPlaceDetailsWithCache as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(mockDetailsResponse);
   });
 
-  it('should return place details when a valid placeId is provided', async () => {
-    // Create a mock request with a valid placeId
-    const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details?placeId=test-place-id')
-    );
-
-    // Call the API route handler
-    const response = await GET(request);
-    const data = await response.json();
-
-    // Verify the cache was checked
-    expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(generatePlaceDetailsCacheKey)).toHaveBeenCalledWith(
-      'test-place-id'
-    );
-
-    // Verify the fetch was called with the correct URL
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('place_id=test-place-id')
-    );
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('fields=name%2Cphotos%2Creviews')
-    );
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('key=test-api-key')
-    );
-
-    // Verify the response structure
-    expect(response.status).toBe(200);
-    expect(data).toHaveProperty('placeDetails');
-    expect(data).toHaveProperty('source', 'api');
-
-    // Verify the place details structure
-    const placeDetails = data.placeDetails;
-    expect(placeDetails).toHaveProperty('photos');
-    expect(placeDetails.photos).toBeInstanceOf(Array);
-    expect(placeDetails.photos.length).toBe(2);
-    expect(placeDetails).toHaveProperty('reviews');
-    expect(placeDetails.reviews).toBeInstanceOf(Array);
-    expect(placeDetails.reviews.length).toBe(2);
-
-    // Verify the results were cached
-    expect(redis.set).toHaveBeenCalledTimes(1);
-    expect(redis.set).toHaveBeenCalled();
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('should return cached place details when available', async () => {
-    // Mock Redis get to return cached data
-    vi.mocked(redis.get).mockResolvedValue(mockCachedPlaceDetails);
-
-    // Create a mock request with a valid placeId
-    const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details?placeId=test-place-id')
-    );
-
-    // Call the API route handler
-    const response = await GET(request);
-    const data = await response.json();
-
-    // Verify the cache was checked
-    expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(generatePlaceDetailsCacheKey)).toHaveBeenCalledWith(
-      'test-place-id'
-    );
-
-    // Verify fetch was NOT called (using cache)
-    expect(global.fetch).not.toHaveBeenCalled();
-
-    // Verify the response structure
-    expect(response.status).toBe(200);
-    expect(data).toHaveProperty('placeDetails');
-    expect(data).toHaveProperty('source', 'cache');
-
-    // Verify the place details structure
-    const placeDetails = data.placeDetails;
-    expect(placeDetails).toHaveProperty('photos');
-    expect(placeDetails.photos).toBeInstanceOf(Array);
-    expect(placeDetails.photos.length).toBe(2);
-    expect(placeDetails).toHaveProperty('reviews');
-    expect(placeDetails.reviews).toBeInstanceOf(Array);
-    expect(placeDetails.reviews.length).toBe(2);
-
-    // Verify the cache was not updated
-    expect(redis.set).not.toHaveBeenCalled();
-  });
-
-  it('should return 400 when placeId parameter is missing', async () => {
-    // Create a mock request with missing placeId
-    const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details')
-    );
-
-    // Call the API route handler
-    const response = await GET(request);
-    const data = await response.json();
-
-    // Verify the response
-    expect(response.status).toBe(400);
-    expect(data).toHaveProperty('error', 'Missing required parameter: placeId');
-
-    // Verify the cache was not checked
-    expect(redis.get).not.toHaveBeenCalled();
-    expect(global.fetch).not.toHaveBeenCalled();
-  });
-
-  it('should handle API errors gracefully', async () => {
-    // Mock fetch to return an error
-    global.fetch = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue({
-        status: 'INVALID_REQUEST',
-        error_message: 'The provided API key is invalid',
-      }),
-    });
-
+  it('should return place details for valid request', async () => {
     // Create a mock request
     const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details?placeId=test-place-id')
+      `https://example.com/api/places/details?id=${mockPlaceId}`
     );
 
-    // Call the API route handler
+    // Execute the handler
     const response = await GET(request);
     const data = await response.json();
 
     // Verify the response
+    expect(response.status).toBe(200);
+    expect(data).toEqual(mockDetailsResponse);
+
+    // Verify the correct functions were called
+    expect(getSearchParams).toHaveBeenCalledWith(request);
+    expect(getPlaceDetailsWithCache).toHaveBeenCalledWith({
+      id: mockPlaceId,
+      bypassCache: false,
+    });
+
+    // Verify logs were called
+    expect(log.info).toHaveBeenCalledWith('Fetching details', {
+      id: mockPlaceId,
+      bypassCache: false,
+    });
+    expect(log.info).toHaveBeenCalledWith('Details fetched', {
+      id: mockPlaceId,
+      bypassCache: false,
+      count: mockDetailsResponse.count,
+      cacheHit: mockDetailsResponse.cacheHit,
+    });
+  });
+
+  it('should return cached data when available', async () => {
+    // Create a cached response with cacheHit set to true
+    const cachedResponse = {
+      ...mockDetailsResponse,
+      cacheHit: true,
+    };
+
+    // Mock getPlaceDetailsWithCache to return the cached data
+    (
+      getPlaceDetailsWithCache as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(cachedResponse);
+
+    const request = new NextRequest(
+      `https://example.com/api/places/details?id=${mockPlaceId}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    // Verify the response
+    expect(response.status).toBe(200);
+    expect(data).toEqual(cachedResponse);
+    expect(data.cacheHit).toBe(true);
+
+    // Verify getPlaceDetailsWithCache was called with the correct parameters
+    expect(getPlaceDetailsWithCache).toHaveBeenCalledWith({
+      id: mockPlaceId,
+      bypassCache: false,
+    });
+  });
+
+  it('should fetch from Google when cache is bypassed', async () => {
+    // Mock bypassCache parameter
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: mockPlaceId,
+      bypassCache: true,
+    });
+
+    const request = new NextRequest(
+      `https://example.com/api/places/details?id=${mockPlaceId}&bypassCache=true`
+    );
+    await GET(request);
+
+    // Verify getPlaceDetailsWithCache was called with bypassCache=true
+    expect(getPlaceDetailsWithCache).toHaveBeenCalledWith({
+      id: mockPlaceId,
+      bypassCache: true,
+    });
+  });
+
+  it('should handle errors gracefully', async () => {
+    // Mock getPlaceDetailsWithCache to throw an error
+    (
+      getPlaceDetailsWithCache as unknown as ReturnType<typeof vi.fn>
+    ).mockRejectedValue(new Error('Failed to fetch place details'));
+
+    const request = new NextRequest(
+      `https://example.com/api/places/details?id=${mockPlaceId}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    // Verify the response is an error
     expect(response.status).toBe(500);
-    expect(data).toHaveProperty('error', 'The provided API key is invalid');
+    expect(data).toHaveProperty('error');
+    expect(data.error).toBe('Failed to fetch place details');
+    expect(data).toHaveProperty('message');
 
-    // Verify the cache was checked but not updated
-    expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(redis.set).not.toHaveBeenCalled();
+    // Verify console.error was called
+    expect(console.error).toHaveBeenCalled();
   });
 
-  it('should handle fetch errors gracefully', async () => {
-    // Mock fetch to throw an error
-    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
-
-    // Create a mock request
-    const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details?placeId=test-place-id')
-    );
-
-    // Call the API route handler
-    const response = await GET(request);
-    const data = await response.json();
-
-    // Verify the response
-    expect(response.status).toBe(500);
-    expect(data).toHaveProperty('error', 'Failed to fetch place details');
-
-    // Verify the cache was checked but not updated
-    expect(redis.get).toHaveBeenCalledTimes(1);
-    expect(redis.set).not.toHaveBeenCalled();
-  });
-
-  it('should handle missing photos and reviews gracefully', async () => {
-    // Create a mock request
-    const request = new NextRequest(
-      new URL('http://localhost:3000/api/places/details?placeId=test-place-id')
-    );
-
-    // Mock fetch to return a response with no photos or reviews
-    global.fetch = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue({
-        status: 'OK',
-        result: {},
-      }),
+  it('should handle missing ID parameter', async () => {
+    // Mock missing ID
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: undefined,
+      bypassCache: false,
     });
 
-    // Call the API route handler
+    // Mock getPlaceDetailsWithCache to throw an error when ID is missing
+    (
+      getPlaceDetailsWithCache as unknown as ReturnType<typeof vi.fn>
+    ).mockRejectedValue(new Error('ID is required'));
+
+    const request = new NextRequest(`https://example.com/api/places/details`);
     const response = await GET(request);
     const data = await response.json();
 
-    // Verify the response
-    expect(response.status).toBe(200);
-    expect(data.placeDetails).toHaveProperty('photos');
-    expect(data.placeDetails.photos).toEqual([]);
-    expect(data.placeDetails).toHaveProperty('reviews');
-    expect(data.placeDetails.reviews).toEqual([]);
+    // Verify the response is an error
+    expect(response.status).toBe(500);
+    expect(data).toHaveProperty('error');
+    expect(data.message).toContain('ID is required');
+  });
+
+  it('should pass additional parameters correctly', async () => {
+    // Mock request with additional parameters
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: mockPlaceId,
+      bypassCache: true,
+      // Add any other parameters that might be supported in the future
+    });
+
+    const request = new NextRequest(
+      `https://example.com/api/places/details?id=${mockPlaceId}&bypassCache=true`
+    );
+    await GET(request);
+
+    // Verify parameters were passed correctly
+    expect(getPlaceDetailsWithCache).toHaveBeenCalledWith({
+      id: mockPlaceId,
+      bypassCache: true,
+    });
   });
 });

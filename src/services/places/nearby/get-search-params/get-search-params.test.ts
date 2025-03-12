@@ -118,13 +118,52 @@ describe('getSearchParams', () => {
     expect(result.bufferMiles).toBe(undefined);
   });
 
-  it('should handle false boolean values correctly', () => {
-    const request = createMockRequest(
-      'http://localhost?openNow=false&bypassCache=false'
-    );
+  it('should set bypassCache to true when parameter is present without value', () => {
+    const request = createMockRequest('http://localhost?bypassCache');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(true);
+  });
+
+  it('should set bypassCache to true when parameter is present with empty value', () => {
+    const request = createMockRequest('http://localhost?bypassCache=');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(true);
+  });
+
+  it('should set bypassCache to true when parameter is "true"', () => {
+    const request = createMockRequest('http://localhost?bypassCache=true');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(true);
+  });
+
+  it('should set bypassCache to true when parameter is "TRUE" (case-insensitive)', () => {
+    const request = createMockRequest('http://localhost?bypassCache=TRUE');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(true);
+  });
+
+  it('should set bypassCache to false when parameter has value other than "true"', () => {
+    const request = createMockRequest('http://localhost?bypassCache=false');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(false);
+  });
+
+  it('should set bypassCache to undefined when parameter is not present', () => {
+    const request = createMockRequest('http://localhost');
+    const result = getSearchParams(request);
+
+    expect(result.bypassCache).toBe(undefined);
+  });
+
+  it('should handle false boolean values correctly for openNow', () => {
+    const request = createMockRequest('http://localhost?openNow=false');
     const result = getSearchParams(request);
 
     expect(result.openNow).toBe(false);
-    expect(result.bypassCache).toBe(false);
   });
 });

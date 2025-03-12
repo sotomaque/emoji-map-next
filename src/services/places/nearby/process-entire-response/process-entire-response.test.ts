@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { GooglePlace } from '@/types/local-places-types';
+import {
+  MOCK_GOOGLE_PLACES,
+  MOCK_PLACES,
+} from '@/__tests__/mocks/places/mock-places';
+import type { GooglePlace } from '@/types/google-places';
 import { processGoogleResponse } from './process-entire-response';
 import { processIndividualPlace } from '../process-individual-result/process-individual-result';
 
@@ -9,24 +13,8 @@ vi.mock('../process-individual-result/process-individual-result', () => ({
 }));
 
 describe('processGoogleResponse', () => {
-  // Sample Google place data
-  const samplePlace1: GooglePlace = {
-    name: 'Pizza Place',
-    id: '123',
-    types: ['restaurant', 'food', 'pizza'],
-    formattedAddress: '123 Pizza St',
-    location: { latitude: 40.7128, longitude: -74.006 },
-  };
-
-  const samplePlace2: GooglePlace = {
-    name: 'Burger Joint',
-    id: '456',
-    types: ['restaurant', 'food', 'burger'],
-    formattedAddress: '456 Burger Ave',
-    location: { latitude: 40.7129, longitude: -74.0061 },
-  };
-
-  const samplePlace3: GooglePlace = {
+  // Create a third sample place for testing invalid cases
+  const invalidPlace: GooglePlace = {
     name: 'Invalid Place',
     id: '789',
     types: [],
@@ -41,43 +29,29 @@ describe('processGoogleResponse', () => {
 
   // Test 1: Process multiple places with valid results
   it('should process multiple places', () => {
-    // Setup mock return values
-    const mockResult1 = {
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'restaurant',
-      emoji: '🍕',
-    };
-
-    const mockResult2 = {
-      id: '456',
-      location: { latitude: 40.7129, longitude: -74.0061 },
-      category: 'restaurant',
-      emoji: '🍔',
-    };
+    // Use the mock places from our mock file
+    const mockResult1 = { ...MOCK_PLACES[0] };
+    const mockResult2 = { ...MOCK_PLACES[1] };
 
     // Configure mock to return different values for different inputs
     const mockProcessIndividualPlace = vi.mocked(processIndividualPlace);
 
-    // @ts-expect-error - Mocking the return value of processIndividualPlace
+    // @ts-expect-error - Mocking the return value that can be null
     mockProcessIndividualPlace.mockImplementation(({ place }) => {
-      if (place.id === '123') return mockResult1;
-      if (place.id === '456') return mockResult2;
+      if (place.id === MOCK_GOOGLE_PLACES[0].id) return mockResult1;
+      if (place.id === MOCK_GOOGLE_PLACES[1].id) return mockResult2;
       return null;
     });
 
     // Test data
     const googleData = {
-      places: [samplePlace1, samplePlace2, samplePlace3],
-      count: 3,
-      fromCache: false,
-      cacheHit: false,
+      places: [...MOCK_GOOGLE_PLACES, invalidPlace],
     };
 
     // Execute function
     const result = processGoogleResponse({
       googleData,
-      textQuery: 'pizza | burger',
+      textQuery: 'pizza | coffee',
     });
 
     // Verify results - now includes null values
@@ -87,8 +61,8 @@ describe('processGoogleResponse', () => {
     // Verify processIndividualPlace was called correctly
     expect(processIndividualPlace).toHaveBeenCalledTimes(3);
     expect(processIndividualPlace).toHaveBeenCalledWith({
-      place: samplePlace1,
-      keywords: ['pizza', 'burger'],
+      place: MOCK_GOOGLE_PLACES[0],
+      keywords: ['pizza', 'coffee'],
       filterReasons: {
         noKeywordMatch: 0,
         noEmoji: 0,
@@ -102,9 +76,6 @@ describe('processGoogleResponse', () => {
   it('should return empty array when no places are provided', () => {
     const googleData = {
       places: [],
-      count: 0,
-      fromCache: false,
-      cacheHit: false,
     };
 
     const result = processGoogleResponse({
@@ -119,14 +90,11 @@ describe('processGoogleResponse', () => {
   // Test 3: Process with all null results
   it('should include null results', () => {
     // Configure mock to return null for all places
-    // @ts-expect-error - Mocking the return value of processIndividualPlace
+    // @ts-expect-error - Mocking the return value that can be null
     vi.mocked(processIndividualPlace).mockReturnValue(null);
 
     const googleData = {
-      places: [samplePlace1, samplePlace2],
-      count: 2,
-      fromCache: false,
-      cacheHit: false,
+      places: MOCK_GOOGLE_PLACES,
     };
 
     const result = processGoogleResponse({
@@ -134,26 +102,20 @@ describe('processGoogleResponse', () => {
       textQuery: 'invalid',
     });
 
-    expect(result).toHaveLength(2);
-    expect(result).toEqual([null, null]);
-    expect(processIndividualPlace).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(MOCK_GOOGLE_PLACES.length);
+    expect(result).toEqual(Array(MOCK_GOOGLE_PLACES.length).fill(null));
+    expect(processIndividualPlace).toHaveBeenCalledTimes(
+      MOCK_GOOGLE_PLACES.length
+    );
   });
 
   // Test 4: Process with multiple keywords and verify they're properly split
   it('should properly split multiple keywords', () => {
     // Configure mock to return a valid result
-    vi.mocked(processIndividualPlace).mockReturnValue({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'restaurant',
-      emoji: '🍕',
-    });
+    vi.mocked(processIndividualPlace).mockReturnValue(MOCK_PLACES[0]);
 
     const googleData = {
-      places: [samplePlace1],
-      count: 1,
-      fromCache: false,
-      cacheHit: false,
+      places: [MOCK_GOOGLE_PLACES[0]],
     };
 
     // Execute with multiple keywords in different formats
@@ -176,31 +138,27 @@ describe('processGoogleResponse', () => {
     vi.mocked(processIndividualPlace).mockImplementation(
       ({ place, filterReasons }) => {
         // Simulate updating the tracking objects
-        if (place.id === '123') {
+        if (place.id === MOCK_GOOGLE_PLACES[0].id) {
           filterReasons.noKeywordMatch += 1;
-        } else if (place.id === '456') {
+        } else if (place.id === MOCK_GOOGLE_PLACES[1].id) {
           filterReasons.mappedToMainCategory += 1;
         }
 
         return {
           id: place.id,
           location: place.location,
-          category: 'restaurant',
           emoji: '🍴',
         };
       }
     );
 
     const googleData = {
-      places: [samplePlace1, samplePlace2],
-      count: 2,
-      fromCache: false,
-      cacheHit: false,
+      places: MOCK_GOOGLE_PLACES,
     };
 
     processGoogleResponse({
       googleData,
-      textQuery: 'pizza | burger',
+      textQuery: 'pizza | coffee',
     });
 
     // Verify the last call received the accumulated values
@@ -216,18 +174,10 @@ describe('processGoogleResponse', () => {
   // Test 6: Process with empty text query
   it('should handle empty text query by passing empty keywords array', () => {
     // Configure mock to return a valid result
-    vi.mocked(processIndividualPlace).mockReturnValue({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'restaurant',
-      emoji: '🍕',
-    });
+    vi.mocked(processIndividualPlace).mockReturnValue(MOCK_PLACES[0]);
 
     const googleData = {
-      places: [samplePlace1],
-      count: 1,
-      fromCache: false,
-      cacheHit: false,
+      places: [MOCK_GOOGLE_PLACES[0]],
     };
 
     // Execute with empty text query

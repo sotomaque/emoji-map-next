@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { GooglePlace } from '@/types/local-places-types';
+import { MOCK_GOOGLE_PLACES } from '@/__tests__/mocks/places/mock-places';
+import type { GooglePlace } from '@/types/google-places';
 import { processIndividualPlace } from './process-individual-result';
 
 // Mock the CATEGORY_MAP with the new structure
@@ -39,21 +40,22 @@ vi.mock('@/constants/category-map', () => ({
 }));
 
 describe('processIndividualPlace', () => {
-  const baseSamplePlace: GooglePlace = {
-    id: '123',
-    location: { latitude: 40.7128, longitude: -74.006 },
+  // Create a base sample place using properties from the mock but with controlled values
+  const createBaseSamplePlace = (): GooglePlace => ({
+    id: MOCK_GOOGLE_PLACES[0].id,
+    location: MOCK_GOOGLE_PLACES[0].location,
+    name: 'Test Place',
+    formattedAddress: '123 Test St',
     primaryType: '',
     types: [],
     primaryTypeDisplayName: { text: '', languageCode: 'en' },
     displayName: { text: 'test place', languageCode: 'en' },
-    name: 'Test Place',
-    formattedAddress: '123 Test St',
     currentOpeningHours: {
       openNow: true,
       periods: [],
       weekdayDescriptions: [],
     },
-  };
+  });
 
   const keywords = ['pizza', 'beer', 'sushi', 'pub', 'japanese'];
 
@@ -65,19 +67,18 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+    testPlace.primaryType = 'pizza';
+
     const result = processIndividualPlace({
-      place: {
-        ...baseSamplePlace,
-        primaryType: 'pizza',
-      },
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'pizza',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '🍕',
     });
     expect(filterReasons).toEqual({
@@ -96,19 +97,18 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+    testPlace.primaryType = 'pub';
+
     const result = processIndividualPlace({
-      place: {
-        ...baseSamplePlace,
-        primaryType: 'pub',
-      },
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'beer',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '🍺',
     });
     expect(filterReasons).toEqual({
@@ -127,19 +127,18 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+    testPlace.primaryType = 'japanese';
+
     const result = processIndividualPlace({
-      place: {
-        ...baseSamplePlace,
-        primaryType: 'japanese',
-      },
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'sushi',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '🍣',
     });
     expect(filterReasons).toEqual({
@@ -158,19 +157,21 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+    testPlace.primaryTypeDisplayName = {
+      text: 'Restaurant',
+      languageCode: 'en',
+    };
+
     const result = processIndividualPlace({
-      place: {
-        ...baseSamplePlace,
-        primaryTypeDisplayName: { text: 'Restaurant', languageCode: 'en' },
-      },
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'restaurant',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '🍽️',
     });
     expect(filterReasons).toEqual({
@@ -189,19 +190,18 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+    testPlace.primaryType = 'restaurant';
+
     const result = processIndividualPlace({
-      place: {
-        ...baseSamplePlace,
-        primaryType: 'restaurant',
-      },
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'restaurant',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '🍽️',
     });
     expect(filterReasons).toEqual({
@@ -220,16 +220,17 @@ describe('processIndividualPlace', () => {
       mappedToMainCategory: 0,
     };
 
+    const testPlace = createBaseSamplePlace();
+
     const result = processIndividualPlace({
-      place: baseSamplePlace,
+      place: testPlace,
       keywords,
       filterReasons,
     });
 
     expect(result).toEqual({
-      id: '123',
-      location: { latitude: 40.7128, longitude: -74.006 },
-      category: 'place',
+      id: testPlace.id,
+      location: testPlace.location,
       emoji: '📍',
     });
     expect(filterReasons).toEqual({
@@ -249,7 +250,7 @@ describe('processIndividualPlace', () => {
     };
 
     const result = processIndividualPlace({
-      place: { id: '123' } as GooglePlace,
+      place: { id: MOCK_GOOGLE_PLACES[0].id } as GooglePlace,
       keywords,
       filterReasons,
     });

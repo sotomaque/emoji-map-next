@@ -1,10 +1,24 @@
-import _ from 'lodash';
+import {
+  defaultTo,
+  find,
+  flatten,
+  includes,
+  isArray,
+  isNumber,
+  isObject,
+  join,
+  keys,
+  map,
+  pick,
+  some,
+  tap,
+  toLower,
+  values,
+} from 'lodash-es';
 import { CATEGORY_MAP } from '@/constants/category-map';
-import type {
-  FilterReasons,
-  GooglePlace,
-  SimplifiedMapPlace,
-} from '@/types/local-places-types';
+import type { GooglePlace } from '@/types/google-places';
+import type { Place, FilterReasons } from '@/types/places';
+import { log } from '@/utils/log';
 
 // Create a mapping of category names to emojis from the new CATEGORY_MAP
 const categoryEmojis: Record<string, string> = Object.fromEntries(
@@ -16,35 +30,35 @@ const findMatchingKeyword = (
   place: GooglePlace,
   keywords: string[]
 ): string | undefined => {
-  const lowercaseKeywords = _.map(keywords, _.toLower);
+  const lowercaseKeywords = map(keywords, toLower);
   const placeFields = {
-    primaryType: _.toLower(place.primaryType || ''),
-    types: _.map(place.types || [], _.toLower),
-    primaryTypeDisplayName: _.toLower(place.primaryTypeDisplayName?.text || ''),
-    displayName: _.toLower(place.displayName?.text || ''),
-    name: _.toLower(place.name || ''),
+    primaryType: toLower(place.primaryType || ''),
+    types: map(place.types || [], toLower),
+    primaryTypeDisplayName: toLower(place.primaryTypeDisplayName?.text || ''),
+    displayName: toLower(place.displayName?.text || ''),
+    name: toLower(place.name || ''),
   };
 
   return (
-    _.find(keywords, (keyword, index) => {
+    find(keywords, (keyword, index) => {
       const lowercaseKeyword = lowercaseKeywords[index];
       const isMatch =
-        _.some(placeFields, (field) =>
-          _.isArray(field)
-            ? _.includes(field, lowercaseKeyword)
+        some(placeFields, (field) =>
+          isArray(field)
+            ? includes(field, lowercaseKeyword)
             : field === lowercaseKeyword
         ) ||
-        _.includes(
-          _.join(_.flatten(_.values(placeFields)), ' '),
-          lowercaseKeyword
-        );
+        includes(join(flatten(values(placeFields)), ' '), lowercaseKeyword);
 
       if (isMatch) {
-        // console.log(`[API] Match found for keyword "${keyword}" in place "${place.name}"`, placeFields);
+        log.info(
+          `[API] Match found for keyword "${keyword}" in place "${place.name}"`,
+          placeFields
+        );
       }
       return isMatch;
     }) ||
-    (console.log(`[API] No match found for place "${place.name}"`, placeFields),
+    (log.debug(`[API] No match found for place "${place.name}"`, placeFields),
     undefined)
   );
 };
@@ -72,51 +86,83 @@ type ProcessIndividualPlaceProps = {
   filterReasons: FilterReasons;
 };
 
+/**
+ * Processes an individual place from the Google Places API response.
+ *
+ * This function:
+ * 1. Validates that the place has required fields
+ * 2. Determines the appropriate category based on keywords and place types
+ * 3. Maps related keywords to main categories when possible
+ * 4. Assigns an emoji based on the determined category
+ *
+ * @param props - Processing parameters
+ * @param props.place - The Google Place object to process
+ * @param props.keywords - Array of search keywords to match against
+ * @param props.filterReasons - Object to track filtering statistics
+ *
+ * @returns A simplified {@link Place} object containing:
+ *   - id: Unique identifier for the place
+ *   - location: Latitude and longitude coordinates
+ *   - emoji: Emoji marker representing the place type
+ *
+ * @remarks
+ * Returns an empty object if the place is missing required fields.
+ * The function tracks various filtering statistics for debugging purposes.
+ */
 export const processIndividualPlace = ({
   place,
   keywords,
   filterReasons,
-}: ProcessIndividualPlaceProps): SimplifiedMapPlace => {
-  // console.log(`[API] Processing place: ${place.name}`, _.pick(place, [
-  //   'id', 'primaryType', 'types', 'primaryTypeDisplayName.text', 'displayName.text'
-  // ]));
+}: ProcessIndividualPlaceProps): Place => {
+  log.info(
+    `[API] Processing place: ${place.name}`,
+    pick(place, [
+      'id',
+      'primaryType',
+      'types',
+      'primaryTypeDisplayName.text',
+      'displayName.text',
+    ])
+  );
 
   // Validate required fields first
   if (
     !place.id ||
-    !_.isObject(place.location) ||
-    !_.isNumber(place.location?.latitude) ||
-    !_.isNumber(place.location?.longitude)
+    !isObject(place.location) ||
+    !isNumber(place.location?.latitude) ||
+    !isNumber(place.location?.longitude)
   ) {
-    // console.error('[API] Place is missing required fields:', place);
-    return {} as SimplifiedMapPlace;
+    log.error('[API] Place is missing required fields:', place);
+    return {} as Place;
   }
 
   // Determine category with fallback
   const matchedKeyword = findMatchingKeyword(place, keywords);
   const initialCategory =
     matchedKeyword ||
-    _.toLower(place.primaryTypeDisplayName?.text) ||
-    _.toLower(place.primaryType) ||
-    _.tap('place', () => {
+    toLower(place.primaryTypeDisplayName?.text) ||
+    toLower(place.primaryType) ||
+    tap('place', () => {
       filterReasons.noKeywordMatch =
-        _.defaultTo(filterReasons.noKeywordMatch, 0) + 1;
+        defaultTo(filterReasons.noKeywordMatch, 0) + 1;
       filterReasons.defaultedToPlace =
-        _.defaultTo(filterReasons.defaultedToPlace, 0) + 1;
-      // console.log(`[API] No type information available, defaulting to: place`);
+        defaultTo(filterReasons.defaultedToPlace, 0) + 1;
+      log.debug(`[API] No type information available, defaulting to: place`);
     });
 
   if (matchedKeyword) {
-    // console.log(`[API] Matched keyword: ${initialCategory} for place: ${place.name}`);
+    log.info(
+      `[API] Matched keyword: ${initialCategory} for place: ${place.name}`
+    );
   } else if (
     !matchedKeyword &&
-    !_.toLower(place.primaryTypeDisplayName?.text) &&
-    !_.toLower(place.primaryType)
+    !toLower(place.primaryTypeDisplayName?.text) &&
+    !toLower(place.primaryType)
   ) {
-    // Already incremented in _.tap
+    // Already incremented in tap
   } else {
     filterReasons.noKeywordMatch =
-      _.defaultTo(filterReasons.noKeywordMatch, 0) + 1;
+      defaultTo(filterReasons.noKeywordMatch, 0) + 1;
   }
 
   // Map to main category only if matchedKeyword exists and has a mapping
@@ -125,10 +171,12 @@ export const processIndividualPlace = ({
     : undefined;
   const finalCategory =
     mainCategory && mainCategory !== initialCategory
-      ? _.tap(mainCategory, () => {
-          // console.log(`[API] Mapping category "${initialCategory}" to main category "${mainCategory}"`);
+      ? tap(mainCategory, () => {
+          log.info(
+            `[API] Mapping category "${initialCategory}" to main category "${mainCategory}"`
+          );
           filterReasons.mappedToMainCategory =
-            _.defaultTo(filterReasons.mappedToMainCategory, 0) + 1;
+            defaultTo(filterReasons.mappedToMainCategory, 0) + 1;
         })
       : initialCategory;
 
@@ -141,30 +189,31 @@ export const processIndividualPlace = ({
     emoji = categoryEmojis[finalCategory];
   }
 
-  // console.log({finalCategory, matchedKeyword, emoji})
-
   if (!emoji) {
-    // console.log(`[API] No emoji found for category: ${finalCategory}`);
-    const similarKey = _.find(
-      _.keys(categoryEmojis),
+    log.debug(`[API] No emoji found for category: ${finalCategory}`);
+    const similarKey = find(
+      keys(categoryEmojis),
       (key) =>
         key !== finalCategory &&
-        (_.includes(key, finalCategory) || _.includes(finalCategory, key))
+        (includes(key, finalCategory) || includes(finalCategory, key))
     );
     emoji = similarKey ? categoryEmojis[similarKey] : '🍽️'; // Default to place emoji
 
     if (similarKey) {
-      // console.log(`[API] Found similar emoji for ${finalCategory} using ${similarKey}: ${emoji}`);
+      log.info(
+        `[API] Found similar emoji for ${finalCategory} using ${similarKey}: ${emoji}`
+      );
     } else {
-      filterReasons.noEmoji = _.defaultTo(filterReasons.noEmoji, 0) + 1;
-      // console.log(`[API] No emoji found for category: ${finalCategory}, using default place emoji`);
+      filterReasons.noEmoji = defaultTo(filterReasons.noEmoji, 0) + 1;
+      log.debug(
+        `[API] No emoji found for category: ${finalCategory}, using default place emoji`
+      );
     }
   }
 
   return {
     id: place.id,
-    location: _.pick(place.location, ['latitude', 'longitude']),
-    category: finalCategory,
+    location: pick(place.location, ['latitude', 'longitude']),
     emoji,
   };
 };

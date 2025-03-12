@@ -9,18 +9,6 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  webpack: (config, { isServer }) => {
-    // Use lodash-es for client bundles
-    // Note: This may cause issues with swagger-ui-react which requires lodash/fp modules
-    // If you need swagger-ui-react, you may need to modify this configuration
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        lodash: 'lodash-es',
-      };
-    }
-    return config;
-  },
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   // Optimize image handling
@@ -41,6 +29,28 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+  },
+  // Configure webpack for better tree shaking
+  webpack: (config, { isServer }) => {
+    // Only apply these optimizations for client-side bundles
+    if (!isServer) {
+      // Alias lodash to lodash-es for better tree shaking
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        lodash: 'lodash-es',
+      };
+    }
+
+    // Enable proper tree shaking for all packages
+    config.optimization = {
+      ...config.optimization,
+      // Ensure unused exports are removed
+      usedExports: true,
+      // Enable module concatenation for better tree shaking
+      concatenateModules: true,
+    };
+
+    return config;
   },
 };
 

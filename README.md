@@ -26,7 +26,7 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - ⭐ View place details including ratings, photos, and reviews
 - 🌙 Dark mode support
 - 📱 Responsive design for mobile and desktop
-- 📚 Interactive API documentation with Swagger UI
+- 📄 Simple API documentation
 - 🔄 State management with Zustand for filters and preferences
 - 📊 Marker clustering for improved map performance
 - 🧪 Comprehensive test suite with 95%+ coverage
@@ -66,8 +66,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Zustand](https://github.com/pmndrs/zustand) - State management
 - [@react-google-maps/api](https://github.com/JustFly1984/react-google-maps-api) - Google Maps React components
 - [@t3-oss/env-nextjs](https://github.com/t3-oss/env-nextjs) - Type-safe environment variables
-- [next-swagger-doc](https://github.com/atomicpages/next-swagger-doc) - OpenAPI documentation
-- [Swagger UI](https://swagger.io/tools/swagger-ui/) - Interactive API documentation
 - [Vitest](https://vitest.dev/) - Testing framework
 - [MSW](https://mswjs.io/) - API mocking for tests
 - [React Query](https://tanstack.com/query/latest) - Data fetching and caching
@@ -224,27 +222,13 @@ This approach ensures that navigation items are correctly highlighted even in ne
 
 ## API Documentation
 
-The API is documented using OpenAPI (Swagger) specification. You can access the interactive API documentation at:
+API documentation is currently under development. A simple version of the API docs will be available at:
 
 ```
 http://localhost:3000/api-docs
 ```
 
-This documentation provides:
-
-- Detailed information about all available endpoints
-- Request parameters and their types
-- Response schemas
-- Example requests and responses
-- Interactive "Try it out" functionality to test the API directly from the browser
-
-The API specification is also available in JSON format at:
-
-```
-http://localhost:3000/api/docs
-```
-
-This can be imported into API client tools like Postman or used by other applications to generate client code.
+The documentation will provide details about available endpoints, request formats, and response structures.
 
 ## API Routes
 
@@ -765,7 +749,7 @@ web/
 │   │   │   │   ├── nearby/
 │   │   │   │   └── details/
 │   │   │   ├── webhooks/
-│   │   │   └── api-docs/
+│   │   │   └── docs/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/

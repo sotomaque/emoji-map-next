@@ -14,8 +14,6 @@ export const redis = new Redis({
   token: env.KV_REST_API_TOKEN,
 });
 
+// TODO: store pictures in redis? not just the urls?
+// TODO: store stuff as json?
 // Cache expiration time (7 days in seconds) for places
-export const CACHE_EXPIRATION_TIME = 60 * 60 * 24 * 7; // 7 days
-
-// Cache expiration time (1 hour in seconds) for place details
-export const PLACE_DETAILS_CACHE_EXPIRATION_TIME = 60 * 60; // 1 hour

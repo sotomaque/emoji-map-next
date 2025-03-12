@@ -25,26 +25,6 @@ vi.mock('@/constants/category-map', () => ({
   ],
 }));
 
-// Mock lodash with a default export
-vi.mock('lodash', () => {
-  const lodashMock = {
-    toLower: (str: string) => str?.toLowerCase() || '',
-    trim: (str: string) => str?.trim() || '',
-    includes: (str: string, searchStr: string) => {
-      if (!str || !searchStr) return false;
-      return str.includes(searchStr);
-    },
-    some: (arr: unknown[], predicate: (value: unknown) => boolean) => {
-      return arr.some(predicate);
-    },
-  };
-
-  return {
-    default: lodashMock,
-    ...lodashMock,
-  };
-});
-
 describe('getPrimaryCategoryForRelatedWord', () => {
   // Reset mocks before each test
   beforeEach(() => {

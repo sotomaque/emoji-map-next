@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
 import { env } from '@/env';
 import { prisma } from '@/lib/db';
+import { log } from '@/utils/log';
 import type { UserJSON, WebhookEvent } from '@clerk/nextjs/server';
 
 export async function POST(req: Request) {
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
     // Handle the webhook based on the event type
     const eventType = evt.type;
-    console.log(`Webhook received: ${eventType}`, {
+    log.info(`Webhook received: ${eventType}`, {
       userId: evt.data.id,
       timestamp: new Date().toISOString(),
     });
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log(`Webhook processed: ${eventType}`, {
+    log.success(`Webhook processed: ${eventType}`, {
       userId: evt.data.id,
       result: result ? 'success' : 'no action taken',
       timestamp: new Date().toISOString(),

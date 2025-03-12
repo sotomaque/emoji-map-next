@@ -1,13 +1,36 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateCacheKey } from './generate-cache-key';
 
+// Mock the NEARBY_CONFIG
+vi.mock('@/constants/nearby', () => ({
+  NEARBY_CONFIG: {
+    CACHE_KEY: 'places',
+    CACHE_KEY_VERSION: 'v1',
+    CACHE_EXPIRATION_TIME: 3600,
+  },
+}));
+
 // Mock the normalizeLocation function
 vi.mock('@/utils/redis/cache-utils', () => ({
   normalizeLocation: (location: string) => {
-    // Simple mock implementation that just returns the input for most cases
+    // Simple mock implementation that returns the expected normalized values
     if (location === '40.7128,-74.0060') return '40.71,-74.01';
+    if (location === '40.7129,-74.0061') return '40.71,-74.01';
     if (location === '40.712,-74.006') return '40.71,-74.01';
+    if (location === '40.7128,special') return '40.71,special';
     return location;
+  },
+}));
+
+// Mock isValidLocation
+vi.mock('@/utils/geo/geo', () => ({
+  isValidLocation: (location: string) => {
+    if (location === 'invalid') return false;
+    if (location === '') return false;
+    if (location === ',45.123') return false;
+    if (location === '40.71,') return false;
+    if (location === 'abc,def') return false;
+    return true;
   },
 }));
 
@@ -20,7 +43,7 @@ describe('generateCacheKey', () => {
 
     const result = generateCacheKey(params);
 
-    expect(result).toBe('places-v2:40.71,-74.01');
+    expect(result).toBe('places:v1:40.71,-74.01');
   });
 
   // Test 2: Different text queries with same location should have same cache key
@@ -37,7 +60,7 @@ describe('generateCacheKey', () => {
     const result2 = generateCacheKey(params2);
 
     expect(result1).toBe(result2);
-    expect(result1).toBe('places-v2:40.71,-74.01');
+    expect(result1).toBe('places:v1:40.71,-74.01');
   });
 
   // Test 3: Similar locations should have same cache key after normalization
@@ -47,14 +70,14 @@ describe('generateCacheKey', () => {
     };
 
     const params2 = {
-      location: '40.712,-74.006',
+      location: '40.7129,-74.0061',
     };
 
     const result1 = generateCacheKey(params1);
     const result2 = generateCacheKey(params2);
 
     expect(result1).toBe(result2);
-    expect(result1).toBe('places-v2:40.71,-74.01');
+    expect(result1).toBe('places:v1:40.71,-74.01');
   });
 
   // Test 4: Invalid location format (no comma)
@@ -120,12 +143,12 @@ describe('generateCacheKey', () => {
   // Test 9: One valid coordinate
   it('should generate a key when at least one coordinate is valid', () => {
     const params = {
-      location: '40.71,special',
+      location: '40.7128,special',
     };
 
     const result = generateCacheKey(params);
 
     // Should generate a key when at least one coordinate is valid
-    expect(result).toBe('places-v2:40.71,special');
+    expect(result).toBe('places:v1:40.71,special');
   });
 });

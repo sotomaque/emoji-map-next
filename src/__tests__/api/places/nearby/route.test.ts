@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { MOCK_PLACES } from '@/__tests__/mocks/places/mock-places';
 import { GET } from '@/app/api/places/nearby/route';
 import { redis } from '@/lib/redis';
 import { buildTextQueryFromKeys } from '@/services/places/nearby/build-text-query-from-string/build-text-query-from-string';
-import { setCacheResults } from '@/services/places/nearby/cache-results/cache-results';
-import { fetchAndProcessGoogleData } from '@/services/places/nearby/fetch-and-process-google-data/fetch-and-process-google-data';
+import { fetchPlacesData } from '@/services/places/nearby/fetch-places-data/fetch-places-data';
 import { generateCacheKey } from '@/services/places/nearby/generate-cache-key/generate-cache-key';
 import { getSearchParams } from '@/services/places/nearby/get-search-params/get-search-params';
-import type {
-  PlacesResponse,
-  SimplifiedMapPlace,
-} from '@/types/local-places-types';
+import type { PlacesResponse } from '@/types/places';
+import { log } from '@/utils/log';
 
 // Mock all the dependencies
 vi.mock('@/lib/redis', () => ({
@@ -20,12 +18,9 @@ vi.mock('@/lib/redis', () => ({
   },
 }));
 
-vi.mock(
-  '@/services/places/nearby/fetch-and-process-google-data/fetch-and-process-google-data',
-  () => ({
-    fetchAndProcessGoogleData: vi.fn(),
-  })
-);
+vi.mock('@/services/places/nearby/fetch-places-data/fetch-places-data', () => ({
+  fetchPlacesData: vi.fn(),
+}));
 
 vi.mock('@/services/places/nearby/get-search-params/get-search-params', () => ({
   getSearchParams: vi.fn(),
@@ -45,40 +40,22 @@ vi.mock(
   })
 );
 
-vi.mock('@/services/places/nearby/cache-results/cache-results', () => ({
-  setCacheResults: vi.fn(),
-}));
-
-// Mock console methods to prevent noise in test output
-vi.spyOn(console, 'log').mockImplementation(() => {});
-vi.spyOn(console, 'error').mockImplementation(() => {});
-
 describe('Places Nearby API', () => {
   // Sample data for tests
-  const mockLocation = '32.8662,-117.2268';
+  const mockLocation =
+    MOCK_PLACES[0].location.latitude + ',' + MOCK_PLACES[0].location.longitude;
   const mockKeys = [1, 2]; // pizza, beer
   const mockTextQuery = 'pizza|beer';
-  const mockCacheKey = 'places-v2:32.8662,-117.2268';
+  const mockCacheKey = `places-v2:${mockLocation}`;
 
-  const mockSimplifiedPlace: SimplifiedMapPlace = {
-    id: 'place123',
-    location: {
-      latitude: 32.8662,
-      longitude: -117.2268,
-    },
-    category: 'pizza',
-    emoji: '🍕',
-  };
+  // Use the first mock place from our mock file
+  const mockSimplifiedPlace = { ...MOCK_PLACES[0] };
 
   const mockPlacesResponse: PlacesResponse = {
-    places: [mockSimplifiedPlace],
+    data: [mockSimplifiedPlace],
     count: 1,
     cacheHit: false,
   };
-
-  // Default buffer miles and limit from the route.ts file
-  const DEFAULT_BUFFER_MILES = 10;
-  const DEFAULT_LIMIT = 20;
 
   // Reset mocks before each test
   beforeEach(() => {
@@ -100,10 +77,9 @@ describe('Places Nearby API', () => {
     (
       buildTextQueryFromKeys as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue(mockTextQuery);
-    (
-      fetchAndProcessGoogleData as unknown as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(mockPlacesResponse);
-    (redis.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null); // Default to cache miss
+    (fetchPlacesData as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPlacesResponse
+    );
   });
 
   afterEach(() => {
@@ -113,7 +89,7 @@ describe('Places Nearby API', () => {
   it('should return places data for valid request', async () => {
     // Create a mock request
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}`
     );
 
     // Execute the handler
@@ -128,20 +104,16 @@ describe('Places Nearby API', () => {
     expect(getSearchParams).toHaveBeenCalledWith(request);
     expect(generateCacheKey).toHaveBeenCalledWith({ location: mockLocation });
     expect(buildTextQueryFromKeys).toHaveBeenCalledWith(mockKeys);
-    expect(redis.get).toHaveBeenCalledWith(mockCacheKey);
 
-    // Update expectation to match the actual implementation with default values
-    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith({
+    // Verify fetchPlacesData was called with the correct parameters
+    expect(fetchPlacesData).toHaveBeenCalledWith({
       textQuery: mockTextQuery,
       location: mockLocation,
       openNow: undefined,
-      limit: DEFAULT_LIMIT,
-      bufferMiles: DEFAULT_BUFFER_MILES,
-    });
-
-    expect(setCacheResults).toHaveBeenCalledWith({
+      limit: undefined,
+      bufferMiles: undefined,
       cacheKey: mockCacheKey,
-      processedPlaces: mockPlacesResponse,
+      bypassCache: false,
     });
   });
 
@@ -153,28 +125,41 @@ describe('Places Nearby API', () => {
       cacheHit: true,
     };
 
-    // Mock redis.get to return the cached response with cacheHit: true
-    (redis.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ...cachedResponse,
-      cacheHit: false, // The route will set this to true
+    // Mock fetchPlacesData to return the cached data
+    (fetchPlacesData as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      cachedResponse
+    );
+
+    // Mock the limit to be less than the cached data count
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      keys: mockKeys,
+      location: mockLocation,
+      bypassCache: false,
+      openNow: undefined,
+      limit: 20, // Less than cachedResponse.count (25)
+      bufferMiles: undefined,
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}`
     );
     const response = await GET(request);
     const data = await response.json();
 
     // Update expectation to match the actual implementation
     expect(response.status).toBe(200);
-    expect(data).toEqual({
-      ...cachedResponse,
-      cacheHit: true, // The route sets this to true for cache hits
-    });
+    expect(data).toEqual(cachedResponse);
 
-    // Verify Google API was not called
-    expect(fetchAndProcessGoogleData).not.toHaveBeenCalled();
-    expect(setCacheResults).not.toHaveBeenCalled();
+    // Verify fetchPlacesData was called with the correct parameters
+    expect(fetchPlacesData).toHaveBeenCalledWith({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      openNow: undefined,
+      limit: 20,
+      bufferMiles: undefined,
+      cacheKey: mockCacheKey,
+      bypassCache: false,
+    });
   });
 
   it('should fetch from Google when cache is bypassed', async () => {
@@ -189,24 +174,26 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268&bypassCache=true'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&bypassCache=true`
     );
     await GET(request);
 
     // Verify cache was not checked
     expect(redis.get).not.toHaveBeenCalled();
 
-    // Verify Google API was called
-    expect(fetchAndProcessGoogleData).toHaveBeenCalled();
+    // Verify fetchPlacesData was called with bypassCache=true
+    expect(fetchPlacesData).toHaveBeenCalledWith({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      openNow: undefined,
+      limit: undefined,
+      bufferMiles: undefined,
+      cacheKey: mockCacheKey,
+      bypassCache: true,
+    });
   });
 
   it('should fetch from Google when cached data is insufficient for requested limit', async () => {
-    // Mock a cache hit with fewer places than requested
-    const cachedResponse = { ...mockPlacesResponse, count: 5 };
-    (redis.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
-      cachedResponse
-    );
-
     // Mock a limit parameter higher than cached count
     (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       keys: mockKeys,
@@ -218,13 +205,20 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268&limit=10'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&limit=10`
     );
     await GET(request);
 
-    // Verify Google API was called despite cache hit
-    expect(redis.get).toHaveBeenCalled();
-    expect(fetchAndProcessGoogleData).toHaveBeenCalled();
+    // Verify fetchPlacesData was called with the correct parameters
+    expect(fetchPlacesData).toHaveBeenCalledWith({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      openNow: undefined,
+      limit: 10,
+      bufferMiles: undefined,
+      cacheKey: mockCacheKey,
+      bypassCache: false,
+    });
   });
 
   it('should return error for missing location parameter', async () => {
@@ -249,7 +243,7 @@ describe('Places Nearby API', () => {
 
     // Verify no further processing occurred
     expect(redis.get).not.toHaveBeenCalled();
-    expect(fetchAndProcessGoogleData).not.toHaveBeenCalled();
+    expect(fetchPlacesData).not.toHaveBeenCalled();
   });
 
   it('should use all valid category keys when no keys are provided', async () => {
@@ -265,7 +259,7 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?location=32.8662,-117.2268'
+      `https://example.com/api/places/v2?location=${mockLocation}`
     );
     const response = await GET(request);
 
@@ -274,7 +268,7 @@ describe('Places Nearby API', () => {
 
     // Verify the correct functions were called with all valid keys
     expect(buildTextQueryFromKeys).toHaveBeenCalledWith(allValidKeys);
-    expect(fetchAndProcessGoogleData).toHaveBeenCalled();
+    expect(fetchPlacesData).toHaveBeenCalled();
   });
 
   it('should handle empty keys array by using all valid keys', async () => {
@@ -290,7 +284,7 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?location=32.8662,-117.2268'
+      `https://example.com/api/places/v2?location=${mockLocation}`
     );
     const response = await GET(request);
     const data = await response.json();
@@ -304,13 +298,13 @@ describe('Places Nearby API', () => {
   });
 
   it('should handle Google API errors gracefully', async () => {
-    // Mock Google API error
-    (
-      fetchAndProcessGoogleData as unknown as ReturnType<typeof vi.fn>
-    ).mockRejectedValue(new Error('Google API error'));
+    // Mock fetchPlacesData error
+    (fetchPlacesData as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Google API error')
+    );
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}`
     );
     const response = await GET(request);
     const data = await response.json();
@@ -319,41 +313,9 @@ describe('Places Nearby API', () => {
     expect(data).toEqual({
       error: 'An error occurred while processing your request',
     });
-  });
 
-  it('should return error when Google API fails even with cache available', async () => {
-    // Mock a cache hit
-    const cachedResponse = { ...mockPlacesResponse, cacheHit: true, count: 5 };
-    (redis.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
-      cachedResponse
-    );
-
-    // Mock Google API error
-    (
-      fetchAndProcessGoogleData as unknown as ReturnType<typeof vi.fn>
-    ).mockRejectedValue(new Error('Google API error'));
-
-    // Mock a limit parameter higher than cached count to force API call
-    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      keys: mockKeys,
-      location: mockLocation,
-      bypassCache: false,
-      openNow: undefined,
-      limit: 10,
-      bufferMiles: undefined,
-    });
-
-    const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268&limit=10'
-    );
-    const response = await GET(request);
-    const data = await response.json();
-
-    // The current implementation returns a 500 error when Google API fails
-    expect(response.status).toBe(500);
-    expect(data).toEqual({
-      error: 'An error occurred while processing your request',
-    });
+    // Verify error was logged
+    expect(log.error).toHaveBeenCalled();
   });
 
   it('should handle additional parameters correctly', async () => {
@@ -368,22 +330,24 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268&openNow=true&limit=20&bufferMiles=5'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&openNow=true&limit=20&bufferMiles=5`
     );
 
     await GET(request);
 
-    // Verify parameters were passed correctly
-    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith({
+    // Verify parameters were passed correctly to fetchPlacesData
+    expect(fetchPlacesData).toHaveBeenCalledWith({
       textQuery: mockTextQuery,
       location: mockLocation,
       openNow: true,
       limit: 20,
       bufferMiles: 5,
+      cacheKey: mockCacheKey,
+      bypassCache: false,
     });
   });
 
-  it('should pass openNow parameter to Google API when provided', async () => {
+  it('should pass openNow parameter to fetchPlacesData when provided', async () => {
     // Mock openNow parameter
     (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       keys: mockKeys,
@@ -395,17 +359,19 @@ describe('Places Nearby API', () => {
     });
 
     const request = new NextRequest(
-      'https://example.com/api/places/v2?key=1&key=2&location=32.8662,-117.2268&openNow=true'
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&openNow=true`
     );
     await GET(request);
 
-    // Verify openNow was passed to Google API
-    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith({
+    // Verify openNow was passed to fetchPlacesData
+    expect(fetchPlacesData).toHaveBeenCalledWith({
       textQuery: mockTextQuery,
       location: mockLocation,
       openNow: true, // Verify openNow is passed as true
-      limit: DEFAULT_LIMIT,
-      bufferMiles: DEFAULT_BUFFER_MILES,
+      limit: undefined,
+      bufferMiles: undefined,
+      cacheKey: mockCacheKey,
+      bypassCache: false,
     });
   });
 });
