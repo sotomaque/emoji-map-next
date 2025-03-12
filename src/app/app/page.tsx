@@ -220,7 +220,7 @@ const HackerButton = ({
 const ResetButton = ({ onClick }: { onClick: () => void }) => (
   <button
     onClick={onClick}
-    className="ml-2 px-2 py-1 text-xs bg-zinc-950 hover:bg-zinc-900 text-red-400 border border-red-700 rounded-sm font-mono hover:text-red-300 hover:border-red-500 hover:shadow-[0_0_10px_rgba(248,113,113,0.3)] transition-all duration-200"
+    className='ml-2 px-2 py-1 text-xs bg-zinc-950 hover:bg-zinc-900 text-red-400 border border-red-700 rounded-sm font-mono hover:text-red-300 hover:border-red-500 hover:shadow-[0_0_10px_rgba(248,113,113,0.3)] transition-all duration-200'
   >
     [RESET]
   </button>
@@ -467,7 +467,7 @@ const NearbyPlacesSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <div className="flex justify-between items-center">
+          <div className='flex justify-between items-center'>
             <CardTitle>
               <HackerTitle>results</HackerTitle>
             </CardTitle>
@@ -494,12 +494,12 @@ const NearbyPlacesSection = ({
         </HackerCardHeader>
 
         <HackerCardContent>
-          <div className="flex justify-between items-center mb-4">
+          <div className='flex justify-between items-center mb-4'>
             {/* Display the request URL */}
             {nearbyPlacesQuery.data ? (
               <RequestUrlDisplay url={getRequestUrl()} />
             ) : (
-              <div className="flex-1"></div>
+              <div className='flex-1'></div>
             )}
             <HackerButton
               onClick={handleClearNearbyPlaces}
@@ -556,7 +556,7 @@ const NearbyPlacesSection = ({
 
                       <div className='max-h-96 overflow-y-auto'>
                         {nearbyPlacesQuery.data.data &&
-                          nearbyPlacesQuery.data.data.length > 0 ? (
+                        nearbyPlacesQuery.data.data.length > 0 ? (
                           <ul className='grid grid-cols-1 gap-3'>
                             {nearbyPlacesQuery.data.data.map((place) =>
                               renderPlaceCard(place)
@@ -730,7 +730,7 @@ const PlaceDetailsSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <div className="flex justify-between items-center">
+          <div className='flex justify-between items-center'>
             <CardTitle>
               <HackerTitle>place_details_result</HackerTitle>
             </CardTitle>
@@ -759,12 +759,12 @@ const PlaceDetailsSection = ({
         </HackerCardHeader>
 
         <HackerCardContent>
-          <div className="flex justify-between items-center mb-4">
+          <div className='flex justify-between items-center mb-4'>
             {/* Display the request URL */}
             {placeDetailsQuery.data ? (
               <RequestUrlDisplay url={getRequestUrl()} />
             ) : (
-              <div className="flex-1"></div>
+              <div className='flex-1'></div>
             )}
             <HackerButton
               onClick={handleClearPlaceDetails}
@@ -833,11 +833,11 @@ const PlaceDetailsSection = ({
                               typeof placeDetailsQuery.data.data
                                 .primaryTypeDisplayName === 'object'
                                 ? (
-                                  placeDetailsQuery.data.data
-                                    .primaryTypeDisplayName as TextObject
-                                ).text
+                                    placeDetailsQuery.data.data
+                                      .primaryTypeDisplayName as TextObject
+                                  ).text
                                 : placeDetailsQuery.data.data
-                                  .primaryTypeDisplayName
+                                    .primaryTypeDisplayName
                             )}
                             {renderDetailField(
                               'Rating',
@@ -856,10 +856,10 @@ const PlaceDetailsSection = ({
                               'currentOpeningHours' in
                                 placeDetailsQuery.data.data
                                 ? (
-                                  placeDetailsQuery.data.data as {
-                                    currentOpeningHours: CurrentOpeningHours;
-                                  }
-                                ).currentOpeningHours.openNow
+                                    placeDetailsQuery.data.data as {
+                                      currentOpeningHours: CurrentOpeningHours;
+                                    }
+                                  ).currentOpeningHours.openNow
                                 : placeDetailsQuery.data.data.openNow
                             )}
                           </div>
@@ -957,9 +957,9 @@ const PlaceDetailsSection = ({
                               {typeof placeDetailsQuery.data.data
                                 .editorialSummary === 'object'
                                 ? (
-                                  placeDetailsQuery.data.data
-                                    .editorialSummary as TextObject
-                                ).text
+                                    placeDetailsQuery.data.data
+                                      .editorialSummary as TextObject
+                                  ).text
                                 : placeDetailsQuery.data.data.editorialSummary}
                             </p>
                           </div>
@@ -975,9 +975,9 @@ const PlaceDetailsSection = ({
                               {typeof placeDetailsQuery.data.data
                                 .generativeSummary === 'object'
                                 ? (
-                                  placeDetailsQuery.data.data
-                                    .generativeSummary as GenerativeSummary
-                                ).overview.text
+                                    placeDetailsQuery.data.data
+                                      .generativeSummary as GenerativeSummary
+                                  ).overview.text
                                 : placeDetailsQuery.data.data.generativeSummary}
                             </p>
                           </div>
@@ -1012,11 +1012,11 @@ const PlaceDetailsSection = ({
                                   </p>
                                   <p className='text-sm'>
                                     {typeof review.text === 'object' &&
-                                      review.text?.text
+                                    review.text?.text
                                       ? review.text.text
                                       : typeof review.text === 'string'
-                                        ? review.text
-                                        : 'No review text'}
+                                      ? review.text
+                                      : 'No review text'}
                                   </p>
                                 </div>
                               )
@@ -1152,7 +1152,7 @@ const PhotosSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <div className="flex justify-between items-center">
+          <div className='flex justify-between items-center'>
             <CardTitle>
               <HackerTitle>photo_result</HackerTitle>
             </CardTitle>
@@ -1181,12 +1181,12 @@ const PhotosSection = ({
         </HackerCardHeader>
 
         <HackerCardContent>
-          <div className="flex justify-between items-center mb-4">
+          <div className='flex justify-between items-center mb-4'>
             {/* Display the request URL */}
             {photoQuery.data ? (
               <RequestUrlDisplay url={getRequestUrl()} />
             ) : (
-              <div className="flex-1"></div>
+              <div className='flex-1'></div>
             )}
             <HackerButton
               onClick={handleClearPhotos}
