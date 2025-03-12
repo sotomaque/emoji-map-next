@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Analytics } from "@vercel/analytics/react"
 import { Providers } from '@/components/providers/providers';
 import { env } from '../env';
 import { cn } from '../lib/utils';
@@ -41,6 +42,7 @@ export default function RootLayout({
           <ReactQueryDevtools initialIsOpen={false} />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
