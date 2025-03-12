@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -216,6 +216,16 @@ const HackerButton = ({
   </Button>
 );
 
+// Add a reset button component with cyberpunk style
+const ResetButton = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="ml-2 px-2 py-1 text-xs bg-zinc-950 hover:bg-zinc-900 text-red-400 border border-red-700 rounded-sm font-mono hover:text-red-300 hover:border-red-500 hover:shadow-[0_0_10px_rgba(248,113,113,0.3)] transition-all duration-200"
+  >
+    [RESET]
+  </button>
+);
+
 // Section components to wrap in error boundaries
 const NearbyPlacesSection = ({
   location,
@@ -236,6 +246,7 @@ const NearbyPlacesSection = ({
   nearbyPlacesQuery,
   handleGetDetails,
   handleGetPhotos,
+  handleClearNearbyPlaces,
 }: {
   location: string;
   setLocation: (value: string) => void;
@@ -255,6 +266,7 @@ const NearbyPlacesSection = ({
   nearbyPlacesQuery: UseQueryResult<EnhancedPlacesResponse, Error>;
   handleGetDetails: (id: string) => void;
   handleGetPhotos: (id: string) => void;
+  handleClearNearbyPlaces: () => void;
 }) => {
   // Construct the request URL for display
   const getRequestUrl = () => {
@@ -316,6 +328,17 @@ const NearbyPlacesSection = ({
       </div>
     </li>
   );
+
+  // Function to reset the component state
+  const handleReset = () => {
+    setLocation(DEFAULT_LOCATION);
+    setTextQuery(DEFAULT_TEXT_QUERY);
+    setLimit(DEFAULT_LIMIT);
+    setBypassCache(false);
+    setOpenNow(false);
+    setShowRawJson(false);
+    handleClearNearbyPlaces(); // Clear the query data
+  };
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -444,12 +467,15 @@ const NearbyPlacesSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <CardTitle>
-            <HackerTitle>results</HackerTitle>
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              <HackerTitle>results</HackerTitle>
+            </CardTitle>
+            <ResetButton onClick={handleReset} />
+          </div>
           <CardDescription className='flex items-center justify-between text-cyan-700 dark:text-cyan-700 font-mono text-xs mt-2'>
             <span>API response will appear here</span>
-            <span className='flex items-center space-x-3'>
+            <div className='flex items-center space-x-3'>
               <input
                 type='checkbox'
                 id='show-raw-json-nearby'
@@ -463,15 +489,26 @@ const NearbyPlacesSection = ({
               >
                 Show Raw JSON
               </Label>
-            </span>
+            </div>
           </CardDescription>
         </HackerCardHeader>
 
         <HackerCardContent>
-          {/* Display the request URL */}
-          {nearbyPlacesQuery.data && (
-            <RequestUrlDisplay url={getRequestUrl()} />
-          )}
+          <div className="flex justify-between items-center mb-4">
+            {/* Display the request URL */}
+            {nearbyPlacesQuery.data ? (
+              <RequestUrlDisplay url={getRequestUrl()} />
+            ) : (
+              <div className="flex-1"></div>
+            )}
+            <HackerButton
+              onClick={handleClearNearbyPlaces}
+              disabled={!nearbyPlacesQuery.data}
+              className='text-xs ml-2'
+            >
+              [CLEAR]
+            </HackerButton>
+          </div>
 
           {nearbyPlacesQuery.isError && (
             <div className='p-4 mb-5 bg-zinc-950 dark:bg-zinc-950 border border-red-700 text-red-400 dark:text-red-400 rounded-sm font-mono shadow-[0_0_10px_rgba(248,113,113,0.2)]'>
@@ -519,7 +556,7 @@ const NearbyPlacesSection = ({
 
                       <div className='max-h-96 overflow-y-auto'>
                         {nearbyPlacesQuery.data.data &&
-                        nearbyPlacesQuery.data.data.length > 0 ? (
+                          nearbyPlacesQuery.data.data.length > 0 ? (
                           <ul className='grid grid-cols-1 gap-3'>
                             {nearbyPlacesQuery.data.data.map((place) =>
                               renderPlaceCard(place)
@@ -560,6 +597,7 @@ const PlaceDetailsSection = ({
   placeDetailsQuery,
   bypassCache,
   setBypassCache,
+  handleClearPlaceDetails,
 }: {
   placeId: string;
   setPlaceId: (value: string) => void;
@@ -568,6 +606,7 @@ const PlaceDetailsSection = ({
   placeDetailsQuery: UseQueryResult<EnhancedDetailResponse, Error>;
   bypassCache: boolean;
   setBypassCache: (value: boolean) => void;
+  handleClearPlaceDetails: () => void;
 }) => {
   // Construct the request URL for display
   const getRequestUrl = () => {
@@ -615,6 +654,14 @@ const PlaceDetailsSection = ({
         </span>
       </div>
     );
+  };
+
+  // Function to reset the component state
+  const handleReset = () => {
+    setPlaceId(DEFAULT_PLACE_ID);
+    setBypassCache(false);
+    setShowRawJson(false);
+    handleClearPlaceDetails(); // Clear the query data
   };
 
   return (
@@ -683,12 +730,15 @@ const PlaceDetailsSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <CardTitle>
-            <HackerTitle>place_details_result</HackerTitle>
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              <HackerTitle>place_details_result</HackerTitle>
+            </CardTitle>
+            <ResetButton onClick={handleReset} />
+          </div>
           <CardDescription className='flex items-center justify-between text-cyan-700 dark:text-cyan-700 font-mono text-xs mt-2'>
             <span>Place details API response will appear here</span>
-            <span className='flex items-center space-x-3'>
+            <div className='flex items-center space-x-3'>
               <input
                 type='checkbox'
                 id='show-raw-json-details'
@@ -704,15 +754,26 @@ const PlaceDetailsSection = ({
               >
                 Show Raw JSON
               </Label>
-            </span>
+            </div>
           </CardDescription>
         </HackerCardHeader>
 
         <HackerCardContent>
-          {/* Display the request URL */}
-          {placeDetailsQuery.data && (
-            <RequestUrlDisplay url={getRequestUrl()} />
-          )}
+          <div className="flex justify-between items-center mb-4">
+            {/* Display the request URL */}
+            {placeDetailsQuery.data ? (
+              <RequestUrlDisplay url={getRequestUrl()} />
+            ) : (
+              <div className="flex-1"></div>
+            )}
+            <HackerButton
+              onClick={handleClearPlaceDetails}
+              disabled={!placeDetailsQuery.data}
+              className='text-xs ml-2'
+            >
+              [CLEAR]
+            </HackerButton>
+          </div>
 
           {placeDetailsQuery.isError && (
             <div className='p-4 mb-5 bg-zinc-950 dark:bg-zinc-950 border border-red-700 text-red-400 dark:text-red-400 rounded-sm font-mono shadow-[0_0_10px_rgba(248,113,113,0.2)]'>
@@ -772,11 +833,11 @@ const PlaceDetailsSection = ({
                               typeof placeDetailsQuery.data.data
                                 .primaryTypeDisplayName === 'object'
                                 ? (
-                                    placeDetailsQuery.data.data
-                                      .primaryTypeDisplayName as TextObject
-                                  ).text
+                                  placeDetailsQuery.data.data
+                                    .primaryTypeDisplayName as TextObject
+                                ).text
                                 : placeDetailsQuery.data.data
-                                    .primaryTypeDisplayName
+                                  .primaryTypeDisplayName
                             )}
                             {renderDetailField(
                               'Rating',
@@ -795,10 +856,10 @@ const PlaceDetailsSection = ({
                               'currentOpeningHours' in
                                 placeDetailsQuery.data.data
                                 ? (
-                                    placeDetailsQuery.data.data as {
-                                      currentOpeningHours: CurrentOpeningHours;
-                                    }
-                                  ).currentOpeningHours.openNow
+                                  placeDetailsQuery.data.data as {
+                                    currentOpeningHours: CurrentOpeningHours;
+                                  }
+                                ).currentOpeningHours.openNow
                                 : placeDetailsQuery.data.data.openNow
                             )}
                           </div>
@@ -896,9 +957,9 @@ const PlaceDetailsSection = ({
                               {typeof placeDetailsQuery.data.data
                                 .editorialSummary === 'object'
                                 ? (
-                                    placeDetailsQuery.data.data
-                                      .editorialSummary as TextObject
-                                  ).text
+                                  placeDetailsQuery.data.data
+                                    .editorialSummary as TextObject
+                                ).text
                                 : placeDetailsQuery.data.data.editorialSummary}
                             </p>
                           </div>
@@ -914,9 +975,9 @@ const PlaceDetailsSection = ({
                               {typeof placeDetailsQuery.data.data
                                 .generativeSummary === 'object'
                                 ? (
-                                    placeDetailsQuery.data.data
-                                      .generativeSummary as GenerativeSummary
-                                  ).overview.text
+                                  placeDetailsQuery.data.data
+                                    .generativeSummary as GenerativeSummary
+                                ).overview.text
                                 : placeDetailsQuery.data.data.generativeSummary}
                             </p>
                           </div>
@@ -951,11 +1012,11 @@ const PlaceDetailsSection = ({
                                   </p>
                                   <p className='text-sm'>
                                     {typeof review.text === 'object' &&
-                                    review.text?.text
+                                      review.text?.text
                                       ? review.text.text
                                       : typeof review.text === 'string'
-                                      ? review.text
-                                      : 'No review text'}
+                                        ? review.text
+                                        : 'No review text'}
                                   </p>
                                 </div>
                               )
@@ -989,6 +1050,7 @@ const PhotosSection = ({
   photoQuery,
   bypassCache,
   setBypassCache,
+  handleClearPhotos,
 }: {
   photoId: string;
   setPhotoId: (value: string) => void;
@@ -997,6 +1059,7 @@ const PhotosSection = ({
   photoQuery: UseQueryResult<PhotosResponse, Error>;
   bypassCache: boolean;
   setBypassCache: (value: boolean) => void;
+  handleClearPhotos: () => void;
 }) => {
   // State to track which photo is being viewed
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
@@ -1015,6 +1078,15 @@ const PhotosSection = ({
     }
 
     return `/api/places/photos?${params.toString()}`;
+  };
+
+  // Function to reset the component state
+  const handleReset = () => {
+    setPhotoId(DEFAULT_PHOTO_ID);
+    setBypassCache(false);
+    setShowRawJson(false);
+    setSelectedPhotoIndex(null);
+    handleClearPhotos(); // Clear the query data
   };
 
   return (
@@ -1080,12 +1152,15 @@ const PhotosSection = ({
 
       <HackerCard>
         <HackerCardHeader>
-          <CardTitle>
-            <HackerTitle>photo_result</HackerTitle>
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>
+              <HackerTitle>photo_result</HackerTitle>
+            </CardTitle>
+            <ResetButton onClick={handleReset} />
+          </div>
           <CardDescription className='flex items-center justify-between text-cyan-700 dark:text-cyan-700 font-mono text-xs mt-2'>
             <span>Photo API response will appear here</span>
-            <span className='flex items-center space-x-3'>
+            <div className='flex items-center space-x-3'>
               <input
                 type='checkbox'
                 id='show-raw-json-photo'
@@ -1101,13 +1176,26 @@ const PhotosSection = ({
               >
                 Show Raw JSON
               </Label>
-            </span>
+            </div>
           </CardDescription>
         </HackerCardHeader>
 
         <HackerCardContent>
-          {/* Display the request URL */}
-          {photoQuery.data && <RequestUrlDisplay url={getRequestUrl()} />}
+          <div className="flex justify-between items-center mb-4">
+            {/* Display the request URL */}
+            {photoQuery.data ? (
+              <RequestUrlDisplay url={getRequestUrl()} />
+            ) : (
+              <div className="flex-1"></div>
+            )}
+            <HackerButton
+              onClick={handleClearPhotos}
+              disabled={!photoQuery.data}
+              className='text-xs ml-2'
+            >
+              [CLEAR]
+            </HackerButton>
+          </div>
 
           {photoQuery.isError && (
             <div className='p-4 mb-5 bg-zinc-950 dark:bg-zinc-950 border border-red-700 text-red-400 dark:text-red-400 rounded-sm font-mono shadow-[0_0_10px_rgba(248,113,113,0.2)]'>
@@ -1218,6 +1306,7 @@ const PhotosSection = ({
 export default function AppPage() {
   const router = useRouter();
   const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
+  const queryClient = useQueryClient();
 
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [textQuery, setTextQuery] = useState(DEFAULT_TEXT_QUERY);
@@ -1387,6 +1476,26 @@ export default function AppPage() {
     retry: 1,
   });
 
+  // Function to clear nearby places query data
+  const handleClearNearbyPlaces = () => {
+    queryClient.removeQueries({ queryKey: ['nearbyPlaces'] });
+    toast.success('Nearby places results cleared');
+  };
+
+  // Function to clear place details query data
+  const handleClearPlaceDetails = () => {
+    queryClient.removeQueries({ queryKey: ['placeDetails'] });
+    setPlaceId(DEFAULT_PLACE_ID);
+    toast.success('Place details results cleared');
+  };
+
+  // Function to clear photo query data
+  const handleClearPhotos = () => {
+    queryClient.removeQueries({ queryKey: ['photo'] });
+    setPhotoId(DEFAULT_PHOTO_ID);
+    toast.success('Photo results cleared');
+  };
+
   // Function to set place ID and immediately fetch details
   const handleGetDetails = (id: string) => {
     setPlaceId(id);
@@ -1507,6 +1616,7 @@ export default function AppPage() {
             nearbyPlacesQuery={nearbyPlacesQuery}
             handleGetDetails={handleGetDetails}
             handleGetPhotos={handleGetPhotos}
+            handleClearNearbyPlaces={handleClearNearbyPlaces}
           />
         </ErrorBoundary>
 
@@ -1520,6 +1630,7 @@ export default function AppPage() {
             placeDetailsQuery={placeDetailsQuery}
             bypassCache={bypassCacheDetails}
             setBypassCache={setBypassCacheDetails}
+            handleClearPlaceDetails={handleClearPlaceDetails}
           />
         </ErrorBoundary>
 
@@ -1533,6 +1644,7 @@ export default function AppPage() {
             photoQuery={photoQuery}
             bypassCache={bypassCachePhotos}
             setBypassCache={setBypassCachePhotos}
+            handleClearPhotos={handleClearPhotos}
           />
         </ErrorBoundary>
       </div>
