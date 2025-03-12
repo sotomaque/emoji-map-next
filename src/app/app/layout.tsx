@@ -13,7 +13,7 @@ import { Header } from '@/components/nav/header/header';
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider >
+    <ClerkProvider>
       <div className='min-h-screen flex flex-col bg-zinc-950 dark:bg-zinc-950 text-cyan-400 dark:text-cyan-400 font-mono bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.1),transparent)]'>
         <Header showAuth={true} />
         <main className='flex-grow'>{children}</main>

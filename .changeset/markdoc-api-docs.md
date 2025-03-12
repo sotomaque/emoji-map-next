@@ -2,6 +2,18 @@
 "web": minor
 ---
 
+## API Documentation Improvements
+
+- Replaced "coming soon" documentation page with comprehensive API documentation
+- Created Markdoc components for rendering API documentation
+- Added documentation for Places API endpoints (nearby, details, photos)
+- Implemented dynamic routing for API documentation pages
+- Added support for custom Markdoc tags (callout, endpoint, parameter, response, code)
+- Created a custom Markdoc component for consistent rendering across the application
+- Updated documentation to reflect actual response types from the API handlers
+- Enhanced documentation with detailed information about each API endpoint
+- Improved styling and navigation for the documentation pages
+
 Added Markdoc integration for comprehensive API documentation.
 - Replaced the "coming soon" docs page with detailed API documentation
 - Created Markdoc components for rendering API documentation (callout, endpoint, parameter, response, code)
