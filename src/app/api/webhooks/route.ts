@@ -135,7 +135,6 @@ async function handleUserCreated(userData: UserJSON) {
         lastName: userData.last_name || null,
         imageUrl: userData.image_url || null,
         username: userData.username || null,
-        id: clerkId,
         updatedAt: new Date(userData.updated_at),
       },
     });
