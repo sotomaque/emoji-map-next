@@ -47,11 +47,15 @@ export async function fetchPlacesData({
 }): Promise<PlacesResponse> {
   let cachedData: Place[] | null = null;
 
+  // if we are specifying only open places,
+  // we dont want to read from cache
+
   // Only attempt cache operations if cacheKey is non-null and bypassCache is false
-  if (!bypassCache && cacheKey) {
+  if (!bypassCache && cacheKey && !openNow) {
     cachedData = await redis.get<Place[]>(cacheKey);
     if (cachedData) {
       log.success(`Cache hit with ${cachedData.length} places`, { cacheKey });
+
       if (!limit || cachedData.length >= limit) {
         return {
           cacheHit: true,

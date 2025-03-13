@@ -1,6 +1,7 @@
 import { env } from '@/env';
-import type { Detail } from '@/types/details';
 import { log } from '@/utils/log';
+import { transformDetailsData } from '../data-transformer/data-transformer';
+import { googleDetailsResponseSchema } from '../validator/details-validator';
 
 /**
  * Fetches place details from the Google Places API for a given place ID
@@ -14,7 +15,6 @@ import { log } from '@/utils/log';
  * const placeDetails = await fetchDetails('ChIJN1t_tDeuEmsRUsoyG83frY4');
  * ```
  */
-
 export async function fetchDetails(id: string) {
   try {
     // Build the Details URL
@@ -24,6 +24,7 @@ export async function fetchDetails(id: string) {
     const fields = [
       'name',
       'rating',
+      'reviews',
       'priceLevel',
       'userRatingCount',
       'currentOpeningHours.openNow',
@@ -53,7 +54,7 @@ export async function fetchDetails(id: string) {
     const fullUrl = `${baseUrl}/places/${id}?${params.toString()}`;
 
     // Make the request
-    log.info('Fetching details from Google Places API', { url: fullUrl });
+    log.success('Fetching details from Google Places API', { url: fullUrl });
 
     const response = await fetch(fullUrl);
 
@@ -65,16 +66,31 @@ export async function fetchDetails(id: string) {
       throw new Error(`API Error: ${response.statusText}`);
     }
 
-    const data: Detail = await response.json();
+    // Parse the response as JSON (untyped)
+    const rawData = await response.json();
 
-    log.success('Details fetched1', { ...data });
+    log.success('Raw data fetched', { ...rawData });
 
-    if (!data) {
-      log.error('No result found', { requestResult: Object.keys(data) });
+    if (!rawData) {
+      log.error('No result found', { requestResult: Object.keys(rawData) });
       throw new Error('No result found');
     }
 
-    log.success('Details fetched', { ...data });
+    // Validate the data using Zod schema
+    const validationResult = googleDetailsResponseSchema.safeParse(rawData);
+
+    if (!validationResult.success) {
+      log.error('Invalid API response format', {
+        errors: validationResult.error.format(),
+        data: rawData,
+      });
+      throw new Error('Invalid API response format');
+    }
+
+    // Extract the validated data
+    const data = transformDetailsData(validationResult.data);
+
+    log.success('Normalized Details Returned', { ...data });
 
     return data;
   } catch (error) {
