@@ -1,482 +1,411 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
-import EmojiSelectorSkeleton from '@/components/map/emoji-selector/emoji-selector-skeleton';
-import MapSkeleton from '@/components/map/map-skeleton';
-import { FEATURE_FLAGS } from '@/constants/feature-flags';
-import { usePlaces, useCurrentLocation } from '@/hooks/usePlaces';
-import type { MapDataPoint } from '@/services/places';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import NearbyPlacesSection from '@/app/app/components/nearby-places-section';
+import PhotosSection from '@/app/app/components/photos-section';
+import PlaceDetailsSection from '@/app/app/components/place-details-section';
 import {
-  useMarkerStore,
-  type Viewport,
-  type FilterCriteria,
-} from '@/store/markerStore';
-import { useFiltersStore } from '@/store/useFiltersStore';
-
-// Dynamically import the EmojiSelector component with no SSR
-const EmojiSelector = dynamic(
-  () => import('@/components/map/emoji-selector/emoji-selector'),
-  {
-    ssr: false,
-    loading: () => <EmojiSelectorSkeleton />,
-  }
-);
-
-// Dynamically import the GoogleMap component with no SSR
-const GoogleMap = dynamic(() => import('@/components/map/map'), {
-  ssr: false,
-  loading: () => <MapSkeleton />,
-});
+  DEFAULT_LOCATION,
+  DEFAULT_LIMIT,
+  DEFAULT_PHOTO_ID,
+  DEFAULT_PLACE_ID,
+} from '@/app/app/components/types';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { Label } from '@/components/ui/label';
+import { FEATURE_FLAGS } from '@/constants/feature-flags';
+import type { DetailResponse } from '@/types/details';
+import type { PhotosResponse } from '@/types/google-photos';
+import type { PlacesResponse } from '@/types/places';
 
 // Main page component that handles feature flag check
 export default function AppPage() {
   const router = useRouter();
   const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
+  const queryClient = useQueryClient();
 
-  // Use useEffect for client-side redirects
+  // Refs for scrolling to sections
+  const placeDetailsRef = useRef<HTMLDivElement>(null);
+  const photosRef = useRef<HTMLDivElement>(null);
+
+  const [location, setLocation] = useState(DEFAULT_LOCATION);
+  const [keysQuery, setKeysQuery] = useState('1|2');
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [bypassCache, setBypassCache] = useState(false);
+  const [openNow, setOpenNow] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Individual raw JSON toggles for each section
+  const [showRawJsonNearby, setShowRawJsonNearby] = useState(false);
+  const [showRawJsonDetails, setShowRawJsonDetails] = useState(false);
+  const [showRawJsonPhoto, setShowRawJsonPhoto] = useState(false);
+  const [showAllRawJson, setShowAllRawJson] = useState(false);
+
+  // Photo API state
+  const [photoId, setPhotoId] = useState(DEFAULT_PHOTO_ID);
+  const [bypassCachePhotos, setBypassCachePhotos] = useState(false);
+
+  // Details API state
+  const [placeId, setPlaceId] = useState(DEFAULT_PLACE_ID);
+  const [bypassCacheDetails, setBypassCacheDetails] = useState(false);
+
+  // Use useEffect for navigation to avoid "location is not defined" error
   useEffect(() => {
     if (!IS_APP_ENABLED) {
       router.push('/');
     }
   }, [IS_APP_ENABLED, router]);
 
-  // If app is not enabled, render nothing or a loading state
-  if (!IS_APP_ENABLED) {
-    return null;
-  }
+  // Function to toggle all raw JSON views at once
+  const handleToggleAllRawJson = (checked: boolean) => {
+    setShowAllRawJson(checked);
+    setShowRawJsonNearby(checked);
+    setShowRawJsonDetails(checked);
+    setShowRawJsonPhoto(checked);
+  };
 
-  // If app is enabled, render the app content
-  return <AppContent />;
-}
-
-// Separate component for app content to avoid conditional hook calls
-function AppContent() {
-  // Get filters from Zustand store
-  const {
-    selectedCategories,
-    showFavoritesOnly,
-    isAllCategoriesMode,
-    getAllCategoryKeywords,
-    openNow,
-    priceLevel,
-    minimumRating,
-    userLocation,
-    viewport: zustandViewport,
-    setUserLocation,
-    setViewportCenter,
-    setViewportBounds,
-    setViewportZoom,
-  } = useFiltersStore();
-
-  // Local state for favorites
-  const [favoriteMarkerIds, setFavoriteMarkerIds] = useState<Set<string>>(
-    new Set()
-  );
-
-  // Get user location
-  const { data: locationData, isLoading: isLoadingLocation } =
-    useCurrentLocation();
-
-  // Update user location when available
-  useEffect(() => {
-    if (locationData) {
-      setUserLocation(locationData);
-    }
-  }, [locationData, setUserLocation]);
-
-  // Determine categories to use for API request
-  const categoriesToUse = isAllCategoriesMode
-    ? getAllCategoryKeywords()
-    : selectedCategories;
-
-  // Use viewport center for API request if available, otherwise use user location
-  const searchLocation = zustandViewport.center || userLocation;
-
-  // Refs for debounce timeouts
-  const boundsChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const centerChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const filtersChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Track if we're currently panning the map
-  const isPanningRef = useRef(false);
-
-  // Track if we need to refetch due to filter changes
-  const needsRefetchRef = useRef(false);
-
-  // Fetch places based on filters and viewport
-  const { isLoading: isLoadingPlaces, refetch } = usePlaces({
-    latitude: searchLocation?.lat || 0,
-    longitude: searchLocation?.lng || 0,
-    radius: 5000, // 5km
-    bounds: zustandViewport.bounds || undefined,
-    categories: categoriesToUse,
-    openNow,
-    priceLevel,
-    minimumRating: minimumRating || undefined,
-  });
-
-  // Get marker store functions - only destructure what we need
-  const {
-    visibleMarkers: markers,
-    newMarkerIds,
-    isTransitioning,
-    setMarkers,
-    setVisibleMarkers,
-    setCurrentViewport,
-    setIsTransitioning,
-    hasViewportCached,
-    filterMarkers,
-    clearCache,
-  } = useMarkerStore();
-
-  // Convert Zustand viewport to our Viewport type
-  const currentViewport: Viewport = useMemo(
-    () => ({
-      center: zustandViewport.center,
-      bounds: zustandViewport.bounds,
-      zoom: zustandViewport.zoom,
-    }),
-    [zustandViewport]
-  );
-
-  // Create filter criteria object
-  const filterCriteria: FilterCriteria = useMemo(
-    () => ({
-      categories: selectedCategories,
-      isAllCategoriesMode,
-      showFavoritesOnly,
-      favoriteIds: favoriteMarkerIds,
+  // TanStack Query for nearby places
+  const nearbyPlacesQuery = useQuery({
+    queryKey: [
+      'nearbyPlaces',
+      location,
+      keysQuery,
+      limit,
+      bypassCache,
       openNow,
-      priceLevel,
-      minimumRating,
-    }),
-    [
-      selectedCategories,
-      isAllCategoriesMode,
-      showFavoritesOnly,
-      favoriteMarkerIds,
-      openNow,
-      priceLevel,
-      minimumRating,
-    ]
-  );
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
 
-  // Handle refetch with transition state
-  const handleRefetchWithTransition = useCallback(
-    async (viewport: Viewport) => {
-      if (!searchLocation) return;
+      // Add location parameter
+      params.append('location', location);
 
-      // Set transitioning state to true
-      setIsTransitioning(true);
+      // Add keys parameters for each key
+      if (keysQuery) {
+        const keys = keysQuery.split('|').map((k) => k.trim());
+        keys.forEach((key) => {
+          if (key) {
+            params.append('keys', key);
+          }
+        });
+      }
+
+      // Add limit parameter
+      params.append('limit', limit.toString());
+
+      // Add optional parameters
+      if (bypassCache) {
+        params.append('bypassCache', 'true');
+      }
+
+      if (openNow) {
+        params.append('openNow', 'true');
+      }
 
       try {
-        // Refetch data - this will fetch ALL categories regardless of user selection
-        // and then we'll filter them client-side based on the selected categories
-        const result = await refetch();
-        console.log('[AppPage] Data refetched successfully');
+        console.log({
+          locationURL: `/api/places/nearby?${params.toString()}`,
+        });
+        const response = await fetch(`/api/places/nearby?${params.toString()}`);
 
-        // If we have data, update the marker store
-        if (result.data && result.data.mapDataPoints) {
-          // Store all markers in the cache (unfiltered)
-          setMarkers(result.data.mapDataPoints, viewport);
-
-          // Apply filters to determine which markers to show
-          const filteredMarkers = filterMarkers(viewport, filterCriteria);
-
-          // Update visible markers
-          setVisibleMarkers(filteredMarkers);
-
-          console.log(
-            `[AppPage] Showing ${filteredMarkers.length} filtered markers out of ${result.data.mapDataPoints.length} total`
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
           );
         }
 
-        // Add a small delay before removing transition state
-        // This gives time for the new markers to prepare for animation
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 100);
+        return response.json() as Promise<PlacesResponse>;
       } catch (error) {
-        console.error('[AppPage] Error refetching data:', error);
-        setIsTransitioning(false);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Nearby places query failed: ${errorMessage}`);
+        throw error;
       }
     },
-    [
-      searchLocation,
-      refetch,
-      setMarkers,
-      filterMarkers,
-      filterCriteria,
-      setVisibleMarkers,
-      setIsTransitioning,
-    ]
-  );
+    enabled: false, // Don't run automatically on mount or when params change
+    retry: 1,
+  });
 
-  // Apply filters locally when filter criteria change but viewport remains the same
-  useEffect(() => {
-    // Skip if we don't have a current viewport or if the viewport isn't cached
-    if (!currentViewport || !hasViewportCached(currentViewport)) {
-      // Mark that we need to refetch when the viewport changes
-      needsRefetchRef.current = true;
+  // TanStack Query for place details
+  const placeDetailsQuery = useQuery({
+    queryKey: ['placeDetails', placeId, bypassCacheDetails],
+    queryFn: async () => {
+      if (!placeId) {
+        toast.error('Place ID is required');
+        throw new Error('ID is required');
+      }
+
+      const params = new URLSearchParams({
+        id: placeId,
+      });
+
+      if (bypassCacheDetails) {
+        params.append('bypassCache', 'true');
+      }
+
+      try {
+        const response = await fetch(
+          `/api/places/details?${params.toString()}`
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
+          );
+        }
+
+        return response.json() as Promise<DetailResponse>;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Place details query failed: ${errorMessage}`);
+        throw error;
+      }
+    },
+    enabled: false, // Don't run automatically on mount or when placeId changes
+    retry: 1,
+  });
+
+  // TanStack Query for photos
+  const photoQuery = useQuery({
+    queryKey: ['photo', photoId, bypassCachePhotos],
+    queryFn: async () => {
+      if (!photoId) {
+        toast.error('Photo ID is required');
+        throw new Error('Photo ID is required');
+      }
+
+      const params = new URLSearchParams({
+        id: photoId,
+      });
+
+      if (bypassCachePhotos) {
+        params.append('bypassCache', 'true');
+      }
+
+      try {
+        const response = await fetch(`/api/places/photos?${params.toString()}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}. ${errorText}`
+          );
+        }
+
+        return response.json() as Promise<PhotosResponse>;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Photo query failed: ${errorMessage}`);
+        throw error;
+      }
+    },
+    enabled: false, // Don't run automatically on mount or when photoId changes
+    retry: 1,
+  });
+
+  // Function to clear nearby places query data
+  const handleClearNearbyPlaces = () => {
+    queryClient.resetQueries({ queryKey: ['nearbyPlaces'] });
+    toast.success('Nearby places results cleared');
+  };
+
+  // Function to clear place details query data
+  const handleClearPlaceDetails = () => {
+    queryClient.resetQueries({ queryKey: ['placeDetails'] });
+    setPlaceId(DEFAULT_PLACE_ID);
+    toast.success('Place details results cleared');
+  };
+
+  // Function to clear photo query data
+  const handleClearPhotos = () => {
+    queryClient.resetQueries({ queryKey: ['photo'] });
+    setPhotoId(DEFAULT_PHOTO_ID);
+    toast.success('Photo results cleared');
+  };
+
+  // Function to set place ID and immediately fetch details
+  const handleGetDetails = (id: string) => {
+    setPlaceId(id);
+    // Use setTimeout with 0 delay to ensure the state is updated before refetching
+    setTimeout(() => {
+      toast.info(`Fetching details for place ID: ${id}`);
+      placeDetailsQuery.refetch();
+
+      // Scroll to the details section with a small delay to ensure rendering
+      setTimeout(() => {
+        if (placeDetailsRef.current) {
+          placeDetailsRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      }, 100);
+    }, 0);
+  };
+
+  // Function to set photo ID and immediately fetch photos
+  const handleGetPhotos = (id: string) => {
+    setPhotoId(id);
+    // Use setTimeout with 0 delay to ensure the state is updated before refetching
+    setTimeout(() => {
+      toast.info(`Fetching photos for place ID: ${id}`);
+      photoQuery.refetch();
+
+      // Scroll to the photos section with a small delay to ensure rendering
+      setTimeout(() => {
+        if (photosRef.current) {
+          photosRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      }, 100);
+    }, 0);
+  };
+
+  const getCurrentLocation = () => {
+    setGettingLocation(true);
+    setLocationError(null);
+
+    if (!navigator.geolocation) {
+      const errorMsg = 'Geolocation is not supported by your browser';
+      setLocationError(errorMsg);
+      toast.error(errorMsg);
+      setGettingLocation(false);
       return;
     }
 
-    // Clear any existing timeout
-    if (filtersChangeTimeoutRef.current) {
-      clearTimeout(filtersChangeTimeoutRef.current);
-    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Format to 4 decimal places for consistency
+        const formattedLat = latitude.toFixed(4);
+        const formattedLng = longitude.toFixed(4);
+        const locationString = `${formattedLat},${formattedLng}`;
+        setLocation(locationString);
+        toast.success(`Location set to: ${locationString}`);
+        setGettingLocation(false);
+      },
+      (error) => {
+        let errorMessage = 'Unknown error occurred while getting location';
 
-    // Debounce filter application to prevent too many updates
-    filtersChangeTimeoutRef.current = setTimeout(() => {
-      console.log('[AppPage] Applying filters locally');
-
-      // Apply filters locally
-      const filteredMarkers = filterMarkers(currentViewport, filterCriteria);
-
-      // Update visible markers without making a network request
-      setVisibleMarkers(filteredMarkers);
-
-      console.log(`[AppPage] Filtered to ${filteredMarkers.length} markers`);
-    }, 300); // 300ms debounce for local filtering
-
-    return () => {
-      if (filtersChangeTimeoutRef.current) {
-        clearTimeout(filtersChangeTimeoutRef.current);
-      }
-    };
-  }, [
-    filterCriteria,
-    currentViewport,
-    hasViewportCached,
-    filterMarkers,
-    setVisibleMarkers,
-  ]);
-
-  // Handle map bounds changed
-  const handleBoundsChanged = useCallback(
-    (bounds: google.maps.LatLngBounds | null) => {
-      if (!bounds) return;
-
-      // Clear any existing timeout
-      if (boundsChangeTimeoutRef.current) {
-        clearTimeout(boundsChangeTimeoutRef.current);
-      }
-
-      // Set panning flag
-      isPanningRef.current = true;
-
-      // Convert Google Maps bounds to the format expected by the store
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-
-      const newBounds = {
-        ne: { lat: ne.lat(), lng: ne.lng() },
-        sw: { lat: sw.lat(), lng: sw.lng() },
-      };
-
-      // Update the viewport in Zustand
-      setViewportBounds(newBounds);
-
-      // Create a new viewport object
-      const newViewport: Viewport = {
-        center: zustandViewport.center,
-        bounds: newBounds,
-        zoom: zustandViewport.zoom,
-      };
-
-      // Update the current viewport in the marker store
-      setCurrentViewport(newViewport);
-
-      // Debounce the API call to prevent too many requests while panning
-      boundsChangeTimeoutRef.current = setTimeout(() => {
-        isPanningRef.current = false;
-        console.log('[AppPage] Bounds change debounce complete');
-
-        // Check if we already have markers for this viewport
-        if (hasViewportCached(newViewport)) {
-          console.log('[AppPage] Using cached markers for this viewport');
-
-          // Apply filters to the cached markers
-          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
-
-          // Update visible markers
-          setVisibleMarkers(filteredMarkers);
-
-          console.log(
-            `[AppPage] Showing ${filteredMarkers.length} filtered markers`
-          );
-        } else {
-          console.log('[AppPage] Fetching new markers for this viewport');
-          // Trigger refetch with transition
-          handleRefetchWithTransition(newViewport);
-          // Reset the needs refetch flag
-          needsRefetchRef.current = false;
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
+            break;
         }
-      }, 1000); // 1000ms debounce (1 second)
-    },
-    [
-      zustandViewport,
-      setViewportBounds,
-      setCurrentViewport,
-      hasViewportCached,
-      filterMarkers,
-      filterCriteria,
-      setVisibleMarkers,
-      handleRefetchWithTransition,
-    ]
-  );
 
-  // Handle map center changed
-  const handleCenterChanged = useCallback(
-    (center: { lat: number; lng: number }) => {
-      // Only update center if we're not already panning
-      // This prevents duplicate API calls since bounds change also fires
-      if (isPanningRef.current) {
-        console.log('[AppPage] Skipping center change during active panning');
-        return;
+        setLocationError(errorMessage);
+        toast.error(errorMessage);
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
       }
+    );
+  };
 
-      // Update viewport center in Zustand
-      setViewportCenter(center);
-
-      // Create a new viewport object
-      const newViewport: Viewport = {
-        center,
-        bounds: zustandViewport.bounds,
-        zoom: zustandViewport.zoom,
-      };
-
-      // Update the current viewport in the marker store
-      setCurrentViewport(newViewport);
-
-      // Clear any existing timeout
-      if (centerChangeTimeoutRef.current) {
-        clearTimeout(centerChangeTimeoutRef.current);
-      }
-
-      // Debounce the API call
-      centerChangeTimeoutRef.current = setTimeout(() => {
-        console.log('[AppPage] Center change debounce complete');
-
-        // Check if we already have markers for this viewport
-        if (hasViewportCached(newViewport)) {
-          console.log('[AppPage] Using cached markers for this viewport');
-
-          // Apply filters to the cached markers
-          const filteredMarkers = filterMarkers(newViewport, filterCriteria);
-
-          // Update visible markers
-          setVisibleMarkers(filteredMarkers);
-
-          console.log(
-            `[AppPage] Showing ${filteredMarkers.length} filtered markers`
-          );
-        } else {
-          console.log('[AppPage] Fetching new markers for this viewport');
-          // Trigger refetch with transition
-          handleRefetchWithTransition(newViewport);
-          // Reset the needs refetch flag
-          needsRefetchRef.current = false;
-        }
-      }, 1000); // 1000ms debounce (1 second)
-    },
-    [
-      zustandViewport,
-      setViewportCenter,
-      setCurrentViewport,
-      hasViewportCached,
-      filterMarkers,
-      filterCriteria,
-      setVisibleMarkers,
-      handleRefetchWithTransition,
-    ]
-  );
-
-  // Handle map zoom changed
-  const handleZoomChanged = useCallback(
-    (zoom: number) => {
-      console.log('[AppPage] Zoom changed:', zoom);
-
-      // Update viewport zoom in Zustand
-      setViewportZoom(zoom);
-
-      // Create a new viewport object
-      const newViewport: Viewport = {
-        center: zustandViewport.center,
-        bounds: zustandViewport.bounds,
-        zoom,
-      };
-
-      // Update the current viewport in the marker store
-      setCurrentViewport(newViewport);
-
-      // We don't trigger a refetch here as the bounds change will handle that
-    },
-    [zustandViewport, setViewportZoom, setCurrentViewport]
-  );
-
-  // Handle shuffle click (refetch data)
-  const handleShuffleClick = useCallback(() => {
-    console.log('Shuffle clicked');
-
-    // Clear the marker cache
-    clearCache();
-
-    // Trigger a refetch with transition
-    handleRefetchWithTransition(currentViewport);
-  }, [clearCache, handleRefetchWithTransition, currentViewport]);
-
-  // Handle map click
-  const handleMapClick = useCallback(() => {
-    console.log('Map clicked');
-    // Close any open info windows or perform other actions
-  }, []);
-
-  // Handle marker click
-  const handleMarkerClick = useCallback((marker: MapDataPoint) => {
-    console.log('Marker clicked:', marker);
-    // Toggle favorite status
-    setFavoriteMarkerIds((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(marker.id)) {
-        newFavorites.delete(marker.id);
-      } else {
-        newFavorites.add(marker.id);
-      }
-      return newFavorites;
-    });
-  }, []);
-
-  // Loading state
-  const isLoading = isLoadingLocation || isLoadingPlaces;
+  if (!IS_APP_ENABLED) {
+    return null; // Return null while the redirect happens in useEffect
+  }
 
   return (
-    <div className='flex flex-col h-screen'>
-      <div className='flex justify-center'>
-        <div className='absolute top-0 z-50 py-4'>
-          <EmojiSelector
-            onShuffleClick={handleShuffleClick}
-            isLoading={isLoading}
+    <div className='flex flex-col p-6'>
+      <div className='flex justify-between items-center mb-6 border-b border-cyan-400 dark:border-cyan-800 pb-4'>
+        <h1 className='text-3xl font-bold font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center'>
+          <span className='mr-2 text-cyan-400'>$</span>
+          <span>API_DEBUG_TOOLS</span>
+          <span className='ml-2 animate-pulse text-purple-500'>_</span>
+        </h1>
+        <div className='flex items-center space-x-2'>
+          <input
+            type='checkbox'
+            id='show-all-raw-json'
+            checked={showAllRawJson}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleToggleAllRawJson(e.target.checked)
+            }
+            className='h-4 w-4 rounded border-cyan-700 text-cyan-500 focus:ring-cyan-700'
           />
+          <Label htmlFor='show-all-raw-json' className='text-cyan-400'>
+            Show All Raw JSON
+          </Label>
         </div>
       </div>
 
-      <div className='flex-grow relative'>
-        <GoogleMap
-          markers={markers}
-          onMapClick={handleMapClick}
-          onMarkerClick={handleMarkerClick}
-          onBoundsChanged={handleBoundsChanged}
-          onCenterChanged={handleCenterChanged}
-          onZoomChanged={handleZoomChanged}
-          initialCenter={userLocation || undefined}
-          initialZoom={zustandViewport.zoom}
-          isTransitioning={isTransitioning}
-          newMarkerIds={newMarkerIds}
-        />
+      <div className='grid grid-cols-1 gap-6'>
+        {/* Nearby Places API Section */}
+        <ErrorBoundary title='Nearby Places API Error'>
+          <NearbyPlacesSection
+            location={location}
+            setLocation={setLocation}
+            keysQuery={keysQuery}
+            setKeysQuery={setKeysQuery}
+            limit={limit}
+            setLimit={setLimit}
+            bypassCache={bypassCache}
+            setBypassCache={setBypassCache}
+            openNow={openNow}
+            setOpenNow={setOpenNow}
+            gettingLocation={gettingLocation}
+            locationError={locationError}
+            getCurrentLocation={getCurrentLocation}
+            showRawJson={showRawJsonNearby}
+            setShowRawJson={setShowRawJsonNearby}
+            nearbyPlacesQuery={nearbyPlacesQuery}
+            handleGetDetails={handleGetDetails}
+            handleGetPhotos={handleGetPhotos}
+            handleClearNearbyPlaces={handleClearNearbyPlaces}
+          />
+        </ErrorBoundary>
+
+        {/* Place Details API Section */}
+        <div ref={placeDetailsRef}>
+          <ErrorBoundary title='Place Details API Error'>
+            <PlaceDetailsSection
+              placeId={placeId}
+              setPlaceId={setPlaceId}
+              showRawJson={showRawJsonDetails}
+              setShowRawJson={setShowRawJsonDetails}
+              placeDetailsQuery={placeDetailsQuery}
+              bypassCache={bypassCacheDetails}
+              setBypassCache={setBypassCacheDetails}
+              handleClearPlaceDetails={handleClearPlaceDetails}
+            />
+          </ErrorBoundary>
+        </div>
+
+        {/* Photos API Section */}
+        <div ref={photosRef}>
+          <ErrorBoundary title='Photos API Error'>
+            <PhotosSection
+              photoId={photoId}
+              setPhotoId={setPhotoId}
+              showRawJson={showRawJsonPhoto}
+              setShowRawJson={setShowRawJsonPhoto}
+              photoQuery={photoQuery}
+              bypassCache={bypassCachePhotos}
+              setBypassCache={setBypassCachePhotos}
+              handleClearPhotos={handleClearPhotos}
+            />
+          </ErrorBoundary>
+        </div>
       </div>
     </div>
   );

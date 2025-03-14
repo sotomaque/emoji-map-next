@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '@/lib/db';
-import { setupApiTestServer } from '../../helpers/api-test-helpers';
 import {
   webhookFixtures,
   mockClerkWebhook,
   createClerkWebhookHandler,
+  setupApiTestServer,
   type MockedPrismaClient,
-} from '../../helpers/clerk-webhook-helpers';
+} from '../../../../vitest.setup';
 
 // Setup server with API handlers
 const server = setupApiTestServer();
@@ -34,33 +34,34 @@ describe('Clerk Webhook Handler - User Update', () => {
     vi.resetAllMocks();
   });
 
-  it('should handle user.updated event and update a user in the database', async () => {
-    // Mock the database operations
-    const mockUser = {
-      id: webhookFixtures.userUpdate.data.id,
-      clerkId: webhookFixtures.userUpdate.data.id,
-      email: webhookFixtures.userUpdate.data.email_addresses[0].email_address,
-      firstName: webhookFixtures.userUpdate.data.first_name || 'Test',
-      lastName: webhookFixtures.userUpdate.data.last_name || 'User',
-    };
-
+  it('should update a user when user.updated event is received', async () => {
     // Mock the findUnique method to return a user
-    mockedPrisma.user.findUnique.mockResolvedValue(mockUser);
+    mockedPrisma.user.findUnique.mockResolvedValueOnce({
+      id: 'existing-user-id',
+      clerkId: webhookFixtures.userUpdate.data.id,
+      email: 'old-email@example.com',
+      // Add other required fields
+    });
 
     // Mock the update method to return the updated user
-    mockedPrisma.user.update.mockResolvedValue({
-      ...mockUser,
-      firstName: webhookFixtures.userUpdate.data.first_name || 'Updated',
-      lastName: webhookFixtures.userUpdate.data.last_name || 'User',
+    mockedPrisma.user.update.mockResolvedValueOnce({
+      id: 'existing-user-id',
+      clerkId: webhookFixtures.userUpdate.data.id,
+      email: webhookFixtures.userUpdate.data.email_addresses[0].email_address,
+      // Add other required fields
     });
 
     // Override the default handler for this specific test
     server.use(
-      createClerkWebhookHandler(webhookFixtures.userUpdate, mockedPrisma)
+      createClerkWebhookHandler(
+        webhookFixtures.userUpdate,
+        mockedPrisma,
+        'http://localhost/api/webhooks/test-update'
+      )
     );
 
     // Create a mock request with the necessary headers and body
-    const response = await fetch('/api/webhooks', {
+    const response = await fetch('http://localhost/api/webhooks/test-update', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,14 +72,12 @@ describe('Clerk Webhook Handler - User Update', () => {
       body: JSON.stringify(webhookFixtures.userUpdate),
     });
 
-    // Check that the response is successful
+    // Verify the response
     expect(response.status).toBe(200);
-
-    // Parse the response body
     const data = await response.json();
-
-    // Check that the response contains the expected data
     expect(data).toHaveProperty('success', true);
+    expect(data).toHaveProperty('message');
+    expect(data).toHaveProperty('timestamp');
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({
@@ -90,7 +89,6 @@ describe('Clerk Webhook Handler - User Update', () => {
       where: { clerkId: webhookFixtures.userUpdate.data.id },
       data: expect.objectContaining({
         email: webhookFixtures.userUpdate.data.email_addresses[0].email_address,
-        updatedAt: expect.any(Date),
       }),
     });
   });

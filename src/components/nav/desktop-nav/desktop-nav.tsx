@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
-import { useNavItems } from '@/hooks/useNavItems';
+import { useNavItems } from '@/hooks/useNavItems/useNavItems';
 import type { NavItem } from '@/types/nav-items';
 import { isNavItemActive } from '@/utils/nav/is-nav-item-active';
 

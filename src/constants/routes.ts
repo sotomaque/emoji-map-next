@@ -1,5 +1,17 @@
 import type { NavItem } from '@/types/nav-items';
 
+/**
+ * Navigation items for the application
+ *
+ * Each item can have the following properties:
+ * - label: Display text for the navigation item
+ * - href: URL the navigation item links to
+ * - target: Whether to open in a new tab (true) or same tab (false)
+ * - featureFlag: Optional feature flag that controls visibility
+ * - hidden: Optional flag to hide from main navigation but still accessible
+ *
+ * @type {NavItem[]}
+ */
 export const navItems: NavItem[] = [
   {
     label: 'Home',
@@ -19,7 +31,7 @@ export const navItems: NavItem[] = [
   },
   {
     label: 'Docs',
-    href: '/api-docs',
+    href: '/docs',
     target: false,
   },
   {

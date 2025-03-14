@@ -11,16 +11,55 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+//
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
+  id        String     @id @default(cuid())
+  clerkId   String     @unique
+  email     String     @unique
   username  String?
   firstName String?
   lastName  String?
   imageUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  favorites Favorite[] // Relation to favorite places
 
   @@index([clerkId])
+}
+
+model Place {
+  id          String     @id @default(cuid())
+  name        String?
+  description String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  favorites   Favorite[] // Relation to users who favorited this place
+
+  @@index([name])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  placeId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, placeId]) // Prevents duplicate favorites
+  @@index([userId])
+  @@index([placeId])
+}
+
+// Working towards having the mapping of the emoji to the key the db 
+// will use to match the place to the category in a db
+// Currently CATEGORY_MAP is used locally and redefined in the iOS client
+model Category {
+  id       Int      @id
+  emoji    String   @unique
+  name     String   @unique
+  keywords String[]
 }

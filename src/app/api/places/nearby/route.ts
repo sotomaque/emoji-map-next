@@ -1,125 +1,58 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { env } from '@/env';
-import {
-  redis,
-  CACHE_EXPIRATION_TIME,
-  generatePlacesCacheKey,
-} from '@/lib/redis';
-import { categoryEmojis } from '@/services/places';
-import type {
-  Place,
-  GooglePlacesResponse,
-  PlaceResult,
-} from '@/types/google-places';
+import { chunk } from 'lodash-es';
+import { buildTextQueryFromKeys } from '@/services/places/nearby/build-text-query-from-string/build-text-query-from-string';
+import { fetchPlacesData } from '@/services/places/nearby/fetch-places-data/fetch-places-data';
+import { generateCacheKey } from '@/services/places/nearby/generate-cache-key/generate-cache-key';
+import { getSearchParams } from '@/services/places/nearby/get-search-params/get-search-params';
+import type { ErrorResponse } from '@/types/error-response';
+import type { PlacesResponse } from '@/types/places';
+import { log } from '@/utils/log';
 
-// Extend the PlaceResult interface to include the sourceKeyword property
-interface ExtendedPlaceResult extends PlaceResult {
-  sourceKeyword?: string;
-}
+// IDEA:
+// i pass two keys
+// i make two requests
+// but cache both
+
+// TODO:
+// - add support for filtering by price levels ($, $$, $$$, $$$$)
+// - add support for filtering by minimumRating
+// - add support for filtering by open now ✅ (passing filter though now)
 
 /**
- * @swagger
- * /api/places/nearby:
- *   get:
- *     summary: Get nearby places
- *     description: Fetches places near a specified location based on type and category
- *     tags:
- *       - places
- *     parameters:
- *       - name: location
- *         in: query
- *         description: Latitude and longitude in format "lat,lng"
- *         required: true
- *         schema:
- *           type: string
- *           example: "37.7749,-122.4194"
- *       - name: radius
- *         in: query
- *         description: Search radius in meters
- *         required: false
- *         schema:
- *           type: integer
- *           default: 5000
- *           example: 5000
- *       - name: bounds
- *         in: query
- *         description: Bounds in format "lat1,lng1|lat2,lng2"
- *         required: false
- *         schema:
- *           type: string
- *           example: "37.7749,-122.4194|37.7749,-122.4194"
- *       - name: type
- *         in: query
- *         description: Google Places type (e.g., "restaurant", "cafe")
- *         required: true
- *         schema:
- *           type: string
- *           example: "restaurant"
- *       - name: keywords
- *         in: query
- *         description: Comma-separated list of keywords to search for
- *         required: false
- *         schema:
- *           type: string
- *           example: "burger,fast food"
- *       - name: openNow
- *         in: query
- *         description: Set to "true" to only show places that are currently open
- *         required: false
- *         schema:
- *           type: string
- *           enum: ["true", "false"]
- *           example: "true"
- *     responses:
- *       200:
- *         description: List of places matching the criteria
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 places:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Place'
- *       400:
- *         description: Bad request - missing required parameters
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ * Nearby Places API Route Handler
+ *
+ * GET endpoint to fetch nearby places based on search parameters:
+ * - location (required): Latitude/longitude coordinates
+ * - keys: Category keys to filter places by (defaults to all categories)
+ * - openNow: Filter for currently open places
+ * - limit: Maximum number of results to return
+ * - bufferMiles: Search radius in miles
+ * - bypassCache: Force fresh data fetch
+ *
+ * The handler:
+ * 1. Validates required parameters
+ * 2. Builds text query from category keys
+ * 3. Generates cache key from location
+ * 4. Fetches places data (from cache if available)
+ * 5. Returns formatted places response
+ *
+ * @param {NextRequest} request - Next.js API request object
+ * @returns {Promise<NextResponse>} JSON response with places data or error
+ * @throws Will return 400 if location parameter is missing
+ * @throws Will return 500 for any other errors during processing
  */
-export async function GET(request: NextRequest) {
+
+// Maximum number of keys to include in a single batch
+const MAX_KEYS_PER_BATCH = 2;
+
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<PlacesResponse | ErrorResponse>> {
   try {
-    // Get query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const location = searchParams.get('location');
-    const radius = searchParams.get('radius') || '5000';
-    const bounds = searchParams.get('bounds');
-    const type = searchParams.get('type');
-    const keywordsParam = searchParams.get('keywords') || '';
-    const openNow = searchParams.get('openNow') === 'true';
+    const { keys, location, bypassCache, openNow, limit, bufferMiles } =
+      getSearchParams(request);
 
-    // Parse keywords into an array
-    const keywords = keywordsParam.split(',').filter((k) => k.trim() !== '');
-
-    console.log('[API] Processing request with:', {
-      location,
-      radius,
-      bounds,
-      type,
-      keywords,
-      openNow,
-    });
-
-    // Validate required parameters
     if (!location) {
       return NextResponse.json(
         { error: 'Missing required parameter: location' },
@@ -127,258 +60,92 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!type) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: type' },
-        { status: 400 }
-      );
-    }
+    // If we have more than MAX_KEYS_PER_BATCH keys, we need to batch the requests
+    if (keys && keys.length > MAX_KEYS_PER_BATCH) {
+      // Split keys into batches of MAX_KEYS_PER_BATCH
+      const keyBatches = chunk(keys, MAX_KEYS_PER_BATCH);
 
-    // Generate a cache key based only on the location and radius
-    const cacheKey = generatePlacesCacheKey({
-      location,
-      radius: radius || undefined,
-    });
+      // Process each batch in parallel
+      const batchPromises = keyBatches.map(async (keyBatch) => {
+        const textQuery = buildTextQueryFromKeys(keyBatch);
+        const cacheKey = generateCacheKey({
+          location: location!,
+          keys: keyBatch,
+        });
 
-    // Try to get data from cache first
-    const cachedData = await redis.get<ExtendedPlaceResult[]>(cacheKey);
-
-    let allResults: ExtendedPlaceResult[] = [];
-    let fromCache = false;
-
-    if (cachedData) {
-      console.log(`[API] Cache hit for key: ${cacheKey}`);
-
-      // Filter cached results by type and openNow (skip bounds filtering to avoid unnecessary API calls)
-      allResults = cachedData.filter((result) => {
-        // Check if the result matches the requested type
-        const matchesType = result.types?.includes(type || '') || false;
-
-        // Check if the result matches the openNow filter (if specified)
-        const matchesOpenNow =
-          !openNow || result.opening_hours?.open_now === true;
-
-        return matchesType && matchesOpenNow;
+        return fetchPlacesData({
+          textQuery,
+          location: location!,
+          openNow,
+          limit,
+          bufferMiles,
+          cacheKey,
+          bypassCache,
+          keys: keyBatch,
+        });
       });
 
-      console.log(
-        `[API] After type and openNow filtering: ${allResults.length} results from ${cachedData.length} cached items`
-      );
+      // Wait for all batches to complete
+      const batchResults = await Promise.all(batchPromises);
 
-      // If we don't have any results after filtering, we need to fetch from the API
-      if (allResults.length === 0) {
-        console.log(
-          `[API] No matching results in cache for type: ${type}, openNow: ${openNow}, fetching from API`
-        );
-        fromCache = false;
-      } else {
-        fromCache = true;
-      }
-    }
+      // Merge the results from all batches
+      const mergedResults: PlacesResponse = {
+        data: [],
+        count: 0,
+        cacheHit: batchResults.every((result) => result.cacheHit),
+      };
 
-    // If we don't have cached data or no matching results after filtering, fetch from the API
-    if (!cachedData || allResults.length === 0) {
-      console.log(
-        `[API] ${cachedData ? 'No matching results in cache' : 'Cache miss'}, fetching from Google Places API`
-      );
-
-      // Build the Google Places API URL using type-safe environment variables
-      const apiKey = env.GOOGLE_PLACES_API_KEY;
-      const baseUrl = env.GOOGLE_PLACES_URL;
-
-      // Create a Set to store unique place IDs to avoid duplicates
-      const uniquePlaceIds = new Set<string>();
-
-      // Combine all keywords with pipe character for a single request
-      const combinedKeywords = keywords.length > 0 ? keywords.join('|') : '';
-
-      console.log(
-        `[API] Using combined keywords: ${combinedKeywords || '(type only)'}`
-      );
-
-      // Build the request parameters
-      const params = new URLSearchParams({
-        location,
-        radius,
-        type,
-        key: apiKey,
-      });
-
-      // Add bounds if provided (this will override radius)
-      if (bounds) {
-        // Validate bounds format: should be "lat1,lng1|lat2,lng2"
-        const boundsRegex =
-          /^-?\d+(\.\d+)?,-?\d+(\.\d+)?\|-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
-        if (boundsRegex.test(bounds)) {
-          params.append('bounds', bounds);
-        } else {
-          console.warn(
-            `[API] Invalid bounds format: ${bounds}, using radius instead`
-          );
-        }
-      }
-
-      // Add optional parameters if provided
-      if (combinedKeywords) params.append('keyword', combinedKeywords);
-      if (openNow) params.append('opennow', 'true');
-
-      // Make the request to Google Places API
-      const url = `${baseUrl}?${params.toString()}`;
-      console.log(`[API] Request:`, url);
-
-      try {
-        const response = await fetch(url);
-        const data: GooglePlacesResponse = await response.json();
-
-        // Check for API errors
-        if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-          console.error(`[API] Error:`, data.status, data.error_message);
-          return NextResponse.json(
-            { error: 'Failed to fetch nearby places' },
-            { status: 500 }
-          );
-        }
-
-        // Log the number of results
-        console.log(`[API] Received ${data.results?.length || 0} results`);
-
-        // Process the results
-        for (const result of data.results) {
-          // Add the result to our list if it's not already there
-          if (!uniquePlaceIds.has(result.place_id)) {
-            uniquePlaceIds.add(result.place_id);
-
-            // Determine which keyword matched this result
-            let matchedKeyword = '';
-            if (keywords.length > 0) {
-              const placeText =
-                `${result.name} ${result.vicinity || ''}`.toLowerCase();
-
-              // Find the first keyword that matches
-              matchedKeyword =
-                keywords.find((keyword) =>
-                  placeText.includes(keyword.toLowerCase())
-                ) || type;
-            } else {
-              matchedKeyword = type;
-            }
-
-            allResults.push({
-              ...result,
-              // Store the specific keyword that matched this place
-              sourceKeyword: matchedKeyword,
-            });
+      // Combine all the data from each batch
+      for (const result of batchResults) {
+        // Add unique places (avoid duplicates by checking IDs)
+        for (const place of result.data) {
+          if (!mergedResults.data.some((p) => p.id === place.id)) {
+            mergedResults.data.push(place);
           }
         }
-      } catch (error) {
-        console.error('[API] Fetch error:', error);
-        return NextResponse.json(
-          { error: 'Failed to fetch nearby places' },
-          { status: 500 }
-        );
       }
 
-      // Cache the results for future requests
-      if (allResults.length > 0) {
-        console.log(
-          `[API] Caching ${allResults.length} results with key: ${cacheKey}`
-        );
-        await redis.set(cacheKey, allResults, { ex: CACHE_EXPIRATION_TIME });
-      }
+      // Update the count
+      mergedResults.count = mergedResults.data.length;
+
+      return NextResponse.json(mergedResults);
     }
 
-    // If we have keywords and the data came from cache, filter the results by keywords
-    if (fromCache && keywords.length > 0) {
-      console.log(
-        `[API] Filtering cached results by keywords: ${keywords.join(', ')}`
-      );
+    // Standard flow for requests with few keys
+    // At this point, keys will always be valid (either user-provided valid keys or all keys from CATEGORY_MAP)
+    const textQuery = buildTextQueryFromKeys(keys);
 
-      // Create a Set of unique place IDs that match any of the keywords
-      const matchingPlaceIds = new Set<string>();
+    // TODO: double check cache key is working
+    // prefix:version:location:keys
+    // i.e. `places:v1:40.71,-74.01:1,2,3`
+    const cacheKey = generateCacheKey({ location: location!, keys }); // Non-null assertion after validation
 
-      // Map to store which keyword matched each place
-      const placeKeywords = new Map<string, string>();
-
-      // For each result, check if it matches any of the keywords
-      for (const result of allResults) {
-        // Check if the place name or vicinity contains any of the keywords
-        const placeText =
-          `${result.name} ${result.vicinity || ''}`.toLowerCase();
-
-        // Find the first keyword that matches
-        const matchedKeyword = keywords.find((keyword) =>
-          placeText.includes(keyword.toLowerCase())
-        );
-
-        if (matchedKeyword) {
-          matchingPlaceIds.add(result.place_id);
-          placeKeywords.set(result.place_id, matchedKeyword);
-        }
-      }
-
-      // Filter the results to only include places that match the keywords
-      allResults = allResults.filter((result) =>
-        matchingPlaceIds.has(result.place_id)
-      );
-
-      // Update the sourceKeyword for each result
-      allResults = allResults.map((result) => ({
-        ...result,
-        sourceKeyword:
-          placeKeywords.get(result.place_id) || result.sourceKeyword || type,
-      }));
-
-      console.log(
-        `[API] After keyword filtering: ${allResults.length} results`
-      );
-    }
-
-    // Transform the results to match our Place model
-    // This matches the iOS Place model structure
-    const places: (Place & { emoji: string })[] = allResults
-      .map((result: ExtendedPlaceResult) => {
-        // Use the keyword that found this place as its category
-        const category = result.sourceKeyword || keywords[0] || type;
-
-        // Get the emoji for the category, or use a default
-        const emoji = categoryEmojis[category];
-
-        if (!emoji) {
-          console.error(`[places] No emoji found for category: ${category}`);
-
-          return {};
-        }
-
-        return {
-          placeId: result.place_id,
-          name: result.name,
-          coordinate: {
-            latitude: result.geometry.location.lat,
-            longitude: result.geometry.location.lng,
-          },
-          category,
-          emoji,
-          description: result.vicinity || 'No description available',
-          priceLevel: result.price_level || null,
-          openNow: result.opening_hours?.open_now || null,
-          rating: result.rating || null,
-        };
-      })
-      .filter((place) => place.placeId !== undefined);
-
-    console.log(
-      `[API] Returning ${places.length} unique places ${fromCache ? 'from cache' : 'from API'}`
-    );
-
-    return NextResponse.json({
-      places,
-      source: fromCache ? 'cache' : 'api',
+    // i.e. { id: 'places/123', location: { latitude: 40.71, longitude: -74.01 }, emoji: '🍵' }
+    const placesData = await fetchPlacesData({
+      textQuery,
+      location: location!,
+      openNow,
+      limit,
+      bufferMiles,
+      cacheKey,
+      bypassCache,
+      keys,
     });
+
+    return NextResponse.json(placesData);
   } catch (error) {
-    console.error('Error fetching nearby places:', error);
+    log.error(`[API] Error processing request`, { error });
+
     return NextResponse.json(
-      { error: 'Failed to fetch nearby places' },
+      { error: 'An error occurred while processing your request' },
       { status: 500 }
     );
   }
 }
+
+// Export config for Next.js (e.g., disable body parser if not needed)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

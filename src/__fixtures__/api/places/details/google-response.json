@@ -1,0 +1,38 @@
+{
+  "name": "places/ChIJV_U7LED_wokRul5d4R2YP_g",
+  "rating": 4,
+  "priceLevel": "PRICE_LEVEL_MODERATE",
+  "userRatingCount": 4508,
+  "primaryTypeDisplayName": {
+    "text": "Diner"
+  },
+  "takeout": true,
+  "delivery": true,
+  "dineIn": true,
+  "currentOpeningHours": {
+    "openNow": false
+  },
+  "editorialSummary": {
+    "text": "Old-school 1940s art deco diner serving breakfast & American comfort food 24/7."
+  },
+  "outdoorSeating": true,
+  "liveMusic": false,
+  "menuForChildren": true,
+  "servesDessert": true,
+  "servesCoffee": true,
+  "goodForChildren": true,
+  "allowsDogs": false,
+  "restroom": true,
+  "goodForGroups": true,
+  "paymentOptions": {
+    "acceptsCreditCards": true,
+    "acceptsDebitCards": true,
+    "acceptsCashOnly": false,
+    "acceptsNfc": true
+  },
+  "generativeSummary": {
+    "overview": {
+      "text": "Long-standing diner with an Art Deco vibe serving breakfast-to-dinner American eats and cocktails."
+    }
+  }
+}

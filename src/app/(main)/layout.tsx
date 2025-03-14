@@ -14,10 +14,20 @@ export const metadata: Metadata = {
   robots: !isProduction ? 'noindex, nofollow' : 'index, follow',
 };
 
+/**
+ * Main layout component for the public-facing pages
+ *
+ * Includes the Header without authentication elements and Footer.
+ * Also sets up metadata for SEO.
+ *
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to render within the layout
+ * @returns {JSX.Element} Main layout component
+ */
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Header />
+      <Header showAuth={false} />
       <main className='max-w-full overflow-hidden flex-grow'>{children}</main>
       <Footer />
     </>

@@ -11,24 +11,17 @@ export const env = createEnv({
     GOOGLE_PLACES_URL: z
       .string()
       .url()
-      .default('https://maps.googleapis.com/maps/api/place/nearbysearch/json'),
-    GOOGLE_PLACES_V2_URL: z
-      .string()
-      .url()
-      .default('https://places.googleapis.com/v1/places:searchText'),
-    GOOGLE_PLACES_DETAILS_URL: z
-      .string()
-      .url()
-      .default('https://maps.googleapis.com/maps/api/place/details/json'),
-    GOOGLE_PLACES_PHOTO_URL: z
-      .string()
-      .url()
-      .default('https://maps.googleapis.com/maps/api/place/photo'),
+      .default('https://places.googleapis.com/v1'),
 
     // NODE
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
+
+    // LOGGING
+    LOG_LEVEL: z
+      .enum(['NONE', 'ERROR', 'WARN', 'SUCCESS', 'INFO', 'DEBUG'])
+      .optional(),
 
     // CLERK
     CLERK_SECRET_KEY: z.string().min(1),
@@ -48,6 +41,11 @@ export const env = createEnv({
     KV_REST_API_READ_ONLY_TOKEN: z.string().min(1),
     KV_REST_API_TOKEN: z.string().min(1),
     KV_REST_API_URL: z.string().min(1),
+
+    // CACHE KEYS
+    NEARBY_CACHE_KEY_VERSION: z.string().min(1),
+    DETAILS_CACHE_KEY_VERSION: z.string().min(1),
+    PHOTOS_CACHE_KEY_VERSION: z.string().min(1),
   },
 
   /**
@@ -59,9 +57,6 @@ export const env = createEnv({
     NEXT_PUBLIC_SITE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
-
-    // GOOGLE MAPS
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1),
 
     // CLERK
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
@@ -82,16 +77,14 @@ export const env = createEnv({
     // GOOGLE PLACES
     GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
     GOOGLE_PLACES_URL: process.env.GOOGLE_PLACES_URL,
-    GOOGLE_PLACES_V2_URL: process.env.GOOGLE_PLACES_V2_URL,
-    GOOGLE_PLACES_DETAILS_URL: process.env.GOOGLE_PLACES_DETAILS_URL,
-    GOOGLE_PLACES_PHOTO_URL: process.env.GOOGLE_PLACES_PHOTO_URL,
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
 
     // NODE
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SITE_ENV: process.env.NEXT_PUBLIC_SITE_ENV,
+
+    // LOGGING
+    LOG_LEVEL: process.env.LOG_LEVEL,
 
     // CLERK
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
@@ -118,6 +111,11 @@ export const env = createEnv({
 
     // STATSIG
     NEXT_PUBLIC_STATSIG_CLIENT_KEY: process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY,
+
+    // CACHE KEYS
+    NEARBY_CACHE_KEY_VERSION: process.env.NEARBY_CACHE_KEY_VERSION,
+    DETAILS_CACHE_KEY_VERSION: process.env.DETAILS_CACHE_KEY_VERSION,
+    PHOTOS_CACHE_KEY_VERSION: process.env.PHOTOS_CACHE_KEY_VERSION,
   },
 
   /**

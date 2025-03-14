@@ -1,20 +1,22 @@
 # Emoji Map Web App
 
 <div align="center">
-  <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin-bottom: 20px;" />
-  <h3>Find places on a map with emoji markers</h3>
+  <p align="center">
+    <img src="public/logo-blur.png" alt="Emoji Map Logo" width="180" height="180" style="border-radius: 12px; margin: 0 auto 20px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+  </p>
+  <h3 align="center" style="margin-bottom: 20px;">Find places on a map with emoji markers</h3>
   
   <div style="margin-top: 20px;">
-    <a href="https://github.com/sotomaque/emoji-map-next">
+    <a href="https://github.com/sotomaque/emoji-map-next" style="margin: 0 10px;">
       <img src="https://img.shields.io/badge/GitHub-Web_App-blue?style=for-the-badge&logo=github" alt="Web App Repository" />
     </a>
-    <a href="https://github.com/sotomaque/emoji-map">
+    <a href="https://github.com/sotomaque/emoji-map" style="margin: 0 10px;">
       <img src="https://img.shields.io/badge/GitHub-iOS_App-purple?style=for-the-badge&logo=github" alt="iOS App Repository" />
     </a>
   </div>
 </div>
 
-A Next.js web application that displays places on a map using emoji markers. This web app is the companion to the [iOS Emoji Map app](https://github.com/sotomaque/emoji-map), providing the same functionality in a web interface. Both applications use the Google Places API to fetch location data and display it on an interactive map.
+A Next.js web application that displays places on a map using emoji markers. This web app is the companion to the [iOS Emoji Map app](https://github.com/sotomaque/emoji-map), providing the same functionality in a web interface. Both applications connect to our Next.js backend, which interfaces with the Google Places API and provides data through a shared services layer.
 
 ## Features
 
@@ -24,7 +26,7 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - ⭐ View place details including ratings, photos, and reviews
 - 🌙 Dark mode support
 - 📱 Responsive design for mobile and desktop
-- 📚 Interactive API documentation with Swagger UI
+- 📄 Simple API documentation
 - 🔄 State management with Zustand for filters and preferences
 - 📊 Marker clustering for improved map performance
 - 🧪 Comprehensive test suite with 95%+ coverage
@@ -33,6 +35,26 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - 🗄️ PostgreSQL database with Prisma ORM
 - 🔄 Git hooks with Husky for code quality checks
 - 🚦 Feature flags with Statsig
+
+### Data Flow
+
+1. **User Interaction**: User interacts with the frontend to search for places or manage their account
+2. **Authentication**:
+   - User authenticates directly with Clerk from the frontend
+   - Clerk provides authentication tokens to the frontend
+3. **API Requests**:
+   - Frontend makes requests to the Next.js backend API
+   - Backend validates authentication with Clerk
+4. **Places Data Flow**:
+   - Place-related requests go to the `/api/places` routes
+   - These routes check Redis cache for existing data
+   - If data is not in cache, Redis fetches from Google Places API
+   - Responses are cached in Redis for future requests
+   - Data is returned to the frontend for display
+5. **User Data Flow**:
+   - User data is stored in Supabase PostgreSQL
+   - When user data changes, Clerk sends webhook events to the backend
+   - Backend processes webhook events and updates Supabase via Prisma
 
 ## Tech Stack
 
@@ -44,8 +66,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Zustand](https://github.com/pmndrs/zustand) - State management
 - [@react-google-maps/api](https://github.com/JustFly1984/react-google-maps-api) - Google Maps React components
 - [@t3-oss/env-nextjs](https://github.com/t3-oss/env-nextjs) - Type-safe environment variables
-- [next-swagger-doc](https://github.com/atomicpages/next-swagger-doc) - OpenAPI documentation
-- [Swagger UI](https://swagger.io/tools/swagger-ui/) - Interactive API documentation
 - [Vitest](https://vitest.dev/) - Testing framework
 - [MSW](https://mswjs.io/) - API mocking for tests
 - [React Query](https://tanstack.com/query/latest) - Data fetching and caching
@@ -69,13 +89,7 @@ NEXT_PUBLIC_SITE_ENV=development
 
 # Google Places API
 GOOGLE_PLACES_API_KEY=your_api_key_here
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-
-# Google Places API URLs
-GOOGLE_PLACES_URL=https://maps.googleapis.com/maps/api/place/nearbysearch/json
-GOOGLE_PLACES_V2_URL=https://places.googleapis.com/v1/places:searchText
-GOOGLE_PLACES_DETAILS_URL=https://maps.googleapis.com/maps/api/place/details/json
-GOOGLE_PLACES_PHOTO_URL=https://maps.googleapis.com/maps/api/place/photo
+GOOGLE_PLACES_URL=https://places.googleapis.com/v1
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
@@ -103,7 +117,30 @@ KV_REST_API_URL=your_upstash_redis_url
 EXPERIMENTATION_CONFIG_ITEM_KEY=your_statsig_config_key
 NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
 STATSIG_SERVER_API_KEY=your_statsig_server_key
+
+# Cache Keys 
+NEARBY_CACHE_KEY_VERSION
+DETAILS_CACHE_KEY_VERSION
+PHOTOS_CACHE_KEY_VERSION
 ```
+
+### Type-Safe Environment Variables
+
+This project uses `@t3-oss/env-nextjs` for type-safe environment variables. Instead of directly accessing `process.env`, we use our custom environment helper located in `src/env.ts`:
+
+```typescript
+import { env } from '~/env';
+
+// Type-safe access to environment variables
+const apiKey = env.GOOGLE_PLACES_API_KEY;
+```
+
+This provides:
+
+- Type safety for environment variables
+- Runtime validation with Zod
+- Better error messages when environment variables are missing
+- Consistent access pattern across components
 
 ### Available Scripts
 
@@ -175,6 +212,7 @@ export function isNavItemActive(href: string, path: string | null | undefined) {
 ```
 
 This function:
+
 - Handles null or undefined paths by defaulting to the home page
 - For the home page (`/`), only returns true if the path is exactly `/`
 - For other pages, returns true if the current path starts with the navigation item's href
@@ -183,27 +221,13 @@ This approach ensures that navigation items are correctly highlighted even in ne
 
 ## API Documentation
 
-The API is documented using OpenAPI (Swagger) specification. You can access the interactive API documentation at:
+API documentation is currently under development. A simple version of the API docs will be available at:
 
 ```
 http://localhost:3000/api-docs
 ```
 
-This documentation provides:
-
-- Detailed information about all available endpoints
-- Request parameters and their types
-- Response schemas
-- Example requests and responses
-- Interactive "Try it out" functionality to test the API directly from the browser
-
-The API specification is also available in JSON format at:
-
-```
-http://localhost:3000/api/docs
-```
-
-This can be imported into API client tools like Postman or used by other applications to generate client code.
+The documentation will provide details about available endpoints, request formats, and response structures.
 
 ## API Routes
 
@@ -225,6 +249,14 @@ Fetches nearby places based on location and category.
 ```
 /api/places/nearby?location=37.7749,-122.4194&radius=5000&type=restaurant&keywords=burger,pizza&openNow=true
 ```
+
+**Backend Processing:**
+
+1. The request is received by the Next.js API route
+2. The route checks Redis for a cached response
+3. If no cache exists, Redis makes a request to Google Places API
+4. The response is cached in Redis for future requests
+5. The data is returned to the client
 
 **Caching:**
 
@@ -264,13 +296,60 @@ Webhook endpoint for Clerk authentication events.
 **Purpose:**
 
 - Receives webhook events from Clerk when user data changes
-- Synchronizes user data with the PostgreSQL database via Prisma
+- Synchronizes user data with the Supabase PostgreSQL database via Prisma
 - Handles user creation, updates, and deletion events
+
+**Flow:**
+
+1. Clerk detects a change in user data (signup, profile update, deletion)
+2. Clerk sends a webhook event to the `/api/webhooks` endpoint
+3. The endpoint validates the webhook signature using Clerk's signing secret
+4. The webhook payload is processed based on the event type
+5. User data is synchronized with Supabase using Prisma ORM
+6. A success response is returned to Clerk
 
 **Security:**
 
 - Validates webhook requests using Clerk's signing secret
 - Rejects requests without valid Svix headers
+- Uses environment variables for secure configuration
+
+**Event Types:**
+
+- `user.created`: A new user has signed up
+- `user.updated`: A user has updated their profile
+- `user.deleted`: A user has been deleted
+
+**Example Webhook Processing:**
+
+```typescript
+// Simplified example of webhook processing
+export async function POST(req: Request) {
+  // Validate webhook signature
+  const payload = await validateWebhookSignature(req);
+
+  // Process based on event type
+  switch (payload.type) {
+    case 'user.created':
+      await prisma.user.create({
+        data: {
+          id: payload.data.id,
+          email: payload.data.email_addresses[0]?.email_address,
+          name: payload.data.first_name,
+        },
+      });
+      break;
+    case 'user.updated':
+      // Update user in database
+      break;
+    case 'user.deleted':
+      // Delete user from database
+      break;
+  }
+
+  return new Response('Webhook processed', { status: 200 });
+}
+```
 
 ## API Architecture Diagrams
 
@@ -284,51 +363,51 @@ This diagram shows the overall structure of the API endpoints and their relation
 flowchart TD
     %% API Structure Diagram for Emoji Map
     %% Main API endpoints and their relationships
-    
+
     %% Define styles
     classDef apiEndpoint fill:#f9f,stroke:#333,stroke-width:2px
     classDef handler fill:#bbf,stroke:#333,stroke-width:1px
     classDef external fill:#bfb,stroke:#333,stroke-width:1px
-    
+
     %% Client and main API route
     Client[Client Application]:::apiEndpoint --> |HTTP Request| API["/api"]:::apiEndpoint
-    
+
     %% Main API categories
     API --> Places["/places"]:::apiEndpoint
     API --> Health["/health"]:::apiEndpoint
     API --> Webhooks["/webhooks"]:::apiEndpoint
-    
+
     %% Places endpoints
     Places --> PlacesNearby["/nearby"]:::apiEndpoint
     Places --> PlacesDetails["/details"]:::apiEndpoint
-    
+
     %% Places handlers
     PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]:::handler
     PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]:::handler
-    
+
     PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]:::handler
-    
+
     %% Health and Webhooks handlers
     Health --> HealthHandler["GET: Health check"]:::handler
-    
+
     Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]:::handler
     Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]:::handler
-    
+
     %% External services
     PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]:::external
     PlacesNewHandler --> GooglePlacesAPI
     PlacesDetailsHandler --> GooglePlacesAPI
-    
+
     PlacesNearbyHandler --> Redis["Redis Cache"]:::external
     PlacesNewHandler --> Redis
     PlacesDetailsHandler --> Redis
-    
+
     %% Add notes
     subgraph "External Services"
         GooglePlacesAPI
         Redis
     end
-    
+
     %% Add a note
     note["Note: All API routes are implemented as Next.js App Router handlers"]
     style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
@@ -342,23 +421,23 @@ This sequence diagram illustrates the data flow when fetching places from the AP
 sequenceDiagram
     %% Places API Flow Diagram
     %% Shows the sequence of operations when fetching places
-    
+
     %% Define participants with styling
     participant Client as 🌐 Client
     participant API as 🔄 Next.js API Route
     participant Cache as 💾 Redis Cache
     participant Google as 🔍 Google Places API
-    
+
     %% Add styling
     autonumber
-    
+
     %% Request flow
     Client->>+API: GET /api/places/nearby/places-new
     Note over API: Process request parameters<br/>(location, radius, keywords)
-    
+
     %% Cache check
     API->>+Cache: Check cache for results
-    
+
     %% Conditional flow based on cache
     alt Cache hit
         Cache-->>-API: Return cached results
@@ -369,18 +448,18 @@ sequenceDiagram
         API->>+Google: Fetch from Google Places API
         Note over Google: Search for places<br/>based on parameters
         Google-->>-API: Return places data
-        
+
         rect rgb(240, 248, 255)
             Note over API: Data Processing
             API->>API: Process places with utility functions
             Note over API: findMatchingKeyword()<br/>createSimplifiedPlace()
         end
-        
+
         API->>Cache: Store results in cache (TTL: 7 days)
         API-->>-Client: Return processed places (from API)
         Note right of Client: Slower response (300-800ms)
     end
-    
+
     %% Add a note about caching
     Note over Cache: Cache key format:<br/>places:{location}:{radius}:{keywords}
 ```
@@ -393,34 +472,34 @@ This diagram shows how feature flags are implemented in the application:
 flowchart TD
     %% Feature Flag System Diagram
     %% Shows how feature flags control application behavior
-    
+
     %% Define styles
     classDef userFlow fill:#f9f,stroke:#333,stroke-width:2px
     classDef featureFlag fill:#bbf,stroke:#333,stroke-width:1px
     classDef component fill:#bfb,stroke:#333,stroke-width:1px
     classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
-    
+
     %% User flow
     A[User Request]:::userFlow --> B{Check Feature Flags}:::decision
     B -->|ENABLE_APP = true| C[Show App Route]:::userFlow
     B -->|ENABLE_APP = false| D[Hide App Route]:::userFlow
-    
+
     C --> E[Render Navigation]:::component
     D --> E
-    
+
     %% Feature Flag System components
-    subgraph "Feature Flag System" 
+    subgraph "Feature Flag System"
         direction TB
         F[Statsig Client]:::featureFlag --> G[useGateValue Hook]:::featureFlag
         G --> B
-        
+
         %% Add feature flag examples
         H[Feature Flags]:::featureFlag
         H --> |Controls| I[ENABLE_APP]:::featureFlag
         H --> |Controls| J[ENABLE_SEARCH]:::featureFlag
         H --> |Controls| K[ENABLE_PROFILE]:::featureFlag
     end
-    
+
     %% Navigation components
     subgraph "Navigation Components"
         direction LR
@@ -428,7 +507,7 @@ flowchart TD
         E --> I1[MobileNav]:::component
         E --> J1[Footer]:::component
     end
-    
+
     %% Nav items filtering
     subgraph "useNavItems Hook"
         direction TB
@@ -436,12 +515,12 @@ flowchart TD
         L -->|Enabled| M[Include Route]:::component
         L -->|Disabled| N[Exclude Route]:::component
     end
-    
+
     %% Connect components
     H1 --> K1
     I1 --> K1
     J1 --> K1
-    
+
     %% Add notes
     note["Note: Feature flags can be updated remotely<br>without requiring a new deployment"]
     style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
@@ -455,16 +534,16 @@ This flowchart illustrates how place data is processed:
 flowchart LR
     %% Places Data Processing Diagram
     %% Shows how place data is processed from API to client
-    
+
     %% Define styles
     classDef input fill:#f9f,stroke:#333,stroke-width:2px
     classDef process fill:#bbf,stroke:#333,stroke-width:1px
     classDef output fill:#bfb,stroke:#333,stroke-width:1px
     classDef utility fill:#ffd,stroke:#333,stroke-width:1px
-    
+
     %% Input data
     A[Google Places API Response]:::input --> B[processPlaces Function]:::process
-    
+
     %% Main processing steps
     subgraph "Data Processing Pipeline"
         direction TB
@@ -472,28 +551,28 @@ flowchart LR
         C --> D[Match Keywords]:::process
         D --> E[Create Simplified Places]:::process
     end
-    
+
     %% Output destinations
     E --> F[Cache Results]:::output
     E --> G[Return to Client]:::output
-    
+
     %% Utility functions
     subgraph "Utility Functions"
         direction TB
         H[findMatchingKeyword]:::utility --> |Used by| D
         I[createSimplifiedPlace]:::utility --> |Used by| E
     end
-    
+
     %% Add data transformation examples
     subgraph "Data Transformation"
         direction TB
         J["Google Place Object<br>(Complex)"]:::input --> |Transform| K["Simplified Place<br>(Client-friendly)"]:::output
     end
-    
+
     %% Add a note about the transformation
     note["Transformation reduces data size by ~70%<br>and normalizes structure for client use"]
     style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-    
+
     %% Connect the transformation to the main flow
     J -.-> A
     K -.-> G
@@ -507,67 +586,67 @@ This diagram shows how the caching system works:
 flowchart TD
     %% Caching System Diagram
     %% Shows how the Redis caching system works
-    
+
     %% Define styles
     classDef request fill:#f9f,stroke:#333,stroke-width:2px
     classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
     classDef process fill:#bbf,stroke:#333,stroke-width:1px
     classDef data fill:#bfb,stroke:#333,stroke-width:1px
     classDef config fill:#ddd,stroke:#333,stroke-width:1px
-    
+
     %% Main flow
     A[API Request]:::request --> B{Check Cache}:::decision
     B -->|Cache Hit| C[Return Cached Data]:::data
     B -->|Cache Miss| D[Fetch from Google API]:::process
-    
+
     D --> E[Process Data]:::process
     E --> F[Store in Cache]:::process
     F --> G[Return Processed Data]:::data
     C --> G
-    
+
     %% Cache key generation
     subgraph "Cache Key Generation"
         direction TB
         H[Text Query]:::request --> K[Generate Cache Key]:::process
         I[Location]:::request --> K
         J[Radius/Bounds]:::request --> K
-        
+
         %% Add example
         example["Example: places:37.78,-122.41:5000:restaurant,pizza"]:::data
         K -.-> example
     end
-    
+
     %% Connect cache key to main flow
     K --> B
-    
+
     %% Cache configuration
     subgraph "Cache Configuration"
         direction LR
         L[TTL: Time to Live]:::config
         M[bypassCache Parameter]:::config
-        
+
         %% Add TTL details
         L1["Places: 7 days"]:::config
         L2["Details: 1 hour"]:::config
         L --> L1
         L --> L2
     end
-    
+
     %% Connect bypass parameter to flow
     M -->|true| D
     M -->|false| B
-    
+
     %% Add performance metrics
     subgraph "Performance Metrics"
         direction TB
         P1["Cache Hit: ~50ms response"]:::data
         P2["Cache Miss: ~500ms response"]:::data
     end
-    
+
     %% Connect performance to flow paths
     C -.-> P1
     F -.-> P2
-    
+
     %% Add a note about cache invalidation
     note["Note: Cache can be manually invalidated<br>by setting bypassCache=true in the request"]
     style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
@@ -581,68 +660,68 @@ This flowchart illustrates the error handling flow:
 flowchart TD
     %% Error Handling Flow Diagram
     %% Shows how errors are handled in the API
-    
+
     %% Define styles
     classDef request fill:#f9f,stroke:#333,stroke-width:2px
     classDef process fill:#bbf,stroke:#333,stroke-width:1px
     classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
     classDef error fill:#faa,stroke:#333,stroke-width:1px
     classDef response fill:#bfb,stroke:#333,stroke-width:1px
-    
+
     %% Main flow
     A[API Request]:::request --> B{Try Request Processing}:::decision
-    
+
     %% Success path
     B -->|Success| C[Return Data]:::response
-    
+
     %% Error paths
     B -->|Error| D{Error Type}:::decision
-    
+
     D -->|API Error| E[Log API Error]:::error
     D -->|Network Error| F[Log Network Error]:::error
     D -->|Other Exception| G[Log General Error]:::error
-    
+
     %% Error responses
     E --> H[Return Error Response]:::response
     F --> H
     G --> H
-    
+
     %% Error response details
     subgraph "Error Response Structure"
         direction TB
         H --> I[HTTP Status Code]:::response
         H --> J[Error Message]:::response
-        
+
         %% Add examples
         I1["400: Bad Request"]:::response
         I2["404: Not Found"]:::response
         I3["500: Server Error"]:::response
-        
+
         I --> I1
         I --> I2
         I --> I3
     end
-    
+
     %% Logging details
     subgraph "Error Logging"
         direction TB
         K[Console Error]:::error
-        
+
         %% Add examples
         K1["[API] Google Places API error: INVALID_REQUEST"]:::error
         K2["[API] Network error: Connection timeout"]:::error
         K3["[API] Unexpected error in places-new route"]:::error
-        
+
         K --> K1
         K --> K2
         K --> K3
     end
-    
+
     %% Connect logging to error types
     E -.-> K1
     F -.-> K2
     G -.-> K3
-    
+
     %% Add error handling strategies
     subgraph "Error Handling Strategies"
         direction TB
@@ -650,7 +729,7 @@ flowchart TD
         S2["Fallback Data"]:::process
         S3["Graceful Degradation"]:::process
     end
-    
+
     %% Add a note about error handling
     note["Note: All errors are prefixed with [API]<br>for easier identification in logs"]
     style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
@@ -669,7 +748,7 @@ web/
 │   │   │   │   ├── nearby/
 │   │   │   │   └── details/
 │   │   │   ├── webhooks/
-│   │   │   └── api-docs/
+│   │   │   └── docs/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/
@@ -810,15 +889,91 @@ The application uses Clerk for authentication and user management. Clerk provide
 
 ### Authentication Flow
 
-1. Users sign in using Clerk's authentication components
+1. Users sign in using Clerk's authentication components in the frontend
 2. Clerk issues a JWT token upon successful authentication
-3. The token is used to authenticate API requests
-4. User data is synchronized with the PostgreSQL database via webhooks
+3. The token is used to authenticate API requests to the backend
+4. User data is synchronized with the Supabase PostgreSQL database via webhooks
 
-When user data changes in Clerk (e.g., a user signs up, updates their profile, or is deleted), Clerk sends webhook events to the application. The application processes these events and updates the PostgreSQL database accordingly.
+### Webhook Integration
+
+When user data changes in Clerk (e.g., a user signs up, updates their profile, or is deleted), Clerk sends webhook events to the application. The application processes these events and updates the Supabase PostgreSQL database accordingly.
 
 Webhook requests are secured using Svix headers, which include:
 
 - `svix-id`: A unique identifier for the webhook event
 - `svix-timestamp`: The time the webhook was sent
 - `svix-signature`: A signature that verifies the webhook came from Clerk
+
+The webhook endpoint validates these headers using Clerk's signing secret before processing the webhook payload.
+
+## Database Integration
+
+The web app uses Prisma ORM to interact with the Supabase PostgreSQL database. This provides:
+
+1. **Type-safe database access**: Prisma generates TypeScript types based on your schema
+2. **Simplified queries**: Prisma Client provides an intuitive API for database operations
+3. **Migrations**: Prisma Migrate helps manage database schema changes
+4. **Data validation**: Prisma validates data before sending it to the database
+
+### Prisma Schema
+
+The Prisma schema defines the database models and relationships:
+
+```prisma
+// Simplified example of Prisma schema
+model User {
+  id        String   @id
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  favorites Place[]
+}
+
+model Place {
+  id        String   @id
+  name      String
+  location  Json
+  category  String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### Database Operations
+
+The application uses Prisma Client for database operations:
+
+```typescript
+// Example of database operations with Prisma
+import { prisma } from '~/lib/prisma';
+
+// Create a user
+const user = await prisma.user.create({
+  data: {
+    id: 'user_123',
+    email: 'user@example.com',
+    name: 'John Doe',
+  },
+});
+
+// Add a favorite place for a user
+await prisma.place.create({
+  data: {
+    id: 'place_123',
+    name: 'Coffee Shop',
+    location: { lat: 37.7749, lng: -122.4194 },
+    category: 'cafe',
+    users: {
+      connect: { id: 'user_123' },
+    },
+  },
+});
+
+// Get a user with their favorite places
+const userWithFavorites = await prisma.user.findUnique({
+  where: { id: 'user_123' },
+  include: { favorites: true },
+});
+```

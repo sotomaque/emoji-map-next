@@ -1,0 +1,51 @@
+{
+  "data": [
+    {
+      "id": "ChIJK5A1pGcB3IARpnAUhqK3-KI",
+      "location": {
+        "latitude": 32.8652237,
+        "longitude": -117.23177679999999
+      },
+      "category": "restaurant",
+      "emoji": "🍣"
+    },
+    {
+      "id": "ChIJ69eyrtIG3IARa7yJ-BqAuRo",
+      "location": {
+        "latitude": 32.8652656,
+        "longitude": -117.231528
+      },
+      "category": "restaurant",
+      "emoji": "🍕"
+    },
+    {
+      "id": "ChIJDw815ysB3IAREi91y9RtP44",
+      "location": {
+        "latitude": 32.8623967,
+        "longitude": -117.22475729999998
+      },
+      "category": "restaurant",
+      "emoji": "🍕"
+    },
+    {
+      "id": "ChIJdaiJxisB3IARFKA2YZEqsXI",
+      "location": {
+        "latitude": 32.8627924,
+        "longitude": -117.22427909999998
+      },
+      "category": "restaurant",
+      "emoji": "🌮"
+    },
+    {
+      "id": "ChIJdfB6gSkB3IARVQ1nD3P0Gu8",
+      "location": {
+        "latitude": 32.861710699999996,
+        "longitude": -117.22336589999999
+      },
+      "category": "restaurant",
+      "emoji": "🍕"
+    }
+  ],
+  "cacheHit": false,
+  "count": 5
+}

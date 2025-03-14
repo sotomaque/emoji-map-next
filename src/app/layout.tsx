@@ -1,7 +1,9 @@
 import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Analytics } from '@vercel/analytics/react';
 import { Providers } from '@/components/providers/providers';
+import { Toaster } from '@/components/ui/sonner';
 import { env } from '../env';
 import { cn } from '../lib/utils';
 import type { Metadata } from 'next';
@@ -41,6 +43,8 @@ export default function RootLayout({
           <ReactQueryDevtools initialIsOpen={false} />
           {children}
         </Providers>
+        <Toaster position='top-center' richColors />
+        <Analytics />
       </body>
     </html>
   );
