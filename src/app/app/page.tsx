@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -336,22 +336,22 @@ export default function AppPage() {
         </h1>
         <div>
           <Link
-            href="/app/profile"
-            className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium flex items-center"
+            href='/app/profile'
+            className='text-cyan-400 hover:text-cyan-300 transition-colors font-medium flex items-center'
           >
             <span>View Profile</span>
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 ml-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-4 w-4 ml-1'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
             >
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M9 5l7 7-7 7"
+                d='M9 5l7 7-7 7'
               />
             </svg>
           </Link>

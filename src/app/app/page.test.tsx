@@ -336,4 +336,21 @@ describe('AppPage', () => {
     // Verify the query data is set
     expect(queryClient.getQueryData(['photo', 'photo1', false])).toBeTruthy();
   });
+
+  it('renders the profile link with correct href', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppPage />
+      </QueryClientProvider>
+    );
+
+    // Find the link by its text content
+    const profileLink = screen.getByText('View Profile').closest('a');
+
+    // Assert the link exists
+    expect(profileLink).toBeInTheDocument();
+
+    // Assert the link has the correct href attribute
+    expect(profileLink).toHaveAttribute('href', '/app/profile');
+  });
 });
