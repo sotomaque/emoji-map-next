@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { log } from '@/utils/log';
 
 export async function POST(request: NextRequest) {
   const { userId: clerkId } = await auth();
@@ -19,12 +20,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    log.debug('Place ID', { placeId: id });
+    log.debug('Clerk ID', { clerkId });
+
     // Find the user by clerkId
     const user = await prisma.user.findUnique({
       where: { clerkId },
     });
 
     if (!user) {
+      log.error('User not found', { clerkId });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -114,6 +119,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    log.debug('placeId', { placeId });
 
     // Find the user by clerkId
     const user = await prisma.user.findUnique({
