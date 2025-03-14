@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { getOrCreateUser } from '@/lib/user-service';
+import type { ErrorResponse } from '@/types/error-response';
+import type { User } from '@prisma/client';
 
-export async function POST() {
+export async function POST(): Promise<
+  NextResponse<
+    | {
+        message: string;
+        user: User;
+      }
+    | ErrorResponse
+  >
+> {
   try {
     const user = await currentUser();
 

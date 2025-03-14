@@ -39,7 +39,9 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Your Profile Page')).toBeInTheDocument();
 
     // Check for the placeholder text
-    expect(screen.getByText('Profile content will be added here in the future.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Profile content will be added here in the future.')
+    ).toBeInTheDocument();
 
     // Check for the back button
     const backButton = screen.getByText('Back to Dashboard');
@@ -63,4 +65,4 @@ describe('ProfilePage', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/');
   });
-}); 
+});
