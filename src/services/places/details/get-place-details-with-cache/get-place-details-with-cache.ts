@@ -33,7 +33,7 @@ export async function getPlaceDetailsWithCache({
   if (!bypassCache && cacheKey) {
     const cachedData = await redis.get<Detail>(cacheKey);
     if (cachedData) {
-      log.success('Cache hit', { cacheKey });
+      log.success(`[DETAILS]Cache hit`);
 
       return {
         data: cachedData,
@@ -41,7 +41,7 @@ export async function getPlaceDetailsWithCache({
         count: 1,
       };
     }
-    log.debug('Cache miss', { cacheKey });
+    log.debug(`[DETAILS] Cache miss`);
   }
 
   // Fetch details from API
@@ -51,7 +51,8 @@ export async function getPlaceDetailsWithCache({
   await redis.set(cacheKey, details, {
     ex: DETAILS_CONFIG.CACHE_EXPIRATION_TIME,
   });
-  log.info('Details cached', { cacheKey });
+
+  log.info(`[DETAILS] cache set`);
 
   return {
     data: details,

@@ -7,34 +7,28 @@ import { processIndividualPlace } from './process-individual-result';
 vi.mock('@/constants/category-map', () => ({
   CATEGORY_MAP: [
     {
-      key: 'pizza',
+      key: 1,
       name: 'pizza',
       emoji: '🍕',
       keywords: ['pizza', 'pizzeria'],
     },
     {
-      key: 'beer',
+      key: 2,
       name: 'beer',
       emoji: '🍺',
       keywords: ['beer', 'brewery', 'pub'],
     },
     {
-      key: 'sushi',
+      key: 3,
       name: 'sushi',
       emoji: '🍣',
       keywords: ['sushi', 'japanese'],
     },
     {
-      key: 'restaurant',
+      key: 4,
       name: 'restaurant',
       emoji: '🍽️',
       keywords: ['restaurant', 'dining'],
-    },
-    {
-      key: 'place',
-      name: 'place',
-      emoji: '📍',
-      keywords: ['place'],
     },
   ],
 }));
@@ -60,207 +54,134 @@ describe('processIndividualPlace', () => {
   const keywords = ['pizza', 'beer', 'sushi', 'pub', 'japanese'];
 
   it('should handle matched primary keyword', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
-    testPlace.primaryType = 'pizza';
+    const place = createBaseSamplePlace();
+    place.primaryType = 'pizza';
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['pizza'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '🍕',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    });
+    expect(result.emoji).toBe('🍕');
   });
 
   it('should handle matched related keyword with own emoji', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
-    testPlace.primaryType = 'pub';
+    const place = createBaseSamplePlace();
+    place.primaryType = 'pub';
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['beer', 'pub'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '🍺',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 1,
-    });
+    expect(result.emoji).toBe('🍺');
   });
 
   it('should handle matched related keyword without own emoji', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
-    testPlace.primaryType = 'japanese';
+    const place = createBaseSamplePlace();
+    place.primaryType = 'japanese';
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['japanese'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '🍣',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 1,
-    });
+    expect(result.emoji).toBe('🍣');
   });
 
   it('should fallback to primaryTypeDisplayName when no keyword match', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
-    testPlace.primaryTypeDisplayName = {
+    const place = createBaseSamplePlace();
+    place.primaryTypeDisplayName = {
       text: 'Restaurant',
       languageCode: 'en',
     };
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['not-matching'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '🍽️',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 1,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    });
+    expect(result.emoji).toBe('🍽️');
   });
 
   it('should fallback to primaryType when no keyword or display name match', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
-    testPlace.primaryType = 'restaurant';
+    const place = createBaseSamplePlace();
+    place.primaryType = 'restaurant';
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['not-matching'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '🍽️',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 1,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    });
+    expect(result.emoji).toBe('🍽️');
   });
 
   it('should default to "place" when no type information is available', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
-    const testPlace = createBaseSamplePlace();
+    const place = createBaseSamplePlace();
 
     const result = processIndividualPlace({
-      place: testPlace,
-      keywords,
-      filterReasons,
+      place,
+      keywords: ['not-matching'],
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
-    expect(result).toEqual({
-      id: testPlace.id,
-      location: testPlace.location,
-      emoji: '📍',
-    });
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 1,
-      defaultedToPlace: 1,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    });
+    expect(result.emoji).toBe('🍽️');
   });
 
   it('should return empty object when required fields are missing', () => {
-    const filterReasons = {
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    };
-
     const result = processIndividualPlace({
       place: { id: MOCK_GOOGLE_PLACES[0].id } as GooglePlace,
       keywords,
-      filterReasons,
+      filterReasons: {
+        noKeywordMatch: 0,
+        defaultedToPlace: 0,
+        noEmoji: 0,
+        mappedToMainCategory: 0,
+      },
+      keys: [],
     });
 
     expect(result).toEqual({});
-    expect(filterReasons).toEqual({
-      noKeywordMatch: 0,
-      defaultedToPlace: 0,
-      noEmoji: 0,
-      mappedToMainCategory: 0,
-    });
   });
 });

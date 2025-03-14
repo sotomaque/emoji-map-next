@@ -21,14 +21,6 @@ describe('data-transformer', () => {
               text: 'Great place!',
               languageCode: 'en',
             },
-            authorAttribution: {
-              displayName: 'John Doe',
-              uri: 'https://example.com/johndoe',
-              photoUri: 'https://example.com/johndoe/photo',
-            },
-            publishTime: '2023-01-01T12:00:00Z',
-            flagContentUri: 'https://example.com/flag',
-            googleMapsUri: 'https://maps.google.com/review',
           },
         ],
         rating: 4.5,
@@ -39,18 +31,15 @@ describe('data-transformer', () => {
         },
         displayName: {
           text: 'Test Restaurant Display Name',
-          languageCode: 'en',
         },
         primaryTypeDisplayName: {
           text: 'Restaurant',
-          languageCode: 'en',
         },
         takeout: true,
         delivery: false,
         dineIn: true,
         editorialSummary: {
           text: 'A great restaurant with amazing food',
-          languageCode: 'en',
         },
         outdoorSeating: true,
         liveMusic: false,
@@ -69,7 +58,6 @@ describe('data-transformer', () => {
         generativeSummary: {
           overview: {
             text: 'This is a generative summary of the restaurant',
-            languageCode: 'en',
           },
         },
       };

@@ -68,12 +68,11 @@ function isValidCacheKey(key: string): boolean {
 export async function setCacheResults({ cacheKey, processedPlaces }: Props) {
   // Validate input parameters
   if (!processedPlaces || !processedPlaces.count) {
-    log.error('[API] No processed places to cache', { processedPlaces });
     return;
   }
 
   if (!isValidCacheKey(cacheKey)) {
-    log.error('[API] Invalid cache key format:', { cacheKey });
+    log.error(`[NEARBY] Invalid cache key format`);
     return;
   }
 
@@ -81,11 +80,8 @@ export async function setCacheResults({ cacheKey, processedPlaces }: Props) {
     await redis.set(cacheKey, processedPlaces.data, {
       ex: NEARBY_CONFIG.CACHE_EXPIRATION_TIME,
     });
-    log.info('[API] Successfully cached', {
-      cacheKey,
-      count: processedPlaces.count,
-    });
-  } catch (error) {
-    log.error('[API] Error caching results:', { error });
+    log.success(`[NEARBY] cache set`);
+  } catch {
+    log.error(`[NEARBY] Error caching results`);
   }
 }

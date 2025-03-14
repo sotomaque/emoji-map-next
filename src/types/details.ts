@@ -1,9 +1,21 @@
 import type { CachedResponse } from './generics';
-import type { GooglePlaceDetails } from './google-places-details';
+import type { GooglePlaceDetails, Review } from './google-places-details';
 
 export type Detail = {
   name: GooglePlaceDetails['name'];
-  reviews: GooglePlaceDetails['reviews'];
+  reviews: {
+    name: Review['name'];
+    relativePublishTimeDescription: Review['relativePublishTimeDescription'];
+    rating: Review['rating'];
+    text?: {
+      text?: Review['text']['text'];
+      languageCode?: Review['text']['languageCode'];
+    };
+    originalText?: {
+      text?: Review['originalText']['text'];
+      languageCode?: Review['originalText']['languageCode'];
+    };
+  }[];
   rating: GooglePlaceDetails['rating'];
   priceLevel: (1 | 2 | 3 | 4) | null;
   userRatingCount: GooglePlaceDetails['userRatingCount'];

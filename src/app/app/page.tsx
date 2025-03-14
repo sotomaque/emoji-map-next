@@ -10,7 +10,6 @@ import PhotosSection from '@/app/app/components/photos-section';
 import PlaceDetailsSection from '@/app/app/components/place-details-section';
 import {
   DEFAULT_LOCATION,
-  DEFAULT_TEXT_QUERY,
   DEFAULT_LIMIT,
   DEFAULT_PHOTO_ID,
   DEFAULT_PLACE_ID,
@@ -33,7 +32,7 @@ export default function AppPage() {
   const photosRef = useRef<HTMLDivElement>(null);
 
   const [location, setLocation] = useState(DEFAULT_LOCATION);
-  const [textQuery, setTextQuery] = useState(DEFAULT_TEXT_QUERY);
+  const [keysQuery, setKeysQuery] = useState('1|2');
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [bypassCache, setBypassCache] = useState(false);
   const [openNow, setOpenNow] = useState(false);
@@ -74,17 +73,29 @@ export default function AppPage() {
     queryKey: [
       'nearbyPlaces',
       location,
-      textQuery,
+      keysQuery,
       limit,
       bypassCache,
       openNow,
     ],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        location,
-        textQuery,
-        limit: limit.toString(),
-      });
+      const params = new URLSearchParams();
+
+      // Add location parameter
+      params.append('location', location);
+
+      // Add keys parameters for each key
+      if (keysQuery) {
+        const keys = keysQuery.split('|').map((k) => k.trim());
+        keys.forEach((key) => {
+          if (key) {
+            params.append('keys', key);
+          }
+        });
+      }
+
+      // Add limit parameter
+      params.append('limit', limit.toString());
 
       // Add optional parameters
       if (bypassCache) {
@@ -95,10 +106,10 @@ export default function AppPage() {
         params.append('openNow', 'true');
       }
 
-      // Add version parameter to test the v2 API
-      params.append('version', 'v2');
-
       try {
+        console.log({
+          locationURL: `/api/places/nearby?${params.toString()}`,
+        });
         const response = await fetch(`/api/places/nearby?${params.toString()}`);
 
         if (!response.ok) {
@@ -202,20 +213,20 @@ export default function AppPage() {
 
   // Function to clear nearby places query data
   const handleClearNearbyPlaces = () => {
-    queryClient.removeQueries({ queryKey: ['nearbyPlaces'] });
+    queryClient.resetQueries({ queryKey: ['nearbyPlaces'] });
     toast.success('Nearby places results cleared');
   };
 
   // Function to clear place details query data
   const handleClearPlaceDetails = () => {
-    queryClient.removeQueries({ queryKey: ['placeDetails'] });
+    queryClient.resetQueries({ queryKey: ['placeDetails'] });
     setPlaceId(DEFAULT_PLACE_ID);
     toast.success('Place details results cleared');
   };
 
   // Function to clear photo query data
   const handleClearPhotos = () => {
-    queryClient.removeQueries({ queryKey: ['photo'] });
+    queryClient.resetQueries({ queryKey: ['photo'] });
     setPhotoId(DEFAULT_PHOTO_ID);
     toast.success('Photo results cleared');
   };
@@ -344,8 +355,8 @@ export default function AppPage() {
           <NearbyPlacesSection
             location={location}
             setLocation={setLocation}
-            textQuery={textQuery}
-            setTextQuery={setTextQuery}
+            keysQuery={keysQuery}
+            setKeysQuery={setKeysQuery}
             limit={limit}
             setLimit={setLimit}
             bypassCache={bypassCache}

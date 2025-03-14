@@ -4,7 +4,6 @@ import { GET } from '@/app/api/places/details/route';
 import { getPlaceDetailsWithCache } from '@/services/places/details/get-place-details-with-cache/get-place-details-with-cache';
 import { getSearchParams } from '@/services/places/details/get-search-params/get-search-params';
 import type { DetailResponse } from '@/types/details';
-import { log } from '@/utils/log';
 
 // Mock all the dependencies
 vi.mock(
@@ -99,18 +98,6 @@ describe('Places Details API', () => {
       id: mockPlaceId,
       bypassCache: false,
     });
-
-    // Verify logs were called
-    expect(log.info).toHaveBeenCalledWith('Fetching details', {
-      id: mockPlaceId,
-      bypassCache: false,
-    });
-    expect(log.info).toHaveBeenCalledWith('Details fetched', {
-      id: mockPlaceId,
-      bypassCache: false,
-      count: mockDetailsResponse.count,
-      cacheHit: mockDetailsResponse.cacheHit,
-    });
   });
 
   it('should return cached data when available', async () => {
@@ -179,9 +166,6 @@ describe('Places Details API', () => {
     expect(data).toHaveProperty('error');
     expect(data.error).toBe('Failed to fetch place details');
     expect(data).toHaveProperty('message');
-
-    // Verify console.error was called
-    expect(console.error).toHaveBeenCalled();
   });
 
   it('should handle missing ID parameter', async () => {

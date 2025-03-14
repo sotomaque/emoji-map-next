@@ -2,30 +2,25 @@ import { z } from 'zod';
 
 // Define Zod schema for the Google Details API response
 const reviewSchema = z.object({
-  name: z.string(),
+  name: z.string(), // maps to place name
   relativePublishTimeDescription: z.string(),
   rating: z.number(),
-  text: z.object({
-    text: z.string(),
-    languageCode: z.string(),
-  }),
-  originalText: z.object({
-    text: z.string(),
-    languageCode: z.string(),
-  }),
-  authorAttribution: z.object({
-    displayName: z.string(),
-    uri: z.string(),
-    photoUri: z.string(),
-  }),
-  publishTime: z.string(),
-  flagContentUri: z.string(),
-  googleMapsUri: z.string(),
+  text: z
+    .object({
+      text: z.string().optional(),
+      languageCode: z.string().optional(),
+    })
+    .optional(),
+  originalText: z
+    .object({
+      text: z.string().optional(),
+      languageCode: z.string().optional(),
+    })
+    .optional(),
 });
 
 const textObjectSchema = z.object({
   text: z.string().optional(),
-  languageCode: z.string().optional(),
 });
 
 // Define the valid price level values
@@ -39,31 +34,14 @@ const priceLevelEnum = z.enum([
 ]);
 
 export const googleDetailsResponseSchema = z.object({
-  name: z.string(),
-  reviews: z.array(reviewSchema).optional().default([]),
-  rating: z.number(),
-  priceLevel: priceLevelEnum.optional().default('PRICE_LEVEL_UNSPECIFIED'),
-  userRatingCount: z.number(),
-  currentOpeningHours: z
-    .object({
-      openNow: z.boolean(),
-    })
-    .optional(),
+  name: z.string().optional(),
   displayName: textObjectSchema.optional(),
   primaryTypeDisplayName: textObjectSchema.optional(),
-  takeout: z.boolean().optional(),
   delivery: z.boolean().optional(),
   dineIn: z.boolean().optional(),
-  editorialSummary: textObjectSchema.optional(),
-  outdoorSeating: z.boolean().optional(),
-  liveMusic: z.boolean().optional(),
-  menuForChildren: z.boolean().optional(),
-  servesDessert: z.boolean().optional(),
-  servesCoffee: z.boolean().optional(),
   goodForChildren: z.boolean().optional(),
-  goodForGroups: z.boolean().optional(),
-  allowsDogs: z.boolean().optional(),
   restroom: z.boolean().optional(),
+  goodForGroups: z.boolean().optional(),
   paymentOptions: z
     .object({
       acceptsCreditCards: z.boolean().optional().default(false),
@@ -71,6 +49,36 @@ export const googleDetailsResponseSchema = z.object({
       acceptsCashOnly: z.boolean().optional().default(false),
     })
     .optional(),
+  reviews: z
+    .array(reviewSchema)
+    .optional()
+    .default([])
+    .transform((reviews) => {
+      // Filter out reviews that don't have both text.text and originalText.text
+      return reviews.filter(
+        (review) =>
+          review?.text?.text !== undefined &&
+          review?.text?.text !== '' &&
+          review?.originalText?.text !== undefined &&
+          review?.originalText?.text !== ''
+      );
+    }),
+  rating: z.number().optional(),
+  priceLevel: priceLevelEnum.optional().default('PRICE_LEVEL_UNSPECIFIED'),
+  userRatingCount: z.number().optional(),
+  currentOpeningHours: z
+    .object({
+      openNow: z.boolean(),
+    })
+    .optional(),
+  takeout: z.boolean().optional(),
+  editorialSummary: textObjectSchema.optional(),
+  outdoorSeating: z.boolean().optional(),
+  liveMusic: z.boolean().optional(),
+  menuForChildren: z.boolean().optional(),
+  servesDessert: z.boolean().optional(),
+  servesCoffee: z.boolean().optional(),
+  allowsDogs: z.boolean().optional(),
   generativeSummary: z
     .object({
       overview: textObjectSchema.optional(),

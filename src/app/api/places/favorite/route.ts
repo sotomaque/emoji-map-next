@@ -2,15 +2,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
-import { log } from '@/utils/log';
 
 export async function POST(request: NextRequest) {
   const { userId: clerkId } = await auth();
   if (!clerkId) {
-    log.error('Unauthorized', {
-      request,
-    });
-
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -18,20 +13,11 @@ export async function POST(request: NextRequest) {
     const { id } = await request.json();
 
     if (!id) {
-      log.error('Place ID is required', {
-        request,
-      });
-
       return NextResponse.json(
         { error: 'Place ID is required' },
         { status: 400 }
       );
     }
-
-    log.debug('Favorite request received', {
-      id,
-      clerkId,
-    });
 
     // Find the user by clerkId
     const user = await prisma.user.findUnique({
@@ -39,10 +25,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      log.debug('User not found', {
-        clerkId,
-      });
-
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -51,21 +33,13 @@ export async function POST(request: NextRequest) {
       where: { id },
     });
 
-    log.success('Existing Place Found', { ...place });
-
     // If place doesn't exist, create it
     if (!place) {
-      log.debug('Place not found, creating it', {
-        id,
-      });
-
       place = await prisma.place.create({
         data: {
           id,
         },
       });
-
-      log.success('Place Created', { ...place });
     }
 
     // Check if the user has already favorited this place
@@ -83,37 +57,20 @@ export async function POST(request: NextRequest) {
 
     // If favorite exists, remove it (toggle off)
     if (existingFavorite) {
-      log.debug('Favorite exists, removing it', {
-        id: existingFavorite.id,
-      });
-
       await prisma.favorite.delete({
         where: {
           id: existingFavorite.id,
         },
       });
 
-      log.success('Favorite Removed', {
-        id: existingFavorite.id,
-      });
-
       action = 'removed';
     } else {
-      log.debug('Favorite does not exist, creating it', {
-        userId: user.id,
-        placeId: place.id,
-      });
-
       // If favorite doesn't exist, create it (toggle on)
       favorite = await prisma.favorite.create({
         data: {
           userId: user.id,
           placeId: place.id,
         },
-      });
-
-      log.success('Favorite Created', {
-        id: favorite.id,
       });
 
       action = 'added';
@@ -128,8 +85,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error handling favorite:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to process favorite' },
       { status: 500 }
@@ -137,13 +93,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// TODO: prob dont want to do this on the current /app route, instead want to query for all given users favorites
+
+// thats one request vs this being 1 request per place
 export async function GET(request: NextRequest) {
   const { userId: clerkId } = await auth();
-  if (!clerkId) {
-    log.error('Unauthorized', {
-      request: request.url,
-    });
 
+  if (!clerkId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -153,10 +109,6 @@ export async function GET(request: NextRequest) {
     const placeId = searchParams.get('id');
 
     if (!placeId) {
-      log.error('Place ID is required', {
-        request: request.url,
-      });
-
       return NextResponse.json(
         { error: 'Place ID is required in query params' },
         { status: 400 }
@@ -169,10 +121,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      log.debug('User not found', {
-        clerkId,
-      });
-
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -182,10 +130,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (!place) {
-      log.debug('Place not found', {
-        placeId,
-      });
-
       return NextResponse.json(
         {
           isFavorite: false,
@@ -205,12 +149,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    log.success('Favorite status checked', {
-      placeId,
-      userId: user.id,
-      isFavorite: !!favorite,
-    });
-
     return NextResponse.json(
       {
         isFavorite: !!favorite,
@@ -219,8 +157,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error checking favorite status:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to check favorite status' },
       { status: 500 }

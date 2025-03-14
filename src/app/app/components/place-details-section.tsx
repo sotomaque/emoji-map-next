@@ -462,10 +462,6 @@ const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
                                   className='p-3 border border-cyan-800 rounded-sm bg-zinc-950'
                                 >
                                   <div className='flex items-center justify-between mb-2'>
-                                    <span className='font-medium'>
-                                      {review.authorAttribution?.displayName ||
-                                        'Anonymous'}
-                                    </span>
                                     <StarRating
                                       rating={review.rating}
                                       color='text-cyan-400'

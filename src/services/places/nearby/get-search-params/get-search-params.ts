@@ -34,20 +34,20 @@ export function getSearchParams(request: NextRequest): SearchParams {
   const searchParams = url.searchParams;
 
   // KEYS
-  const keyParams = searchParams.getAll('key');
+  const keysParams = searchParams.getAll('keys');
   let keys: number[];
 
   // Get all valid category keys
   const validCategoryKeys = CATEGORY_MAP.map((category) => category.key);
 
   // Fix keys handling: properly process when keys are provided
-  if (isEmpty(keyParams)) {
+  if (isEmpty(keysParams)) {
     // If no keys provided, use all valid category keys
     keys = validCategoryKeys;
   } else {
     // Filter and convert provided keys
     keys = uniq(
-      keyParams
+      keysParams
         .map((k) => toNumber(k))
         .filter((k) => !isNaN(k) && validCategoryKeys.includes(k))
     );

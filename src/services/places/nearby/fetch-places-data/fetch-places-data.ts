@@ -22,6 +22,7 @@ import { fetchAndProcessGoogleData } from '../fetch-and-process-google-data/fetc
  * @param props.bufferMiles - Buffer distance in miles to extend the search radius (defaults to NEARBY_CONFIG.DEFAULT_BUFFER_MILES)
  * @param props.cacheKey - Cache key for storing and retrieving results (if null, caching is skipped)
  * @param props.bypassCache - Whether to bypass the cache and fetch directly from the API (defaults to false)
+ * @param props.keys - Array of keys for fetching data from Google Places API
  *
  * @returns A {@link PlacesResponse} object containing:
  *   - data: Array of simplified place objects with emoji markers
@@ -36,6 +37,7 @@ export async function fetchPlacesData({
   bufferMiles = NEARBY_CONFIG.DEFAULT_BUFFER_MILES,
   cacheKey,
   bypassCache = false,
+  keys,
 }: {
   textQuery: string;
   location: string;
@@ -44,51 +46,78 @@ export async function fetchPlacesData({
   bufferMiles?: number;
   cacheKey: string | null;
   bypassCache?: boolean;
+  keys?: number[];
 }): Promise<PlacesResponse> {
   let cachedData: Place[] | null = null;
+  // const hasFilters = !openNow; // TODO: add additional filters
 
-  // if we are specifying only open places,
-  // we dont want to read from cache
+  // TODO: handle open now edge case & future filters
 
-  // Only attempt cache operations if cacheKey is non-null and bypassCache is false
-  if (!bypassCache && cacheKey && !openNow) {
-    cachedData = await redis.get<Place[]>(cacheKey);
-    if (cachedData) {
-      log.success(`Cache hit with ${cachedData.length} places`, { cacheKey });
+  // Optimized for batched requests
+  // Only attempt cache operations if:
+  // 1. cacheKey is non-null
+  // 2. bypassCache is false
+  if (!bypassCache && cacheKey) {
+    try {
+      cachedData = await redis.get<Place[]>(cacheKey);
 
-      if (!limit || cachedData.length >= limit) {
-        return {
-          cacheHit: true,
-          data: cachedData,
-          count: cachedData.length,
-        };
+      if (cachedData) {
+        log.success(`[CACHE HIT]`, {
+          cacheKey,
+        });
+
+        // If we have enough cached data or no limit is specified, return it
+        if (!limit || cachedData.length >= limit) {
+          return {
+            cacheHit: true,
+            data: cachedData,
+            count: cachedData.length,
+          };
+        }
+
+        log.debug(
+          `[PLACES] Cached data insufficient (${cachedData.length}/${limit}), fetching more`
+        );
+      } else {
+        log.error(`[CACHE MISS]`, {
+          cacheKey,
+          keys: keys?.join(','),
+        });
       }
-      log.debug('Cached data insufficient, fetching more', {
-        limit,
-        cachedCount: cachedData.length,
+    } catch (error) {
+      log.error(`[PLACES] Error retrieving from cache`, {
+        error,
+        cacheKey,
       });
-    } else {
-      log.debug('Cache miss', { cacheKey });
+      // Continue with API fetch on cache error
     }
-  } else if (!cacheKey) {
-    log.info('Skipping cache due to null cacheKey');
+  } else {
+    if (bypassCache) {
+      log.info(`[PLACES] Bypassing cache as requested`);
+    } else if (!cacheKey) {
+      log.info(`[PLACES] Skipping cache (no cache key)`);
+    }
   }
-
-  // Fetch from Google Places API
-  log.info('Fetching from Google Places API', { textQuery, location });
   const processedPlaces = await fetchAndProcessGoogleData({
     textQuery,
     location,
     openNow,
     limit,
     bufferMiles,
+    keys,
   });
 
-  // Cache results only if cacheKey is non-null
-  if (cacheKey) {
+  // Cache results only if cacheKey is non-null and we have data to cache
+  if (cacheKey && processedPlaces.data.length > 0) {
+    log.success(`[CACHE SET]`, {
+      cacheKey,
+      data: processedPlaces.data,
+    });
     await setCacheResults({ cacheKey, processedPlaces });
   } else {
-    log.info('Skipping cache set due to null cacheKey');
+    log.error(`[CACHE SKIPPED]`, {
+      cacheKey,
+    });
   }
 
   return processedPlaces;

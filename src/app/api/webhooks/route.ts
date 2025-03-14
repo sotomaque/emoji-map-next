@@ -16,7 +16,6 @@ export async function POST(req: Request) {
 
     // If there are no headers, error out
     if (!svix_id || !svix_timestamp || !svix_signature) {
-      console.error('Missing svix headers');
       return new NextResponse('Missing svix headers', { status: 400 });
     }
 
@@ -27,7 +26,6 @@ export async function POST(req: Request) {
     // Create a new Svix instance with your webhook secret
     const webhookSecret = env.CLERK_SIGNING_SECRET;
     if (!webhookSecret) {
-      console.error('Missing CLERK_SIGNING_SECRET');
       return new NextResponse('Missing webhook secret', { status: 500 });
     }
 
@@ -42,17 +40,13 @@ export async function POST(req: Request) {
         'svix-timestamp': svix_timestamp,
         'svix-signature': svix_signature,
       }) as WebhookEvent;
-    } catch (err) {
-      console.error('Error verifying webhook:', err);
+    } catch {
+      log.error(`[API] Error verifying webhook`);
       return new NextResponse('Error verifying webhook', { status: 400 });
     }
 
     // Handle the webhook based on the event type
     const eventType = evt.type;
-    log.info(`Webhook received: ${eventType}`, {
-      userId: evt.data.id,
-      timestamp: new Date().toISOString(),
-    });
 
     let result;
     if (eventType === 'user.created') {
@@ -63,7 +57,7 @@ export async function POST(req: Request) {
       if (evt.data.id) {
         result = await handleUserDeleted(evt.data.id);
       } else {
-        console.error('User ID is missing in user.deleted event');
+        log.error(`[API] User ID is missing in user.deleted event`);
       }
     }
 
@@ -75,7 +69,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Unexpected error in webhook handler:', error);
+    log.error(`[API] Unexpected error in webhook handler`, { error });
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -89,7 +83,6 @@ async function handleUserCreated(userData: UserJSON) {
     });
 
     if (existingUser) {
-      console.log(`User already exists: ${userData.id}`);
       return;
     }
 
@@ -116,12 +109,10 @@ async function handleUserCreated(userData: UserJSON) {
     const createdAt = userData.created_at;
 
     if (!clerkId) {
-      console.error('User ID is missing');
       return;
     }
 
     if (!email) {
-      console.error('Email is missing for user:', clerkId);
       return;
     }
 
@@ -139,10 +130,9 @@ async function handleUserCreated(userData: UserJSON) {
       },
     });
 
-    console.log(`User created: ${user.id}`);
     return user;
   } catch (error) {
-    console.error('Error creating user:', error);
+    log.error(`[API] Error creating user`, { error });
     throw error;
   }
 }
@@ -156,7 +146,6 @@ async function handleUserUpdated(userData: UserJSON) {
     });
 
     if (!existingUser) {
-      console.log(`User doesn't exist during update, creating: ${userData.id}`);
       // If user doesn't exist, create them
       return await handleUserCreated(userData);
     }
@@ -192,10 +181,9 @@ async function handleUserUpdated(userData: UserJSON) {
       },
     });
 
-    console.log(`User updated: ${user.id}`);
     return user;
   } catch (error) {
-    console.error('Error updating user:', error);
+    log.error(`[API] Error updating user`, { error });
     throw error;
   }
 }
@@ -209,7 +197,6 @@ async function handleUserDeleted(clerkId: string) {
     });
 
     if (!existingUser) {
-      console.log(`User not found for deletion: ${clerkId}`);
       return null;
     }
 
@@ -218,10 +205,9 @@ async function handleUserDeleted(clerkId: string) {
       where: { clerkId },
     });
 
-    console.log(`User deleted: ${user.id}`);
     return user;
   } catch (error) {
-    console.error('Error deleting user:', error);
+    log.error(`[API] Error deleting user`, { error });
     throw error;
   }
 }

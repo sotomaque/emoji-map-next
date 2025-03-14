@@ -53,3 +53,13 @@ model Favorite {
   @@index([userId])
   @@index([placeId])
 }
+
+// Working towards having the mapping of the emoji to the key the db 
+// will use to match the place to the category in a db
+// Currently CATEGORY_MAP is used locally and redefined in the iOS client
+model Category {
+  id       Int      @id
+  emoji    String   @unique
+  name     String   @unique
+  keywords String[]
+}

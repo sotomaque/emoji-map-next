@@ -69,6 +69,7 @@ describe('processGoogleResponse', () => {
         defaultedToPlace: 0,
         mappedToMainCategory: 0,
       },
+      keys: [],
     });
   });
 

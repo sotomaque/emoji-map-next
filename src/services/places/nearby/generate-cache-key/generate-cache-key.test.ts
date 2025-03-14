@@ -151,4 +151,75 @@ describe('generateCacheKey', () => {
     // Should generate a key when at least one coordinate is valid
     expect(result).toBe('places:v1:40.71,special');
   });
+
+  // Test 10: With category keys
+  it('should include sorted category keys in the cache key', () => {
+    const params = {
+      location: '40.7128,-74.0060',
+      keys: [3, 1, 2],
+    };
+
+    const result = generateCacheKey(params);
+
+    // Keys should be sorted numerically and appended to the cache key
+    expect(result).toBe('places:v1:40.71,-74.01:1,2,3');
+  });
+
+  // Test 11: Different order of keys should produce the same cache key
+  it('should generate the same cache key for different order of category keys', () => {
+    const params1 = {
+      location: '40.7128,-74.0060',
+      keys: [3, 1, 2],
+    };
+
+    const params2 = {
+      location: '40.7128,-74.0060',
+      keys: [1, 2, 3],
+    };
+
+    const result1 = generateCacheKey(params1);
+    const result2 = generateCacheKey(params2);
+
+    expect(result1).toBe(result2);
+    expect(result1).toBe('places:v1:40.71,-74.01:1,2,3');
+  });
+
+  // Test 12: Empty keys array
+  it('should handle empty keys array', () => {
+    const params = {
+      location: '40.7128,-74.0060',
+      keys: [],
+    };
+
+    const result = generateCacheKey(params);
+
+    // Empty keys array should be treated the same as no keys
+    expect(result).toBe('places:v1:40.71,-74.01');
+  });
+
+  // Test 13: With duplicate keys
+  it('should handle duplicate keys', () => {
+    const params = {
+      location: '40.7128,-74.0060',
+      keys: [1, 2, 1, 3, 2],
+    };
+
+    const result = generateCacheKey(params);
+
+    // Duplicate keys should be preserved in the sorted result
+    expect(result).toBe('places:v1:40.71,-74.01:1,1,2,2,3');
+  });
+
+  // Test 14: With invalid location but valid keys
+  it('should return null for invalid location even with valid keys', () => {
+    const params = {
+      location: 'invalid',
+      keys: [1, 2, 3],
+    };
+
+    const result = generateCacheKey(params);
+
+    // Should return null for invalid location regardless of keys
+    expect(result).toBeNull();
+  });
 });

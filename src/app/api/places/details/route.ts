@@ -4,7 +4,6 @@ import { getPlaceDetailsWithCache } from '@/services/places/details/get-place-de
 import { getSearchParams } from '@/services/places/details/get-search-params/get-search-params';
 import type { DetailResponse } from '@/types/details';
 import type { ErrorResponse } from '@/types/error-response';
-import { log } from '@/utils/log';
 
 /**
  * GET handler for the /api/places/details endpoint
@@ -31,19 +30,10 @@ export async function GET(
 ): Promise<NextResponse<DetailResponse | ErrorResponse>> {
   try {
     const { id, bypassCache } = getSearchParams(request);
-
-    log.info('Fetching details', { id, bypassCache });
     const details = await getPlaceDetailsWithCache({ id, bypassCache });
 
-    log.info('Details fetched', {
-      id,
-      bypassCache,
-      count: details.count,
-      cacheHit: details.cacheHit,
-    });
     return NextResponse.json(details);
   } catch (error) {
-    console.error('[API] Unhandled error fetching place details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch place details', message: String(error) },
       { status: 500 }

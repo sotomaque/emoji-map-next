@@ -13,6 +13,27 @@ export enum LogLevel {
 }
 
 /**
+ * HTTP method types for endpoint logging
+ */
+export type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'OPTIONS'
+  | 'HEAD';
+
+/**
+ * Endpoint information for logging
+ */
+export interface EndpointInfo {
+  type?: HttpMethod;
+  path?: string;
+  util?: string; // Name of the utility or function generating the log
+}
+
+/**
  * Parse log level from environment variable or default to INFO in production and DEBUG in development
  */
 const getLogLevel = (): LogLevel => {
@@ -57,6 +78,7 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   white: '\x1b[37m',
+  gray: '\x1b[90m',
 
   // Background colors
   bgRed: '\x1b[41m',
@@ -65,6 +87,7 @@ const colors = {
   bgBlue: '\x1b[44m',
   bgMagenta: '\x1b[45m',
   bgCyan: '\x1b[46m',
+  bgGray: '\x1b[100m',
 
   // Styles
   bold: '\x1b[1m',
@@ -80,7 +103,26 @@ const colors = {
 const isBrowser = typeof window !== 'undefined';
 
 /**
- * Enhanced logger with color support, debug mode, and log levels
+ * Format endpoint information for display
+ */
+const formatEndpoint = (endpoint?: EndpointInfo): string => {
+  if (!endpoint || (!endpoint.type && !endpoint.path && !endpoint.util))
+    return '';
+
+  const parts = [];
+  if (endpoint.type) parts.push(endpoint.type);
+  if (endpoint.path) parts.push(endpoint.path);
+
+  // Format the output differently if util is provided
+  if (endpoint.util) {
+    return `[${parts.join(' ')} || ${endpoint.util}] `;
+  }
+
+  return `[${parts.join(' ')}] `;
+};
+
+/**
+ * Enhanced logger with color support, debug mode, log levels, and endpoint information
  */
 export const log = {
   /**
@@ -94,16 +136,41 @@ export const log = {
    * Log informational messages (level: INFO)
    *
    * @param message - The message to log
-   * @param meta - Optional metadata to include with the log
+   * @param metaOrEndpoint - Optional metadata or endpoint information
+   * @param endpoint - Optional endpoint information if meta is provided
    */
-  info: (message: string, meta?: Record<string, unknown>) => {
+  info: (
+    message: string,
+    metaOrEndpoint?: Record<string, unknown> | EndpointInfo,
+    endpoint?: EndpointInfo
+  ) => {
     if (currentLogLevel < LogLevel.INFO) return;
 
+    let meta: Record<string, unknown> | undefined;
+    let endpointInfo: EndpointInfo | undefined;
+
+    // Determine if first optional param is metadata or endpoint
+    if (metaOrEndpoint) {
+      if (metaOrEndpoint.type || metaOrEndpoint.path || metaOrEndpoint.util) {
+        endpointInfo = metaOrEndpoint as EndpointInfo;
+      } else {
+        meta = metaOrEndpoint as Record<string, unknown>;
+        endpointInfo = endpoint;
+      }
+    }
+
+    const endpointStr = formatEndpoint(endpointInfo);
+
     if (isBrowser) {
-      console.log(`%c[INFO] ${message}`, 'color: #0066cc', meta || '');
+      console.log(
+        `%c[INFO]%c ${endpointStr}${message}`,
+        'color: #0066cc; font-weight: bold;',
+        'color: inherit;',
+        meta || ''
+      );
     } else {
       console.log(
-        `${colors.blue}[INFO]${colors.reset} ${message}`,
+        `${colors.blue}${colors.bold}[INFO]${colors.reset} ${colors.cyan}${endpointStr}${colors.reset}${message}`,
         meta ? JSON.stringify(meta) : ''
       );
     }
@@ -113,20 +180,45 @@ export const log = {
    * Log error messages with prominent styling (level: ERROR)
    *
    * @param message - The error message to log
-   * @param error - The error object or details
+   * @param errorOrEndpoint - The error object or endpoint information
+   * @param endpoint - Optional endpoint information if error is provided
    */
-  error: (message: string, error: unknown) => {
+  error: (
+    message: string,
+    errorOrEndpoint?: unknown | EndpointInfo,
+    endpoint?: EndpointInfo
+  ) => {
     if (currentLogLevel < LogLevel.ERROR) return;
+
+    let error: unknown;
+    let endpointInfo: EndpointInfo | undefined;
+
+    // Determine if first optional param is error or endpoint
+    if (
+      errorOrEndpoint &&
+      typeof errorOrEndpoint === 'object' &&
+      ((errorOrEndpoint as EndpointInfo).type ||
+        (errorOrEndpoint as EndpointInfo).path ||
+        (errorOrEndpoint as EndpointInfo).util)
+    ) {
+      endpointInfo = errorOrEndpoint as EndpointInfo;
+    } else {
+      error = errorOrEndpoint;
+      endpointInfo = endpoint;
+    }
+
+    const endpointStr = formatEndpoint(endpointInfo);
 
     if (isBrowser) {
       console.error(
-        `%c[ERROR] ${message}`,
+        `%c[ERROR]%c ${endpointStr}${message}`,
         'color: #ffffff; background-color: #ff0000; font-weight: bold; padding: 2px 5px; border-radius: 3px;',
+        'color: #ff0000; font-weight: bold;',
         error
       );
     } else {
       console.error(
-        `${colors.bgRed}${colors.white}${colors.bold}[ERROR]${colors.reset} ${colors.red}${message}${colors.reset}`,
+        `${colors.bgRed}${colors.white}${colors.bold}[ERROR]${colors.reset} ${colors.cyan}${endpointStr}${colors.reset}${colors.red}${message}${colors.reset}`,
         error
       );
     }
@@ -136,21 +228,42 @@ export const log = {
    * Log debug messages (level: DEBUG)
    *
    * @param message - The debug message to log
-   * @param meta - Optional metadata to include with the log
+   * @param metaOrEndpoint - Optional metadata or endpoint information
+   * @param endpoint - Optional endpoint information if meta is provided
    */
-  debug: (message: string, meta?: Record<string, unknown>) => {
+  debug: (
+    message: string,
+    metaOrEndpoint?: Record<string, unknown> | EndpointInfo,
+    endpoint?: EndpointInfo
+  ) => {
     // Check log level
     if (currentLogLevel < LogLevel.DEBUG) return;
 
+    let meta: Record<string, unknown> | undefined;
+    let endpointInfo: EndpointInfo | undefined;
+
+    // Determine if first optional param is metadata or endpoint
+    if (metaOrEndpoint) {
+      if (metaOrEndpoint.type || metaOrEndpoint.path || metaOrEndpoint.util) {
+        endpointInfo = metaOrEndpoint as EndpointInfo;
+      } else {
+        meta = metaOrEndpoint as Record<string, unknown>;
+        endpointInfo = endpoint;
+      }
+    }
+
+    const endpointStr = formatEndpoint(endpointInfo);
+
     if (isBrowser) {
       console.log(
-        `%c[DEBUG] ${message}`,
+        `%c[DEBUG]%c ${endpointStr}${message}`,
         'color: #ffffff; background-color: #6600cc; font-weight: bold; padding: 2px 5px; border-radius: 3px;',
+        'color: #6600cc;',
         meta || ''
       );
     } else {
       console.log(
-        `${colors.bgMagenta}${colors.white}${colors.bold}[DEBUG]${colors.reset} ${colors.magenta}${message}${colors.reset}`,
+        `${colors.bgMagenta}${colors.white}${colors.bold}[DEBUG]${colors.reset} ${colors.cyan}${endpointStr}${colors.reset}${colors.magenta}${message}${colors.reset}`,
         meta ? JSON.stringify(meta) : ''
       );
     }
@@ -160,20 +273,41 @@ export const log = {
    * Log warning messages (level: WARN)
    *
    * @param message - The warning message to log
-   * @param meta - Optional metadata to include with the log
+   * @param metaOrEndpoint - Optional metadata or endpoint information
+   * @param endpoint - Optional endpoint information if meta is provided
    */
-  warn: (message: string, meta?: Record<string, unknown>) => {
+  warn: (
+    message: string,
+    metaOrEndpoint?: Record<string, unknown> | EndpointInfo,
+    endpoint?: EndpointInfo
+  ) => {
     if (currentLogLevel < LogLevel.WARN) return;
+
+    let meta: Record<string, unknown> | undefined;
+    let endpointInfo: EndpointInfo | undefined;
+
+    // Determine if first optional param is metadata or endpoint
+    if (metaOrEndpoint) {
+      if (metaOrEndpoint.type || metaOrEndpoint.path || metaOrEndpoint.util) {
+        endpointInfo = metaOrEndpoint as EndpointInfo;
+      } else {
+        meta = metaOrEndpoint as Record<string, unknown>;
+        endpointInfo = endpoint;
+      }
+    }
+
+    const endpointStr = formatEndpoint(endpointInfo);
 
     if (isBrowser) {
       console.warn(
-        `%c[WARN] ${message}`,
+        `%c[WARN]%c ${endpointStr}${message}`,
         'color: #000000; background-color: #ffcc00; font-weight: bold; padding: 2px 5px; border-radius: 3px;',
+        'color: #cc9900; font-weight: bold;',
         meta || ''
       );
     } else {
       console.warn(
-        `${colors.bgYellow}${colors.bold}[WARN]${colors.reset} ${colors.yellow}${message}${colors.reset}`,
+        `${colors.bgYellow}${colors.bold}[WARN]${colors.reset} ${colors.cyan}${endpointStr}${colors.reset}${colors.yellow}${message}${colors.reset}`,
         meta ? JSON.stringify(meta) : ''
       );
     }
@@ -183,20 +317,41 @@ export const log = {
    * Log success messages (level: SUCCESS)
    *
    * @param message - The success message to log
-   * @param meta - Optional metadata to include with the log
+   * @param metaOrEndpoint - Optional metadata or endpoint information
+   * @param endpoint - Optional endpoint information if meta is provided
    */
-  success: (message: string, meta?: Record<string, unknown>) => {
+  success: (
+    message: string,
+    metaOrEndpoint?: Record<string, unknown> | EndpointInfo,
+    endpoint?: EndpointInfo
+  ) => {
     if (currentLogLevel < LogLevel.SUCCESS) return;
+
+    let meta: Record<string, unknown> | undefined;
+    let endpointInfo: EndpointInfo | undefined;
+
+    // Determine if first optional param is metadata or endpoint
+    if (metaOrEndpoint) {
+      if (metaOrEndpoint.type || metaOrEndpoint.path || metaOrEndpoint.util) {
+        endpointInfo = metaOrEndpoint as EndpointInfo;
+      } else {
+        meta = metaOrEndpoint as Record<string, unknown>;
+        endpointInfo = endpoint;
+      }
+    }
+
+    const endpointStr = formatEndpoint(endpointInfo);
 
     if (isBrowser) {
       console.log(
-        `%c[SUCCESS] ${message}`,
+        `%c[SUCCESS]%c ${endpointStr}${message}`,
         'color: #ffffff; background-color: #00cc66; font-weight: bold; padding: 2px 5px; border-radius: 3px;',
+        'color: #00cc66; font-weight: bold;',
         meta || ''
       );
     } else {
       console.log(
-        `${colors.bgGreen}${colors.white}${colors.bold}[SUCCESS]${colors.reset} ${colors.green}${message}${colors.reset}`,
+        `${colors.bgGreen}${colors.white}${colors.bold}[SUCCESS]${colors.reset} ${colors.cyan}${endpointStr}${colors.reset}${colors.green}${message}${colors.reset}`,
         meta ? JSON.stringify(meta) : ''
       );
     }

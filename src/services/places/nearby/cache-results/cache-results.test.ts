@@ -52,10 +52,7 @@ describe('cacheResults', () => {
     });
 
     // Verify success log message
-    expect(log.info).toHaveBeenCalledWith('[API] Successfully cached', {
-      cacheKey,
-      count: processedPlaces.count,
-    });
+    expect(log.success).toHaveBeenCalledWith('[NEARBY] cache set');
   });
 
   // Test 2: Invalid key format (missing prefix)
@@ -71,9 +68,7 @@ describe('cacheResults', () => {
     expect(redis.set).not.toHaveBeenCalled();
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Invalid cache key format:', {
-      cacheKey,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Invalid cache key format');
   });
 
   // Test 3: Invalid key format (missing location part)
@@ -89,9 +84,7 @@ describe('cacheResults', () => {
     expect(redis.set).not.toHaveBeenCalled();
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Invalid cache key format:', {
-      cacheKey,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Invalid cache key format');
   });
 
   // Test 4: Invalid key format (missing longitude)
@@ -107,9 +100,7 @@ describe('cacheResults', () => {
     expect(redis.set).not.toHaveBeenCalled();
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Invalid cache key format:', {
-      cacheKey,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Invalid cache key format');
   });
 
   // Test 5: Invalid key format (missing latitude)
@@ -125,9 +116,7 @@ describe('cacheResults', () => {
     expect(redis.set).not.toHaveBeenCalled();
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Invalid cache key format:', {
-      cacheKey,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Invalid cache key format');
   });
 
   // Test 6: Invalid key format (non-numeric coordinates)
@@ -143,9 +132,7 @@ describe('cacheResults', () => {
     expect(redis.set).not.toHaveBeenCalled();
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Invalid cache key format:', {
-      cacheKey,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Invalid cache key format');
   });
 
   // Test 7: Valid key format (one numeric coordinate)
@@ -163,10 +150,7 @@ describe('cacheResults', () => {
     });
 
     // Verify success log message
-    expect(log.info).toHaveBeenCalledWith('[API] Successfully cached', {
-      cacheKey,
-      count: processedPlaces.count,
-    });
+    expect(log.success).toHaveBeenCalledWith('[NEARBY] cache set');
   });
 
   // Test 8: Empty results
@@ -181,13 +165,7 @@ describe('cacheResults', () => {
     // Verify redis.set was not called
     expect(redis.set).not.toHaveBeenCalled();
 
-    // Verify error log message
-    expect(log.error).toHaveBeenCalledWith(
-      '[API] No processed places to cache',
-      {
-        processedPlaces,
-      }
-    );
+    // No error log for empty results in the implementation
   });
 
   // Test 9: Null results
@@ -202,13 +180,7 @@ describe('cacheResults', () => {
     // Verify redis.set was not called
     expect(redis.set).not.toHaveBeenCalled();
 
-    // Verify error log message
-    expect(log.error).toHaveBeenCalledWith(
-      '[API] No processed places to cache',
-      {
-        processedPlaces,
-      }
-    );
+    // No error log for null results in the implementation
   });
 
   // Test 10: Redis error
@@ -225,8 +197,6 @@ describe('cacheResults', () => {
     await setCacheResults({ cacheKey, processedPlaces });
 
     // Verify error log message
-    expect(log.error).toHaveBeenCalledWith('[API] Error caching results:', {
-      error: mockError,
-    });
+    expect(log.error).toHaveBeenCalledWith('[NEARBY] Error caching results');
   });
 });

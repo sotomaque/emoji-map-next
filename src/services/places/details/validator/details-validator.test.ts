@@ -70,37 +70,41 @@ describe('details-validator', () => {
       }
     });
 
-    it('should reject responses without a name', () => {
-      const invalidResponse = {
+    it('should accept responses without a name', () => {
+      const responseWithoutName = {
         priceLevel: 'PRICE_LEVEL_MODERATE',
         rating: 4.5,
         userRatingCount: 100,
       };
 
-      const result = googleDetailsResponseSchema.safeParse(invalidResponse);
-      expect(result.success).toBe(false);
+      const result = googleDetailsResponseSchema.safeParse(responseWithoutName);
+      expect(result.success).toBe(true);
     });
 
-    it('should reject responses without a rating', () => {
-      const invalidResponse = {
+    it('should accept responses without a rating', () => {
+      const responseWithoutRating = {
         name: 'Test Place',
         priceLevel: 'PRICE_LEVEL_MODERATE',
         userRatingCount: 100,
       };
 
-      const result = googleDetailsResponseSchema.safeParse(invalidResponse);
-      expect(result.success).toBe(false);
+      const result = googleDetailsResponseSchema.safeParse(
+        responseWithoutRating
+      );
+      expect(result.success).toBe(true);
     });
 
-    it('should reject responses without a userRatingCount', () => {
-      const invalidResponse = {
+    it('should accept responses without a userRatingCount', () => {
+      const responseWithoutUserRatingCount = {
         name: 'Test Place',
         priceLevel: 'PRICE_LEVEL_MODERATE',
         rating: 4.5,
       };
 
-      const result = googleDetailsResponseSchema.safeParse(invalidResponse);
-      expect(result.success).toBe(false);
+      const result = googleDetailsResponseSchema.safeParse(
+        responseWithoutUserRatingCount
+      );
+      expect(result.success).toBe(true);
     });
 
     it('should validate a response with reviews', () => {
@@ -110,7 +114,7 @@ describe('details-validator', () => {
         userRatingCount: 100,
         reviews: [
           {
-            name: 'Review 1',
+            name: 'Valid Review',
             rating: 5,
             relativePublishTimeDescription: '2 days ago',
             text: {
@@ -121,14 +125,74 @@ describe('details-validator', () => {
               text: 'Great place!',
               languageCode: 'en',
             },
-            authorAttribution: {
-              displayName: 'John Doe',
-              uri: 'https://example.com/johndoe',
-              photoUri: 'https://example.com/johndoe/photo',
+          },
+          {
+            name: 'Missing Text',
+            rating: 4,
+            relativePublishTimeDescription: '3 days ago',
+            text: {
+              languageCode: 'en',
             },
-            publishTime: '2023-01-01T12:00:00Z',
-            flagContentUri: 'https://example.com/flag',
-            googleMapsUri: 'https://maps.google.com/review',
+            originalText: {
+              text: 'Good service',
+              languageCode: 'en',
+            },
+          },
+          {
+            name: 'Missing Original Text',
+            rating: 3,
+            relativePublishTimeDescription: '4 days ago',
+            text: {
+              text: 'Nice atmosphere',
+              languageCode: 'en',
+            },
+            originalText: {
+              languageCode: 'en',
+            },
+          },
+          {
+            name: 'Empty Text',
+            rating: 2,
+            relativePublishTimeDescription: '5 days ago',
+            text: {
+              text: '',
+              languageCode: 'en',
+            },
+            originalText: {
+              text: 'Not good',
+              languageCode: 'en',
+            },
+          },
+          {
+            name: 'Empty Original Text',
+            rating: 1,
+            relativePublishTimeDescription: '6 days ago',
+            text: {
+              text: 'Terrible',
+              languageCode: 'en',
+            },
+            originalText: {
+              text: '',
+              languageCode: 'en',
+            },
+          },
+          {
+            name: 'Missing Text Object',
+            rating: 3,
+            relativePublishTimeDescription: '7 days ago',
+            originalText: {
+              text: 'Average',
+              languageCode: 'en',
+            },
+          },
+          {
+            name: 'Missing Original Text Object',
+            rating: 3,
+            relativePublishTimeDescription: '8 days ago',
+            text: {
+              text: 'Average',
+              languageCode: 'en',
+            },
           },
         ],
       };
@@ -138,9 +202,6 @@ describe('details-validator', () => {
       if (result.success) {
         expect(result.data.reviews).toHaveLength(1);
         expect(result.data.reviews[0].rating).toBe(5);
-        expect(result.data.reviews[0].authorAttribution.displayName).toBe(
-          'John Doe'
-        );
         expect(result.data.reviews[0].text).toEqual({
           text: 'Great place!',
           languageCode: 'en',
@@ -225,6 +286,116 @@ describe('details-validator', () => {
           expect(result.data.priceLevel).toBe(priceLevel);
         }
       });
+    });
+
+    it('should filter out reviews without text.text or originalText.text', () => {
+      const responseWithMixedReviews = {
+        name: 'Test Place',
+        rating: 4.5,
+        userRatingCount: 100,
+        reviews: [
+          // Valid review with both text.text and originalText.text
+          {
+            name: 'Valid Review',
+            rating: 5,
+            relativePublishTimeDescription: '2 days ago',
+            text: {
+              text: 'Great place!',
+              languageCode: 'en',
+            },
+            originalText: {
+              text: 'Great place!',
+              languageCode: 'en',
+            },
+          },
+          // Missing text.text
+          {
+            name: 'Missing Text',
+            rating: 4,
+            relativePublishTimeDescription: '3 days ago',
+            text: {
+              languageCode: 'en',
+            },
+            originalText: {
+              text: 'Good service',
+              languageCode: 'en',
+            },
+          },
+          // Missing originalText.text
+          {
+            name: 'Missing Original Text',
+            rating: 3,
+            relativePublishTimeDescription: '4 days ago',
+            text: {
+              text: 'Nice atmosphere',
+              languageCode: 'en',
+            },
+            originalText: {
+              languageCode: 'en',
+            },
+          },
+          // Empty text.text
+          {
+            name: 'Empty Text',
+            rating: 2,
+            relativePublishTimeDescription: '5 days ago',
+            text: {
+              text: '',
+              languageCode: 'en',
+            },
+            originalText: {
+              text: 'Not good',
+              languageCode: 'en',
+            },
+          },
+          // Empty originalText.text
+          {
+            name: 'Empty Original Text',
+            rating: 1,
+            relativePublishTimeDescription: '6 days ago',
+            text: {
+              text: 'Terrible',
+              languageCode: 'en',
+            },
+            originalText: {
+              text: '',
+              languageCode: 'en',
+            },
+          },
+          // Missing text object
+          {
+            name: 'Missing Text Object',
+            rating: 3,
+            relativePublishTimeDescription: '7 days ago',
+            originalText: {
+              text: 'Average',
+              languageCode: 'en',
+            },
+          },
+          // Missing originalText object
+          {
+            name: 'Missing Original Text Object',
+            rating: 3,
+            relativePublishTimeDescription: '8 days ago',
+            text: {
+              text: 'Average',
+              languageCode: 'en',
+            },
+          },
+        ],
+      };
+
+      const result = googleDetailsResponseSchema.safeParse(
+        responseWithMixedReviews
+      );
+      expect(result.success).toBe(true);
+      if (result.success) {
+        // Only the first review should remain after filtering
+        expect(result.data.reviews).toHaveLength(1);
+        expect(result.data.reviews[0].name).toBe('Valid Review');
+        expect(result.data.reviews[0].text?.text).toBe('Great place!');
+        expect(result.data.reviews[0].originalText?.text).toBe('Great place!');
+      }
     });
   });
 });

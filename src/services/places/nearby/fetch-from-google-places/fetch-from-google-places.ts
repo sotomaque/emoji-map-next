@@ -36,6 +36,9 @@ const path = 'places:searchText';
  * 3. Processes and validates the response
  * 4. Returns the data in a standardized format
  *
+ * When used with batching, this function will be called multiple times with different
+ * text queries representing different category batches.
+ *
  * @param props - Parameters for the Google Places API request
  * @param props.textQuery - Text query to search for places (e.g., "restaurants", "coffee shops")
  * @param props.location - Location in the format "latitude,longitude"
@@ -66,9 +69,6 @@ export async function fetchFromGoogle({
   limit,
   bufferMiles,
 }: Props): Promise<GooglePlacesResponse> {
-  log.debug('Fetch parameters', { limit });
-  log.info('[API] Fetching from Google Places API');
-
   try {
     const requestBody = prepareGoogleRequestBody({
       textQuery,
@@ -79,8 +79,6 @@ export async function fetchFromGoogle({
     });
 
     const url = `${baseUrl}/${path}?key=${apiKey}`;
-    log.debug('API request details', { baseUrl, path, url });
-    log.info('[API] Fetching from Google Places API', { url });
 
     const response = await fetch(url, {
       method: 'POST',
@@ -100,28 +98,25 @@ export async function fetchFromGoogle({
       body: JSON.stringify(requestBody),
     });
 
-    log.success('[API] Response:', { response });
+    if (!response.ok) {
+      return { places: [] };
+    }
 
     const data = await response.json();
 
     if (!data?.places || !Array.isArray(data?.places)) {
-      log.error('[API] Invalid response from Google Places API:', data);
-
       return {
         places: [],
       };
     }
 
-    log.info(
-      `[API] Received ${data.places.length} results from Google Places API`
-    );
+    const limitedResults = limit ? data.places.slice(0, limit) : data.places;
 
     return {
-      places: data.places.slice(0, limit),
+      places: limitedResults,
     };
   } catch (error) {
-    log.error('[API] Error fetching from Google Places API:', error);
-
+    log.error(`[API] Error fetching from Google Places`, { error });
     return {
       places: [],
     };

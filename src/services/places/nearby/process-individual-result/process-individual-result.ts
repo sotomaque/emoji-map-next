@@ -7,7 +7,7 @@ import {
   isNumber,
   isObject,
   join,
-  keys,
+  keys as keysOf,
   map,
   pick,
   some,
@@ -18,11 +18,20 @@ import {
 import { CATEGORY_MAP } from '@/constants/category-map';
 import type { GooglePlace } from '@/types/google-places';
 import type { Place, FilterReasons } from '@/types/places';
-import { log } from '@/utils/log';
 
 // Create a mapping of category names to emojis from the new CATEGORY_MAP
 const categoryEmojis: Record<string, string> = Object.fromEntries(
   CATEGORY_MAP.map((category) => [category.name, category.emoji])
+);
+
+// Create a mapping of category keys to emojis for direct lookup
+const keyToEmojiMap: Record<number, string> = Object.fromEntries(
+  CATEGORY_MAP.map((category) => [category.key, category.emoji])
+);
+
+// Create a mapping of category keys to category names
+const keyToCategoryMap: Record<number, string> = Object.fromEntries(
+  CATEGORY_MAP.map((category) => [category.key, category.name])
 );
 
 // Internal helper functions
@@ -39,28 +48,17 @@ const findMatchingKeyword = (
     name: toLower(place.name || ''),
   };
 
-  return (
-    find(keywords, (keyword, index) => {
-      const lowercaseKeyword = lowercaseKeywords[index];
-      const isMatch =
-        some(placeFields, (field) =>
-          isArray(field)
-            ? includes(field, lowercaseKeyword)
-            : field === lowercaseKeyword
-        ) ||
-        includes(join(flatten(values(placeFields)), ' '), lowercaseKeyword);
+  return find(keywords, (keyword, index) => {
+    const lowercaseKeyword = lowercaseKeywords[index];
+    const isMatch =
+      some(placeFields, (field) =>
+        isArray(field)
+          ? includes(field, lowercaseKeyword)
+          : field === lowercaseKeyword
+      ) || includes(join(flatten(values(placeFields)), ' '), lowercaseKeyword);
 
-      if (isMatch) {
-        log.info(
-          `[API] Match found for keyword "${keyword}" in place "${place.name}"`,
-          placeFields
-        );
-      }
-      return isMatch;
-    }) ||
-    (log.debug(`[API] No match found for place "${place.name}"`, placeFields),
-    undefined)
-  );
+    return isMatch;
+  });
 };
 
 const getPrimaryCategoryForRelatedWord = (word: string): string | undefined => {
@@ -84,6 +82,7 @@ type ProcessIndividualPlaceProps = {
   place: GooglePlace;
   keywords: string[];
   filterReasons: FilterReasons;
+  keys?: number[];
 };
 
 /**
@@ -99,6 +98,7 @@ type ProcessIndividualPlaceProps = {
  * @param props.place - The Google Place object to process
  * @param props.keywords - Array of search keywords to match against
  * @param props.filterReasons - Object to track filtering statistics
+ * @param props.keys - Array of category keys
  *
  * @returns A simplified {@link Place} object containing:
  *   - id: Unique identifier for the place
@@ -113,18 +113,8 @@ export const processIndividualPlace = ({
   place,
   keywords,
   filterReasons,
+  keys = [],
 }: ProcessIndividualPlaceProps): Place => {
-  log.info(
-    `[API] Processing place: ${place.name}`,
-    pick(place, [
-      'id',
-      'primaryType',
-      'types',
-      'primaryTypeDisplayName.text',
-      'displayName.text',
-    ])
-  );
-
   // Validate required fields first
   if (
     !place.id ||
@@ -132,8 +122,21 @@ export const processIndividualPlace = ({
     !isNumber(place.location?.latitude) ||
     !isNumber(place.location?.longitude)
   ) {
-    log.error('[API] Place is missing required fields:', place);
     return {} as Place;
+  }
+
+  // Optimization: If only one key is provided, directly use its emoji
+  if (keys.length === 1) {
+    const categoryKey = keys[0];
+    const emoji = keyToEmojiMap[categoryKey];
+
+    if (emoji) {
+      return {
+        id: place.id,
+        location: pick(place.location, ['latitude', 'longitude']),
+        emoji,
+      };
+    }
   }
 
   // Determine category with fallback
@@ -147,13 +150,10 @@ export const processIndividualPlace = ({
         defaultTo(filterReasons.noKeywordMatch, 0) + 1;
       filterReasons.defaultedToPlace =
         defaultTo(filterReasons.defaultedToPlace, 0) + 1;
-      log.debug(`[API] No type information available, defaulting to: place`);
     });
 
   if (matchedKeyword) {
-    log.info(
-      `[API] Matched keyword: ${initialCategory} for place: ${place.name}`
-    );
+    // noop
   } else if (
     !matchedKeyword &&
     !toLower(place.primaryTypeDisplayName?.text) &&
@@ -172,14 +172,54 @@ export const processIndividualPlace = ({
   const finalCategory =
     mainCategory && mainCategory !== initialCategory
       ? tap(mainCategory, () => {
-          log.info(
-            `[API] Mapping category "${initialCategory}" to main category "${mainCategory}"`
-          );
           filterReasons.mappedToMainCategory =
             defaultTo(filterReasons.mappedToMainCategory, 0) + 1;
         })
       : initialCategory;
 
+  // If multiple keys are provided, restrict emoji selection to those keys
+  if (keys.length > 1) {
+    // Create a set of allowed category names based on the provided keys
+    const allowedCategories = new Set(
+      keys.map((key) => keyToCategoryMap[key]).filter(Boolean)
+    );
+
+    // Try to find a direct match in the allowed categories
+    if (allowedCategories.has(finalCategory)) {
+      const emoji = categoryEmojis[finalCategory];
+
+      return {
+        id: place.id,
+        location: pick(place.location, ['latitude', 'longitude']),
+        emoji,
+      };
+    }
+
+    // Try to find a related match in the allowed categories
+    for (const category of Array.from(allowedCategories)) {
+      const categoryObj = CATEGORY_MAP.find((cat) => cat.name === category);
+      if (categoryObj && categoryObj.keywords.includes(finalCategory)) {
+        const emoji = categoryEmojis[category];
+
+        return {
+          id: place.id,
+          location: pick(place.location, ['latitude', 'longitude']),
+          emoji,
+        };
+      }
+    }
+
+    // If no match found in allowed categories, use the first key's emoji as fallback
+    const fallbackEmoji = keyToEmojiMap[keys[0]];
+
+    return {
+      id: place.id,
+      location: pick(place.location, ['latitude', 'longitude']),
+      emoji: fallbackEmoji,
+    };
+  }
+
+  // Original logic for when no keys are provided or the optimization didn't apply
   // Determine emoji with optimized fallback
   // First try to get emoji for the original matched keyword if it exists
   let emoji = matchedKeyword ? categoryEmojis[matchedKeyword] : null;
@@ -190,9 +230,8 @@ export const processIndividualPlace = ({
   }
 
   if (!emoji) {
-    log.debug(`[API] No emoji found for category: ${finalCategory}`);
     const similarKey = find(
-      keys(categoryEmojis),
+      keysOf(categoryEmojis),
       (key) =>
         key !== finalCategory &&
         (includes(key, finalCategory) || includes(finalCategory, key))
@@ -200,14 +239,9 @@ export const processIndividualPlace = ({
     emoji = similarKey ? categoryEmojis[similarKey] : '🍽️'; // Default to place emoji
 
     if (similarKey) {
-      log.info(
-        `[API] Found similar emoji for ${finalCategory} using ${similarKey}: ${emoji}`
-      );
+      // noop
     } else {
       filterReasons.noEmoji = defaultTo(filterReasons.noEmoji, 0) + 1;
-      log.debug(
-        `[API] No emoji found for category: ${finalCategory}, using default place emoji`
-      );
     }
   }
 

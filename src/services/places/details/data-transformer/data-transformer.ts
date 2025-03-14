@@ -15,11 +15,11 @@ export function transformDetailsData(
 
   // Transform to Detail type with default values for required fields
   const normalizedData: Detail = {
-    name: data.name,
+    name: data.name || '',
     reviews: data.reviews,
-    rating: data.rating,
+    rating: data.rating || 0,
     priceLevel: mappedPriceLevel,
-    userRatingCount: data.userRatingCount,
+    userRatingCount: data.userRatingCount || 0,
     openNow: data.currentOpeningHours?.openNow || undefined,
     displayName: data.displayName?.text || '',
     primaryTypeDisplayName: data.primaryTypeDisplayName?.text || '',

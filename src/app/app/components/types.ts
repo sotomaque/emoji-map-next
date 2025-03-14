@@ -54,8 +54,8 @@ export interface EnhancedPlacesResponse extends PlacesResponse {
 export interface NearbyPlacesSectionProps {
   location: string;
   setLocation: (value: string) => void;
-  textQuery: string;
-  setTextQuery: (value: string) => void;
+  keysQuery: string;
+  setKeysQuery: (value: string) => void;
   limit: number;
   setLimit: (value: number) => void;
   bypassCache: boolean;

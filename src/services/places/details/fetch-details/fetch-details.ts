@@ -25,15 +25,16 @@ export async function fetchDetails(id: string) {
       'name',
       'rating',
       'reviews',
-      'priceLevel',
+      'priceLevel', // missing but should be ok?
       'userRatingCount',
       'currentOpeningHours.openNow',
       'primaryTypeDisplayName.text',
+      'displayName.text',
       'takeout',
       'delivery',
       'dineIn',
-      'editorialSummary.text',
-      'outdoorSeating',
+      'editorialSummary.text', //  missing (should be ok?)
+      'outdoorSeating', // missing (should be ok?)
       'liveMusic',
       'menuForChildren',
       'servesDessert',
@@ -54,25 +55,18 @@ export async function fetchDetails(id: string) {
     const fullUrl = `${baseUrl}/places/${id}?${params.toString()}`;
 
     // Make the request
-    log.success('Fetching details from Google Places API', { url: fullUrl });
-
     const response = await fetch(fullUrl);
 
     if (!response.ok) {
-      log.error('API Error', {
-        status: response.status,
-        statusText: response.statusText,
-      });
+      log.error(`[API] Error fetching details`, { error: response.statusText });
       throw new Error(`API Error: ${response.statusText}`);
     }
 
     // Parse the response as JSON (untyped)
     const rawData = await response.json();
 
-    log.success('Raw data fetched', { ...rawData });
-
     if (!rawData) {
-      log.error('No result found', { requestResult: Object.keys(rawData) });
+      log.error(`[API] No result found`);
       throw new Error('No result found');
     }
 
@@ -80,21 +74,20 @@ export async function fetchDetails(id: string) {
     const validationResult = googleDetailsResponseSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      log.error('Invalid API response format', {
-        errors: validationResult.error.format(),
-        data: rawData,
-      });
+      log.error(
+        `[API] Invalid API response format - Zod Validation Error`,
+        { error: validationResult.error },
+        rawData
+      );
       throw new Error('Invalid API response format');
     }
 
     // Extract the validated data
     const data = transformDetailsData(validationResult.data);
 
-    log.success('Normalized Details Returned', { ...data });
-
     return data;
   } catch (error) {
-    log.error('Error fetching details', { error });
+    log.error(`[API] Error fetching details`, { error });
     throw error;
   }
 }

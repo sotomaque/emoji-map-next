@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
+import { CATEGORY_MAP } from '@/constants/category-map';
 import type { Place } from '@/types/places';
 import {
   HackerCard,
@@ -22,8 +23,8 @@ import type { NearbyPlacesSectionProps } from './types';
 const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   location,
   setLocation,
-  textQuery,
-  setTextQuery,
+  keysQuery,
+  setKeysQuery,
   limit,
   setLimit,
   bypassCache,
@@ -47,6 +48,34 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   const [loadingFavorites, setLoadingFavorites] = useState<
     Record<string, boolean>
   >({});
+
+  // Parse the keysQuery string into an array of numbers
+  const selectedKeys = keysQuery
+    ? keysQuery
+        .split('|')
+        .map((k) => parseInt(k.trim()))
+        .filter((k) => !isNaN(k))
+    : [];
+
+  // Toggle a key in the keysQuery
+  const toggleKey = (key: number) => {
+    const currentKeys = [...selectedKeys];
+    const keyIndex = currentKeys.indexOf(key);
+
+    if (keyIndex >= 0) {
+      // Remove the key if it's already selected
+      currentKeys.splice(keyIndex, 1);
+    } else {
+      // Add the key if it's not selected
+      currentKeys.push(key);
+    }
+
+    // Sort the keys for consistent display
+    currentKeys.sort((a, b) => a - b);
+
+    // Update the keysQuery string
+    setKeysQuery(currentKeys.join('|'));
+  };
 
   // Fetch favorites when places data changes
   useEffect(() => {
@@ -113,11 +142,23 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
   // Construct the request URL for display
   const getRequestUrl = () => {
-    const params = new URLSearchParams({
-      location,
-      textQuery,
-      limit: limit.toString(),
-    });
+    const params = new URLSearchParams();
+
+    // Add location parameter
+    params.append('location', location);
+
+    // Add keys parameters for each key
+    if (keysQuery) {
+      const keys = keysQuery.split('|').map((k) => k.trim());
+      keys.forEach((key) => {
+        if (key) {
+          params.append('keys', key);
+        }
+      });
+    }
+
+    // Add limit parameter
+    params.append('limit', limit.toString());
 
     if (bypassCache) {
       params.append('bypassCache', 'true');
@@ -212,7 +253,7 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   // Function to reset the component state
   const handleReset = () => {
     setLocation('40.7128,-74.0060');
-    setTextQuery('pizza|beer');
+    setKeysQuery('1|2');
     setLimit(20);
     setBypassCache(false);
     setOpenNow(false);
@@ -266,18 +307,77 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
           </div>
 
           <div className='space-y-3'>
-            <label
-              htmlFor='textQuery'
-              className='text-sm font-medium text-cyan-400 dark:text-cyan-400 font-mono'
-            >
-              Text Query (use | to separate multiple queries)
+            <label className='text-sm font-medium text-cyan-400 dark:text-cyan-400 font-mono flex items-center'>
+              Category Keys (click to toggle)
+              <span className='ml-2 text-xs text-cyan-600 opacity-80'>
+                (defaults to all if none selected)
+              </span>
             </label>
-            <HackerInput
-              id='textQuery'
-              value={textQuery}
-              onChange={(e) => setTextQuery(e.target.value)}
-              placeholder='pizza|beer'
-            />
+            <div className='flex flex-wrap gap-2'>
+              {CATEGORY_MAP.map((category) => (
+                <button
+                  key={category.key}
+                  onClick={() => toggleKey(category.key)}
+                  className={`px-4 py-2 rounded-full text-sm font-mono flex items-center transition-colors ${
+                    selectedKeys.includes(category.key)
+                      ? 'bg-cyan-800 text-white border border-cyan-600 shadow-[0_0_8px_rgba(8,145,178,0.3)]'
+                      : 'bg-zinc-900 text-cyan-400 border border-zinc-800 hover:bg-zinc-800'
+                  }`}
+                  title={`${category.name} (key: ${category.key})`}
+                >
+                  <span className='text-lg'>{category.emoji}</span>
+                </button>
+              ))}
+            </div>
+            {selectedKeys.length > 0 ? (
+              <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+                <div className='mb-2'>
+                  <span className='text-cyan-500 font-medium'>
+                    Selected categories:
+                  </span>{' '}
+                  {selectedKeys.map((key, index) => {
+                    const category = CATEGORY_MAP.find((c) => c.key === key);
+                    return (
+                      <span key={key} className='inline-flex items-center'>
+                        {index > 0 && <span className='mx-1'>•</span>}
+                        <span className='mr-1'>{category?.emoji}</span>
+                        <span>{category?.name}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Keywords section */}
+                <div className='mt-3 space-y-2'>
+                  {selectedKeys.map((key) => {
+                    const category = CATEGORY_MAP.find((c) => c.key === key);
+                    if (!category) return null;
+
+                    return (
+                      <div
+                        key={`keywords-${key}`}
+                        className='pl-2 border-l-2 border-cyan-800'
+                      >
+                        <div className='flex items-center'>
+                          <span className='mr-1'>{category.emoji}</span>
+                          <span className='text-cyan-400'>{category.name}</span>
+                        </div>
+                        <div className='text-cyan-600 mt-1'>
+                          With Keywords: [
+                          {category.keywords.map((k) => `'${k}'`).join(', ')}]
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+                <span className='text-cyan-500 font-medium'>
+                  All categories will be used
+                </span>
+              </div>
+            )}
           </div>
 
           <div className='space-y-3'>

@@ -12,6 +12,6 @@ import { env } from '@/env';
 export const DETAILS_CONFIG = {
   // Cache key for the details API
   CACHE_KEY: 'details',
-  CACHE_KEY_VERSION: env.NEARBY_CACHE_KEY_VERSION,
+  CACHE_KEY_VERSION: env.DETAILS_CACHE_KEY_VERSION,
   CACHE_EXPIRATION_TIME: 60 * 60 * 24, // 1 day
 } as const;

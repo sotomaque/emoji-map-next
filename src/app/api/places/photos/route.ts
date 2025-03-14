@@ -41,11 +41,7 @@ export async function GET(
   try {
     const { id, limit, bypassCache } = getSearchParams(request);
 
-    log.info('Fetching photos', { id, limit, bypassCache });
-
     const photos = await fetchPlacePhotos({ id, limit, bypassCache });
-
-    log.info('Photos fetched', { id, limit, bypassCache, photos });
 
     return NextResponse.json(photos);
   } catch (error) {
@@ -57,7 +53,7 @@ export async function GET(
       ? 400
       : 500;
 
-    log.error('Error in photos route', error);
+    log.error(`[API] Error in photos route`, { error });
     return NextResponse.json({ error: message }, { status });
   }
 }

@@ -34,7 +34,7 @@ describe('getSearchParams', () => {
 
   it('should parse all parameters correctly', () => {
     const request = createMockRequest(
-      'http://localhost?location=London&openNow=true&bypassCache=true&key=1&key=2&limit=10&bufferMiles=5'
+      'http://localhost?location=London&openNow=true&bypassCache=true&keys=1&keys=2&keys=3&limit=10&bufferMiles=5'
     );
     const result = getSearchParams(request);
 
@@ -42,7 +42,7 @@ describe('getSearchParams', () => {
       location: 'London',
       openNow: true,
       bypassCache: true,
-      keys: [1, 2],
+      keys: [1, 2, 3],
       limit: 10,
       bufferMiles: 5,
     });
@@ -60,11 +60,11 @@ describe('getSearchParams', () => {
 
   it('should filter invalid keys', () => {
     const request = createMockRequest(
-      'http://localhost?key=1&key=999&key=abc&key=2'
+      'http://localhost?keys=1&keys=999&keys=abc&keys=2&keys=3'
     );
     const result = getSearchParams(request);
 
-    expect(result.keys).toEqual([1, 2]);
+    expect(result.keys).toEqual([1, 2, 3]);
   });
 
   it('should handle string values for location', () => {
@@ -76,7 +76,7 @@ describe('getSearchParams', () => {
 
   it('should handle multiple keys correctly and remove duplicates', () => {
     const request = createMockRequest(
-      'http://localhost?key=1&key=2&key=3&key=1' // Duplicate key
+      'http://localhost?keys=1&keys=2&keys=3&keys=1' // Duplicate key
     );
     const result = getSearchParams(request);
 

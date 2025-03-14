@@ -12,6 +12,9 @@ type Props = {
 
   /** Original text query used for the search, can contain multiple keywords separated by '|' */
   textQuery: string;
+
+  /** Array of category keys */
+  keys?: number[];
 };
 
 /**
@@ -31,6 +34,7 @@ type Props = {
  * @param props - Processing parameters
  * @param props.googleData - Raw Google Places API response data
  * @param props.textQuery - Original text query used for the search (can contain multiple keywords separated by '|')
+ * @param props.keys - Array of category keys
  *
  * @returns An array of {@link Place} objects, each containing:
  *   - id: Unique identifier for the place
@@ -48,10 +52,17 @@ type Props = {
 export function processGoogleResponse({
   googleData,
   textQuery,
+  keys,
 }: Props): Place[] {
+  const LOGGER_PREFIX = '[API - GET /api/places/nearby]';
+
+  log.info(`${LOGGER_PREFIX} Processing Google Places API response`);
+
   const keywords = textQuery
     .split('|')
     .map((k: string) => k.trim().toLowerCase());
+
+  log.info(`${LOGGER_PREFIX} Keywords extracted from text query`);
 
   // Keep track of filtering stats
   const filterReasons: FilterReasons = {
@@ -67,10 +78,11 @@ export function processGoogleResponse({
       place,
       keywords,
       filterReasons,
+      keys: keys || [],
     })
   );
 
-  log.info('[API] Filter reasons:', { filterReasons });
+  log.info(`${LOGGER_PREFIX} Filter reasons`, { filterReasons });
 
   return results;
 }
