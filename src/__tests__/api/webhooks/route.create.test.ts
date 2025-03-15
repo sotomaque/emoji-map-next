@@ -38,7 +38,6 @@ describe('Clerk Webhook Handler - User Create', () => {
     // Mock the database operations
     const mockUser = {
       id: webhookFixtures.userCreate.data.id,
-      clerkId: webhookFixtures.userCreate.data.id,
       email: webhookFixtures.userCreate.data.email_addresses[0].email_address,
       firstName: webhookFixtures.userCreate.data.first_name || 'Test',
       lastName: webhookFixtures.userCreate.data.last_name || 'User',
@@ -80,13 +79,12 @@ describe('Clerk Webhook Handler - User Create', () => {
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({
-      where: { clerkId: webhookFixtures.userCreate.data.id },
+      where: { id: webhookFixtures.userCreate.data.id },
     });
 
     // Verify that create was called with the correct parameters
     expect(mockedPrisma.user.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        clerkId: webhookFixtures.userCreate.data.id,
         id: webhookFixtures.userCreate.data.id,
         email: webhookFixtures.userCreate.data.email_addresses[0].email_address,
       }),
@@ -97,7 +95,6 @@ describe('Clerk Webhook Handler - User Create', () => {
     // Mock the database operations
     const mockUser = {
       id: webhookFixtures.userCreate.data.id,
-      clerkId: webhookFixtures.userCreate.data.id,
       email: webhookFixtures.userCreate.data.email_addresses[0].email_address,
       firstName: webhookFixtures.userCreate.data.first_name || 'Test',
       lastName: webhookFixtures.userCreate.data.last_name || 'User',
@@ -139,7 +136,7 @@ describe('Clerk Webhook Handler - User Create', () => {
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({
-      where: { clerkId: webhookFixtures.userCreate.data.id },
+      where: { id: webhookFixtures.userCreate.data.id },
     });
 
     // Verify that create was not called

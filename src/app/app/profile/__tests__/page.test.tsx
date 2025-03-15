@@ -67,9 +67,8 @@ describe('ProfilePage', () => {
     ];
 
     // Mock user data
-    const mockUser = {
+    const mockUser: User & { favorites?: Favorite[] } = {
       id: 'user_123',
-      clerkId: 'clerk_123',
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',

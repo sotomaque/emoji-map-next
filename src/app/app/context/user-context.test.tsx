@@ -18,7 +18,6 @@ describe('UserContext', () => {
     // Reset mockUser before each test
     mockUser = {
       id: 'user_123',
-      clerkId: 'clerk_123',
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import ProfileContent from './profile-content';
-import type { Favorite } from '@prisma/client';
+import type { Favorite, User } from '@prisma/client';
 
 describe('ProfileContent', () => {
   // Set a fixed date for all tests
@@ -34,9 +34,8 @@ describe('ProfileContent', () => {
     },
   ];
 
-  const mockUser = {
+  const mockUser: User & { favorites?: Favorite[] } = {
     id: 'user_123',
-    clerkId: 'clerk_123',
     email: 'test@example.com',
     firstName: 'Test',
     lastName: 'User',

@@ -31,11 +31,11 @@ export async function POST(request: NextRequest): Promise<
   >
 > {
   console.log('POST request received');
-  const { userId: clerkId } = await auth();
+  const { userId } = await auth();
 
-  if (!clerkId) {
-    console.log('Unauthorized no clerkId');
-    log.error('Unauthorized no clerkId');
+  if (!userId) {
+    console.log('Unauthorized no userId');
+    log.error('Unauthorized no userId');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -52,18 +52,18 @@ export async function POST(request: NextRequest): Promise<
     }
 
     log.debug('Place ID', { placeId: id });
-    log.debug('Clerk ID', { clerkId });
+    log.debug('Clerk ID', { userId });
 
-    // Find the user by clerkId
+    // Find the user by id
     const user = await prisma.user.findUnique({
-      where: { clerkId: clerkId as string },
+      where: { id: userId as string },
     });
 
     console.log('User found', { user });
 
     if (!user) {
-      console.log('User not found', { clerkId });
-      log.error('User not found', { clerkId });
+      console.log('User not found', { userId });
+      log.error('User not found', { userId });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest): Promise<
 
     return NextResponse.json(
       {
-        message: `Favorite ${action}`,
+        message: action === 'added' ? 'Favorite added' : 'Favorite removed',
         place,
         favorite,
         action,
@@ -161,9 +161,9 @@ export async function GET(request: NextRequest): Promise<
     | ErrorResponse
   >
 > {
-  const { userId: clerkId } = await auth();
+  const { userId } = await auth();
 
-  if (!clerkId) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -181,9 +181,9 @@ export async function GET(request: NextRequest): Promise<
 
     log.debug('placeId', { placeId });
 
-    // Find the user by clerkId
+    // Find the user by id
     const user = await prisma.user.findUnique({
-      where: { clerkId: clerkId as string },
+      where: { id: userId as string },
     });
 
     if (!user) {

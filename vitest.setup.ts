@@ -301,7 +301,7 @@ export function createClerkWebhookHandler(
 
       // Check if user exists
       await mockPrisma.user.findUnique({
-        where: { clerkId: userData.id },
+        where: { id: userData.id },
       });
 
       // Get email from the user data
@@ -312,7 +312,7 @@ export function createClerkWebhookHandler(
 
       // Update the user
       await mockPrisma.user.update({
-        where: { clerkId: userData.id },
+        where: { id: userData.id },
         data: {
           email,
           firstName: userData.first_name,
@@ -327,7 +327,7 @@ export function createClerkWebhookHandler(
 
       // Check if user exists
       const existingUser = await mockPrisma.user.findUnique({
-        where: { clerkId: userData.id },
+        where: { id: userData.id },
       });
 
       // Only create if user doesn't exist
@@ -341,7 +341,6 @@ export function createClerkWebhookHandler(
         // Create the user
         await mockPrisma.user.create({
           data: {
-            clerkId: userData.id,
             id: userData.id,
             email,
             firstName: userData.first_name,

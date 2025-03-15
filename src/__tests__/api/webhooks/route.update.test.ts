@@ -37,18 +37,14 @@ describe('Clerk Webhook Handler - User Update', () => {
   it('should update a user when user.updated event is received', async () => {
     // Mock the findUnique method to return a user
     mockedPrisma.user.findUnique.mockResolvedValueOnce({
-      id: 'existing-user-id',
-      clerkId: webhookFixtures.userUpdate.data.id,
+      id: webhookFixtures.userUpdate.data.id,
       email: 'old-email@example.com',
-      // Add other required fields
     });
 
     // Mock the update method to return the updated user
     mockedPrisma.user.update.mockResolvedValueOnce({
-      id: 'existing-user-id',
-      clerkId: webhookFixtures.userUpdate.data.id,
+      id: webhookFixtures.userUpdate.data.id,
       email: webhookFixtures.userUpdate.data.email_addresses[0].email_address,
-      // Add other required fields
     });
 
     // Override the default handler for this specific test
@@ -81,12 +77,12 @@ describe('Clerk Webhook Handler - User Update', () => {
 
     // Verify that findUnique was called with the correct parameters
     expect(mockedPrisma.user.findUnique).toHaveBeenCalledWith({
-      where: { clerkId: webhookFixtures.userUpdate.data.id },
+      where: { id: webhookFixtures.userUpdate.data.id },
     });
 
     // Verify that update was called with the correct parameters
     expect(mockedPrisma.user.update).toHaveBeenCalledWith({
-      where: { clerkId: webhookFixtures.userUpdate.data.id },
+      where: { id: webhookFixtures.userUpdate.data.id },
       data: expect.objectContaining({
         email: webhookFixtures.userUpdate.data.email_addresses[0].email_address,
       }),

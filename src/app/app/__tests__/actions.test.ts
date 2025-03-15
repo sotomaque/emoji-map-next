@@ -37,7 +37,6 @@ describe('getCurrentUser', () => {
 
   const mockUser = {
     id: 'user_123',
-    clerkId: 'clerk_123',
     email: 'test@example.com',
     firstName: 'Test',
     lastName: 'User',

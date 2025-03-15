@@ -79,14 +79,12 @@ async function handleUserCreated(userData: UserJSON) {
   try {
     // Check if user already exists (to avoid duplicates)
     const existingUser = await prisma.user.findUnique({
-      where: { clerkId: userData.id },
+      where: { id: userData.id },
     });
 
     if (existingUser) {
       return;
     }
-
-    const clerkId = userData.id;
 
     // Find the primary email address if possible, otherwise use the first one
     let email: string | undefined;
@@ -108,10 +106,6 @@ async function handleUserCreated(userData: UserJSON) {
 
     const createdAt = userData.created_at;
 
-    if (!clerkId) {
-      return;
-    }
-
     if (!email) {
       return;
     }
@@ -119,7 +113,7 @@ async function handleUserCreated(userData: UserJSON) {
     // Create the user in the database
     const user = await prisma.user.create({
       data: {
-        clerkId,
+        id: userData.id,
         email,
         createdAt: new Date(createdAt),
         firstName: userData.first_name || null,
@@ -142,7 +136,7 @@ async function handleUserUpdated(userData: UserJSON) {
   try {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { clerkId: userData.id },
+      where: { id: userData.id },
     });
 
     if (!existingUser) {
@@ -170,7 +164,7 @@ async function handleUserUpdated(userData: UserJSON) {
 
     // Update the user in the database
     const user = await prisma.user.update({
-      where: { clerkId: userData.id },
+      where: { id: userData.id },
       data: {
         email: email || existingUser.email,
         firstName: userData.first_name,
@@ -189,11 +183,11 @@ async function handleUserUpdated(userData: UserJSON) {
 }
 
 // Handler for user.deleted event
-async function handleUserDeleted(clerkId: string) {
+async function handleUserDeleted(id: string) {
   try {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { clerkId },
+      where: { id },
     });
 
     if (!existingUser) {
@@ -202,7 +196,7 @@ async function handleUserDeleted(clerkId: string) {
 
     // Delete the user from the database
     const user = await prisma.user.delete({
-      where: { clerkId },
+      where: { id },
     });
 
     return user;

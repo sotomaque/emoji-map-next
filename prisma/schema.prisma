@@ -2,19 +2,23 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Add previewFeatures to enable better connection handling
+  previewFeatures = ["metrics"]
+  // Add engineType to help with connection issues
+  engineType      = "binary"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  provider = "postgresql"
+  // Use only the non-pooling URL to disable connection pooling
+  url      = env("POSTGRES_URL_NON_POOLING")
+  // Remove directUrl since we're using the non-pooling URL directly
 }
 
 //
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String     @unique
+  id        String     @id @unique
   email     String     @unique
   username  String?
   firstName String?
@@ -24,7 +28,7 @@ model User {
   updatedAt DateTime   @updatedAt
   favorites Favorite[] // Relation to favorite places
 
-  @@index([clerkId])
+  @@index([id])
 }
 
 model Place {

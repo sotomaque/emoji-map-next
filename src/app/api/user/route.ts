@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/db';
 import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
-import { getOrCreateUser, getCurrentDbUser } from '../../../lib/user-service';
 import type { User, Favorite } from '@prisma/client';
 
 export async function POST(): Promise<
@@ -20,17 +20,31 @@ export async function POST(): Promise<
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get or create the user in our database
-    const dbUser = await getOrCreateUser({
-      clerkId: user.id,
-      email: user.emailAddresses[0].emailAddress,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      imageUrl: user.imageUrl,
+    // check if user exists in our database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
     });
 
-    return NextResponse.json({ user: dbUser });
+    // if user exists in our database, return the user
+    if (dbUser) {
+      return NextResponse.json({ user: dbUser });
+    }
+
+    // otherwise, create user in our database
+    const newUser = await prisma.user.create({
+      data: {
+        id: user.id,
+        email: user.emailAddresses[0].emailAddress,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        imageUrl: user.imageUrl,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ user: newUser });
   } catch (error) {
     console.error('Error creating user:', error);
     return NextResponse.json(
@@ -50,16 +64,18 @@ export async function GET(): Promise<
 > {
   try {
     // Get the current Clerk user
-    const clerkUser = await currentUser();
+    const { userId } = await auth();
 
-    log.debug('clerkUser', { clerkUser });
-    if (!clerkUser) {
-      log.error('Unauthorized no clerkUser');
+    log.debug('userId', { userId });
+    if (!userId) {
+      log.error('Unauthorized no userId');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the user from our database with favorites included
-    const dbUser = await getCurrentDbUser(true); // Pass true to include favorites
+    // check if user exists in our database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
     log.debug('dbUser', { dbUser });
 
