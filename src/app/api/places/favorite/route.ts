@@ -33,13 +33,7 @@ import type { Favorite, Place } from '@prisma/client';
 export async function POST(request: NextRequest) {
   console.log('POST request received');
   const { userId: clerkId } = await auth();
-
-  return NextResponse.json(
-    {
-      clerkId,
-    },
-    { status: 200 }
-  );
+  console.log('clerkId', { clerkId });
 
   if (!clerkId) {
     console.log('Unauthorized no clerkId');
