@@ -18,7 +18,8 @@ import type { Favorite, Place } from '@prisma/client';
  *   - 400 if place ID is missing
  *   - 404 if user is not found
  *   - 200 with favorite data on success
- * : Promise<
+ */
+export async function POST(request: NextRequest): Promise<
   NextResponse<
     | {
         message: string;
@@ -28,9 +29,7 @@ import type { Favorite, Place } from '@prisma/client';
       }
     | ErrorResponse
   >
->
- */
-export async function POST(request: NextRequest) {
+> {
   console.log('POST request received');
   const { userId: clerkId } = await auth();
   console.log('clerkId', { clerkId });
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const { id } = await request.json();
-
     if (!id) {
       console.log('Place ID is required');
       log.error('Place ID is required');
@@ -53,114 +51,92 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Place ID', id);
     log.debug('Place ID', { placeId: id });
     log.debug('Clerk ID', { clerkId });
 
     // Find the user by clerkId
-    // try {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { clerkId: clerkId as string },
-      });
-      return NextResponse.json(
-        {
-          error: 'TEMP EARLY RETURN',
-          message: {
-            user,
-            placeId: id,
-            clerkId,
-          },
-        },
-        { status: 200 }
-      );
-    } catch {
-      return NextResponse.json(
-        {
-          error: 'TEMP EARLY RETURN',
-          message: {
-            placeId: id,
-            clerkId,
-            user: null,
-          },
-        },
-        { status: 400 }
-      );
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkId as string },
+    });
+
+    console.log('user found', user);
+
+    if (!user) {
+      console.log('User not found', { clerkId });
+      log.error('User not found', { clerkId });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // return NextResponse.json({ error: 'TEMP EARLY RETURN' }, { status: 200 });
+    // Check if this place exists in the database
+    let place = await prisma.place.findUnique({
+      where: { id },
+    });
 
-    // console.log('User found', { user });
+    console.log('place found', place);
 
-    // if (!user) {
-    //   console.log('User not found', { clerkId });
-    //   log.error('User not found', { clerkId });
-    //   return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    // }
+    // If place doesn't exist, create it
+    if (!place) {
+      console.log('Place not found, creating it');
+      log.debug('Place not found, creating it');
+      place = await prisma.place.create({
+        data: {
+          id,
+        },
+      });
+    }
 
-    // // Check if this place exists in the database
-    // let place = await prisma.place.findUnique({
-    //   where: { id },
-    // });
+    // Check if the user has already favorited this place
+    const existingFavorite = await prisma.favorite.findUnique({
+      where: {
+        userId_placeId: {
+          userId: user.id,
+          placeId: place.id,
+        },
+      },
+    });
 
-    // // If place doesn't exist, create it
-    // if (!place) {
-    //   console.log('Place not found, creating it');
-    //   log.debug('Place not found, creating it');
-    //   place = await prisma.place.create({
-    //     data: {
-    //       id,
-    //     },
-    //   });
-    // }
+    console.log('existingFavorite', existingFavorite);
 
-    // // Check if the user has already favorited this place
-    // const existingFavorite = await prisma.favorite.findUnique({
-    //   where: {
-    //     userId_placeId: {
-    //       userId: user.id,
-    //       placeId: place.id,
-    //     },
-    //   },
-    // });
+    let action: 'added' | 'removed';
+    let favorite: Favorite | null = null;
 
-    // let action: 'added' | 'removed';
-    // let favorite: Favorite | null = null;
+    // If favorite exists, remove it (toggle off)
+    if (existingFavorite) {
+      console.log('Favorite exists, removing it');
+      log.debug('Favorite exists, removing it');
+      await prisma.favorite.delete({
+        where: {
+          id: existingFavorite.id,
+        },
+      });
 
-    // // If favorite exists, remove it (toggle off)
-    // if (existingFavorite) {
-    //   console.log('Favorite exists, removing it');
-    //   log.debug('Favorite exists, removing it');
-    //   await prisma.favorite.delete({
-    //     where: {
-    //       id: existingFavorite.id,
-    //     },
-    //   });
+      action = 'removed';
+    } else {
+      console.log('Favorite does not exist, creating it');
+      log.debug('Favorite does not exist, creating it');
+      // If favorite doesn't exist, create it (toggle on)
+      favorite = await prisma.favorite.create({
+        data: {
+          userId: user.id,
+          placeId: place.id,
+        },
+      });
 
-    //   action = 'removed';
-    // } else {
-    //   console.log('Favorite does not exist, creating it');
-    //   log.debug('Favorite does not exist, creating it');
-    //   // If favorite doesn't exist, create it (toggle on)
-    //   favorite = await prisma.favorite.create({
-    //     data: {
-    //       userId: user.id,
-    //       placeId: place.id,
-    //     },
-    //   });
+      action = 'added';
+    }
 
-    //   action = 'added';
-    // }
-
-    // return NextResponse.json(
-    //   {
-    //     message: `Favorite ${action}`,
-    //     place,
-    //     favorite,
-    //     action,
-    //   },
-    //   { status: 200 }
-    // );
+    return NextResponse.json(
+      {
+        message: `Favorite ${action}`,
+        place,
+        favorite,
+        action,
+      },
+      { status: 200 }
+    );
   } catch (error) {
+    console.log('Failed to process favorite', { error });
     log.error('Failed to process favorite', { error });
     return NextResponse.json(
       { error: 'Failed to process favorite' },
