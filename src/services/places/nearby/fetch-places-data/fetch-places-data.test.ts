@@ -211,4 +211,128 @@ describe('fetchPlacesData', () => {
       fetchPlacesDataModule.fetchPlacesData(defaultParams)
     ).rejects.toThrow('API error');
   });
+
+  // New tests for the keys parameter functionality
+
+  it('should pass keys parameter to fetchAndProcessGoogleData', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    const categoryKeys = [1, 2, 3];
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      keys: categoryKeys,
+    });
+
+    // THEN
+    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keys: categoryKeys,
+      })
+    );
+  });
+
+  it('should include keys in cache miss log when provided', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    const categoryKeys = [1, 2, 3];
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      keys: categoryKeys,
+    });
+
+    // THEN
+    expect(log.error).toHaveBeenCalledWith('[CACHE MISS]', {
+      cacheKey: defaultParams.cacheKey,
+      keys: categoryKeys.join(','),
+    });
+  });
+
+  it('should not include keys in cache miss log when not provided', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData(defaultParams);
+
+    // THEN
+    expect(log.error).toHaveBeenCalledWith('[CACHE MISS]', {
+      cacheKey: defaultParams.cacheKey,
+      keys: undefined,
+    });
+  });
+
+  it('should handle cache retrieval with keys parameter', async () => {
+    // GIVEN
+    // Create a mock implementation that returns a response with cacheHit: true
+    const cachedPlaces = [...MOCK_PLACES];
+    vi.mocked(redis.get).mockResolvedValue(cachedPlaces);
+    const categoryKeys = [1, 2, 3];
+
+    // WHEN
+    const result = await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      keys: categoryKeys,
+      // Ensure we have a limit that's less than or equal to the cached data length
+      limit: cachedPlaces.length,
+    });
+
+    // THEN
+    expect(redis.get).toHaveBeenCalledWith(defaultParams.cacheKey);
+    expect(result.cacheHit).toBe(true);
+    expect(result.data).toEqual(cachedPlaces);
+    expect(result.count).toEqual(cachedPlaces.length);
+    // Verify that fetchAndProcessGoogleData was not called since we used cache
+    expect(fetchAndProcessGoogleData).not.toHaveBeenCalled();
+  });
+
+  it('should cache results with keys parameter when fetching from API', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    const categoryKeys = [1, 2, 3];
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      keys: categoryKeys,
+    });
+
+    // THEN
+    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keys: categoryKeys,
+      })
+    );
+    expect(setCacheResults).toHaveBeenCalledWith({
+      cacheKey: defaultParams.cacheKey,
+      processedPlaces: mockProcessedPlaces,
+    });
+  });
+
+  it('should limit returned cache results based on the limit parameter', async () => {
+    // GIVEN
+    const cachedPlaces = [...MOCK_PLACES, { ...MOCK_PLACES[0], id: 'place3' }]; // 3 items
+    vi.mocked(redis.get).mockResolvedValue(cachedPlaces);
+    const requestedLimit = 1; // Only want 1 item
+
+    // WHEN
+    const result = await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      limit: requestedLimit,
+    });
+
+    // THEN
+    expect(redis.get).toHaveBeenCalledWith(defaultParams.cacheKey);
+    expect(result.cacheHit).toBe(true);
+    // Should only return the first item
+    expect(result.data.length).toBe(requestedLimit);
+    expect(result.data).toEqual(cachedPlaces.slice(0, requestedLimit));
+    // Count should match the limited data length
+    expect(result.count).toBe(requestedLimit);
+    // Verify that fetchAndProcessGoogleData was not called since we used cache
+    expect(fetchAndProcessGoogleData).not.toHaveBeenCalled();
+  });
 });
