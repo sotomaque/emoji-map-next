@@ -18,8 +18,7 @@ import type { Favorite, Place } from '@prisma/client';
  *   - 400 if place ID is missing
  *   - 404 if user is not found
  *   - 200 with favorite data on success
- */
-export async function POST(request: NextRequest): Promise<
+ * : Promise<
   NextResponse<
     | {
         message: string;
@@ -29,9 +28,18 @@ export async function POST(request: NextRequest): Promise<
       }
     | ErrorResponse
   >
-> {
+>
+ */
+export async function POST(request: NextRequest) {
   console.log('POST request received');
   const { userId: clerkId } = await auth();
+
+  return NextResponse.json(
+    {
+      clerkId,
+    },
+    { status: 200 }
+  );
 
   if (!clerkId) {
     console.log('Unauthorized no clerkId');

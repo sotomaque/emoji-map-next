@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import type { ErrorResponse } from '@/types/error-response';
+import { log } from '@/utils/log';
 import { getOrCreateUser, getCurrentDbUser } from '../../../lib/user-service';
 import type { User, Favorite } from '@prisma/client';
-import { log } from '@/utils/log';
 
 export async function POST(): Promise<
   NextResponse<
@@ -15,8 +15,6 @@ export async function POST(): Promise<
 > {
   try {
     const user = await currentUser();
-
-    return NextResponse.json(user, { status: 200 });
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
