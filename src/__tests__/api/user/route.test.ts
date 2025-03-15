@@ -4,7 +4,7 @@ import { currentUser, type User as ClerkUser } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET, POST } from '@/app/api/user/route';
 import { prisma } from '@/lib/db';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 // Mock dependencies
 vi.mock('@clerk/nextjs/server', () => ({
@@ -194,6 +194,7 @@ describe('User API Routes', () => {
         where: { id: 'user_123' },
         include: {
           favorites: true,
+          ratings: true,
         },
       });
       expect(NextResponse.json).toHaveBeenCalledWith(
@@ -208,7 +209,7 @@ describe('User API Routes', () => {
         'https://example.com/api/user?userId=user_123'
       );
 
-      // Mock user found in database with favorites
+      // Mock user found in database with favorites and ratings
       const mockDbUser = {
         id: 'user_123',
         email: 'test@example.com',
@@ -219,10 +220,11 @@ describe('User API Routes', () => {
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
         favorites: [] as Favorite[],
+        ratings: [] as Rating[],
       };
 
       vi.mocked(prisma.user.findUnique).mockResolvedValue(
-        mockDbUser as User & { favorites: Favorite[] }
+        mockDbUser as User & { favorites: Favorite[]; ratings: Rating[] }
       );
 
       await GET(mockRequest as unknown as NextRequest);
@@ -231,6 +233,65 @@ describe('User API Routes', () => {
         where: { id: 'user_123' },
         include: {
           favorites: true,
+          ratings: true,
+        },
+      });
+      expect(NextResponse.json).toHaveBeenCalledWith({
+        user: mockDbUser,
+        status: 200,
+      });
+    });
+
+    it('should return user with ratings if found in database', async () => {
+      // Create a mock request with userId
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user?userId=user_123'
+      );
+
+      // Mock user found in database with favorites and ratings
+      const mockRatings = [
+        {
+          id: 'rating_1',
+          userId: 'user_123',
+          placeId: 'place_1',
+          rating: 4,
+          createdAt: FIXED_DATE,
+          updatedAt: FIXED_DATE,
+        },
+        {
+          id: 'rating_2',
+          userId: 'user_123',
+          placeId: 'place_2',
+          rating: 5,
+          createdAt: FIXED_DATE,
+          updatedAt: FIXED_DATE,
+        },
+      ] as Rating[];
+
+      const mockDbUser = {
+        id: 'user_123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        username: 'testuser',
+        imageUrl: 'https://example.com/image.jpg',
+        createdAt: FIXED_DATE,
+        updatedAt: FIXED_DATE,
+        favorites: [] as Favorite[],
+        ratings: mockRatings,
+      };
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(
+        mockDbUser as User & { favorites: Favorite[]; ratings: Rating[] }
+      );
+
+      await GET(mockRequest as unknown as NextRequest);
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'user_123' },
+        include: {
+          favorites: true,
+          ratings: true,
         },
       });
       expect(NextResponse.json).toHaveBeenCalledWith({

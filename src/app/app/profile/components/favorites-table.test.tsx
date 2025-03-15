@@ -2,7 +2,7 @@ import * as reactQuery from '@tanstack/react-query';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import FavoritesTable from './favorites-table';
+import { FavoritesTable } from './favorites-table';
 import type { Favorite } from '@prisma/client';
 
 // Mock the user context hooks

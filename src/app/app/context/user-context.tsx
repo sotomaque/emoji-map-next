@@ -1,12 +1,14 @@
 'use client';
 
 import { createContext, useContext, useState } from 'react';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 // Define the context type with both user data and setter function
 interface UserContextType {
-  userData: (User & { favorites?: Favorite[] }) | null;
-  updateUser: (updates: Partial<User & { favorites?: Favorite[] }>) => void;
+  userData: (User & { favorites?: Favorite[]; ratings?: Rating[] }) | null;
+  updateUser: (
+    updates: Partial<User & { favorites?: Favorite[]; ratings?: Rating[] }>
+  ) => void;
 }
 
 // Create a context for the user data
@@ -17,16 +19,18 @@ export function UserProvider({
   user,
   children,
 }: {
-  user: (User & { favorites?: Favorite[] }) | null;
+  user: (User & { favorites?: Favorite[]; ratings?: Rating[] }) | null;
   children: React.ReactNode;
 }) {
   // Use state to store the user data so it can be updated
   const [userData, setUserData] = useState<
-    (User & { favorites?: Favorite[] }) | null
+    (User & { favorites?: Favorite[]; ratings?: Rating[] }) | null
   >(user);
 
   // Function to update user data
-  const updateUser = (updates: Partial<User & { favorites?: Favorite[] }>) => {
+  const updateUser = (
+    updates: Partial<User & { favorites?: Favorite[]; ratings?: Rating[] }>
+  ) => {
     setUserData((prevUserData) =>
       prevUserData ? { ...prevUserData, ...updates } : null
     );
@@ -83,4 +87,57 @@ export function useUpdateFavorites() {
   };
 
   return { addFavorite, removeFavorite };
+}
+
+// Helper hook to update ratings
+export function useUpdateRatings() {
+  const { userData, updateUser } = useUser();
+
+  const updateRating = (placeId: string, rating: number) => {
+    if (!userData) return;
+
+    const currentRatings = userData.ratings || [];
+    const existingRatingIndex = currentRatings.findIndex(
+      (r) => r.placeId === placeId
+    );
+
+    let updatedRatings;
+
+    // If rating exists
+    if (existingRatingIndex !== -1) {
+      const existingRating = currentRatings[existingRatingIndex];
+
+      // If the rating is the same, remove it
+      if (existingRating.rating === rating) {
+        updatedRatings = currentRatings.filter((r) => r.placeId !== placeId);
+      } else {
+        // If the rating is different, update it
+        updatedRatings = [...currentRatings];
+        updatedRatings[existingRatingIndex] = {
+          ...existingRating,
+          rating,
+          updatedAt: new Date(),
+        };
+      }
+    } else {
+      // If rating doesn't exist, add it
+      updatedRatings = [
+        ...currentRatings,
+        {
+          id: `temp_${Date.now()}`, // Temporary ID until server assigns one
+          userId: userData.id,
+          placeId,
+          rating,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
+    updateUser({
+      ratings: updatedRatings,
+    });
+  };
+
+  return { updateRating };
 }

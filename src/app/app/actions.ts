@@ -2,21 +2,26 @@
 
 import { currentUser } from '@clerk/nextjs/server';
 import { env } from '@/env';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 /**
  * Server action to fetch the current user's data
  *
  */
 export async function getCurrentUser(): Promise<
-  (User & { favorites?: Favorite[] }) | null
+  (User & { favorites?: Favorite[]; ratings?: Rating[] }) | null
 > {
   try {
     const user = await currentUser();
 
+    // If no user is authenticated, return null early
+    if (!user) {
+      return null;
+    }
+
     const response = await fetch(
       `${env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/user?userId=${
-        user?.id
+        user.id
       }`
     );
 

@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FavoritesTable from './components/favorites-table';
-import PlaceDetails from './components/place-details';
-import ProfileContent from './components/profile-content';
+import { FavoritesTable } from './components/favorites-table';
+import { PlaceDetails } from './components/place-details';
+import { ProfileContent } from './components/profile-content';
 import { useUserData } from '../context/user-context';
+import { RatingsTable } from './components/ratings-table';
 
 export default function ProfilePage() {
   const userData = useUserData();
@@ -55,6 +56,14 @@ export default function ProfilePage() {
         <div className='bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8'>
           <FavoritesTable
             favorites={userData.favorites}
+            onViewPlace={handleViewPlace}
+          />
+        </div>
+
+        {/* Ratings table section */}
+        <div className='bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8'>
+          <RatingsTable
+            ratings={userData.ratings}
             onViewPlace={handleViewPlace}
           />
         </div>

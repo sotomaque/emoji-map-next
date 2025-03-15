@@ -4,7 +4,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 export async function POST(): Promise<
   NextResponse<
@@ -56,7 +56,10 @@ export async function POST(): Promise<
 }
 
 type UserResponse = {
-  user: User & { favorites?: Favorite[] };
+  user: User & {
+    favorites?: Favorite[];
+    ratings?: Rating[];
+  };
 };
 
 /**
@@ -64,7 +67,7 @@ type UserResponse = {
  * @param request - NextRequest
  * @returns NextResponse<UserResponse | ErrorResponse>
  *
- * @example No Favorites
+ * @example No Favorites & No Ratings
  * ```ts
  * const response = await fetch('/api/user?userId=123');
  * const data = await response.json();
@@ -77,7 +80,7 @@ type UserResponse = {
  *   }
  * }
  *
- * @example With Favorites
+ * @example With Favorites & Ratings
  * ```ts
  * const response = await fetch('/api/user?userId=123');
  * const data = await response.json();
@@ -95,6 +98,12 @@ type UserResponse = {
  *       {
  *         "id": "456",
  *         "name": "Favorite 2",
+ *       },
+ *     ],
+ *     "ratings": [
+ *       {
+ *         "id": "123",
+ *         "rating": 5,
  *       },
  *     ],
  *   },
@@ -147,6 +156,7 @@ export async function GET(
       where: { id: userId },
       include: {
         favorites: true,
+        ratings: true,
       },
     });
 

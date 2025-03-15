@@ -7,12 +7,13 @@ import {
   useUser,
   useUserData,
   useUpdateFavorites,
+  useUpdateRatings,
 } from './user-context';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 describe('UserContext', () => {
   // Mock user data
-  let mockUser: User & { favorites?: Favorite[] };
+  let mockUser: User & { favorites?: Favorite[]; ratings?: Rating[] };
 
   beforeEach(() => {
     // Reset mockUser before each test
@@ -37,6 +38,16 @@ describe('UserContext', () => {
           userId: 'user_123',
           placeId: 'place_2',
           createdAt: new Date('2023-02-15'),
+        },
+      ],
+      ratings: [
+        {
+          id: 'rating_1',
+          userId: 'user_123',
+          placeId: 'place_3',
+          rating: 4,
+          createdAt: new Date('2023-03-01'),
+          updatedAt: new Date('2023-03-01'),
         },
       ],
     };
@@ -238,6 +249,133 @@ describe('UserContext', () => {
 
       // Count should still be 2
       expect(getByTestId('favorites-count')).toHaveTextContent('2');
+    });
+  });
+
+  describe('useUpdateRatings', () => {
+    // Create a component that uses the hooks and exposes methods to test
+    const TestRatingsComponent = ({ onMount }: { onMount?: () => void }) => {
+      const { userData } = useUser();
+      const { updateRating } = useUpdateRatings();
+
+      // Call onMount if provided
+      if (onMount) {
+        onMount();
+      }
+
+      return (
+        <div>
+          <div data-testid='ratings-count'>
+            {userData?.ratings?.length || 0}
+          </div>
+          <div data-testid='rating-value'>
+            {userData?.ratings?.find((r) => r.placeId === 'place_3')?.rating ||
+              'none'}
+          </div>
+          <button
+            data-testid='add-rating'
+            onClick={() => updateRating('place_4', 5)}
+          >
+            Add Rating
+          </button>
+          <button
+            data-testid='update-rating'
+            onClick={() => updateRating('place_3', 5)}
+          >
+            Update Rating
+          </button>
+          <button
+            data-testid='remove-rating'
+            onClick={() => updateRating('place_3', 4)}
+          >
+            Remove Rating
+          </button>
+        </div>
+      );
+    };
+
+    it('adds a new rating', () => {
+      const { getByTestId } = render(
+        <UserProvider user={mockUser}>
+          <TestRatingsComponent />
+        </UserProvider>
+      );
+
+      // Check initial count
+      expect(getByTestId('ratings-count')).toHaveTextContent('1');
+
+      // Click the add button
+      fireEvent.click(getByTestId('add-rating'));
+
+      // Check updated count
+      expect(getByTestId('ratings-count')).toHaveTextContent('2');
+    });
+
+    it('updates an existing rating', () => {
+      const { getByTestId } = render(
+        <UserProvider user={mockUser}>
+          <TestRatingsComponent />
+        </UserProvider>
+      );
+
+      // Check initial rating value
+      expect(getByTestId('rating-value')).toHaveTextContent('4');
+
+      // Click the update button
+      fireEvent.click(getByTestId('update-rating'));
+
+      // Check updated rating value
+      expect(getByTestId('rating-value')).toHaveTextContent('5');
+    });
+
+    it('removes a rating when the same rating is submitted', () => {
+      const { getByTestId } = render(
+        <UserProvider user={mockUser}>
+          <TestRatingsComponent />
+        </UserProvider>
+      );
+
+      // Check initial count
+      expect(getByTestId('ratings-count')).toHaveTextContent('1');
+
+      // Click the remove button (submits the same rating value)
+      fireEvent.click(getByTestId('remove-rating'));
+
+      // Check updated count (should be 0 after removal)
+      expect(getByTestId('ratings-count')).toHaveTextContent('0');
+    });
+
+    it('does nothing when userData is null', () => {
+      // Create a wrapper with null user data
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <UserProvider user={null}>{children}</UserProvider>
+      );
+
+      // Suppress console.error for this test
+      const originalConsoleError = console.error;
+      console.error = vi.fn();
+
+      // Render a hook that calls updateRating
+      const { result } = renderHook(
+        () => {
+          try {
+            return useUpdateRatings();
+          } catch {
+            return { updateRating: vi.fn() };
+          }
+        },
+        { wrapper }
+      );
+
+      // Call updateRating (should not throw an error)
+      act(() => {
+        if (result.current) {
+          result.current.updateRating('place_1', 5);
+        }
+      });
+
+      // Restore console.error
+      console.error = originalConsoleError;
     });
   });
 });

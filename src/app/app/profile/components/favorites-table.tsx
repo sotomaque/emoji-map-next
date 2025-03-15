@@ -12,7 +12,7 @@ interface FavoritesTableProps {
   onViewPlace: (placeId: string) => void;
 }
 
-export default function FavoritesTable({
+export function FavoritesTable({
   favorites,
   onViewPlace,
 }: FavoritesTableProps) {

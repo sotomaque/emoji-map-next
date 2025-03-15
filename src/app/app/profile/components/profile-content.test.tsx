@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import ProfileContent from './profile-content';
+import { ProfileContent } from './profile-content';
 import type { Favorite, User } from '@prisma/client';
 
 describe('ProfileContent', () => {

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import ThemedUserButton from '@/components/auth/themed-user-button';
 import { navItems } from '@/constants/routes';
+import { cn } from '@/lib/utils';
 import { DesktopNav } from '../desktop-nav/desktop-nav';
 import { Logo } from '../logo/logo';
 import { MobileNav } from '../mobile-nav/mobile-nav';
@@ -14,6 +15,7 @@ import { ModeToggle } from '../mode-toggle/mode-toggle';
  */
 interface HeaderProps {
   showAuth?: boolean;
+  className?: string;
 }
 
 /**
@@ -24,9 +26,14 @@ interface HeaderProps {
  * @param {boolean} [props.showAuth=false] - When true, displays auth components instead of logo
  * @returns {JSX.Element} Header component
  */
-export function Header({ showAuth = false }: HeaderProps) {
+export function Header({ showAuth = false, className }: HeaderProps) {
   return (
-    <header className='sticky top-0 w-full border-border/40 bg-[#34409b] dark:bg-[#34409b] z-50'>
+    <header
+      className={cn(
+        `sticky top-0 w-full border-border/40 bg-[#34409b] dark:bg-[#34409b] z-50`,
+        className
+      )}
+    >
       <div className='container flex items-center justify-between h-16'>
         {showAuth ? (
           <>

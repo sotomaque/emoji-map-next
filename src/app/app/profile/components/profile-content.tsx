@@ -1,14 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import type { User, Favorite } from '@prisma/client';
+import type { User, Favorite, Rating } from '@prisma/client';
 
 interface ProfileContentProps {
-  user: User & { favorites?: Favorite[] };
+  user: User & {
+    favorites?: Favorite[];
+    ratings?: Rating[];
+  };
 }
 
-export default function ProfileContent({ user }: ProfileContentProps) {
-  console.log(user);
+export function ProfileContent({ user }: ProfileContentProps) {
   return (
     <div className='flex flex-col md:flex-row gap-8'>
       {/* Profile image */}
