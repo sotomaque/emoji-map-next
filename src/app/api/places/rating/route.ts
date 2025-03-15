@@ -9,12 +9,12 @@ import type { Place, Rating } from '@prisma/client';
  * POST handler for rating a place
  * if the place is already rated, it will be updated with the new rating
  * if the place is not created, it will first create the place in the database
- * and then create the ratinge relationship
+ * and then create the rating relationship
  *
  * @param request - The Next.js request object containing the place ID in the body
  * @returns A NextResponse with:
  *   - 401 if user is not authenticated
- *   - 400 if place ID is missing
+ *   - 400 if place ID is not provided
  *   - 404 if user is not found
  *   - 200 with rating data on success
  */
@@ -48,11 +48,6 @@ export async function POST(request: NextRequest): Promise<
   }
 
   const userRating = params?.rating;
-
-  if (!userRating) {
-    log.error('Rating is required');
-    return NextResponse.json({ error: 'Rating is required' }, { status: 400 });
-  }
 
   try {
     // Find the user by id
@@ -90,14 +85,20 @@ export async function POST(request: NextRequest): Promise<
       },
     });
 
+    if (!userRating) {
+      log.error(
+        'Rating not provided, if exiting rating found, it will be removed'
+      );
+    }
+
     let action: 'added' | 'removed' | 'updated';
     let rating: Rating | null = null;
 
     // If rating exists, check if the rating is being updated or removed
     if (existingRating) {
-      log.debug('Rating exists');
+      log.debug('Prior exists');
 
-      if (existingRating.rating === userRating) {
+      if (existingRating.rating === userRating || !userRating) {
         log.debug('Rating is being removed');
         rating = await prisma.rating.delete({
           where: { id: existingRating.id },
@@ -114,6 +115,13 @@ export async function POST(request: NextRequest): Promise<
     } else {
       log.debug('Rating does not exist, creating it');
       // If rating doesn't exist, create it (toggle on)
+      if (!userRating) {
+        return NextResponse.json(
+          { error: 'Rating is required' },
+          { status: 400 }
+        );
+      }
+
       rating = await prisma.rating.create({
         data: {
           userId: user.id,
