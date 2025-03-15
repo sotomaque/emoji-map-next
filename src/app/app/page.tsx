@@ -6,23 +6,21 @@ import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import NearbyPlacesSection from '@/app/app/components/nearby-places-section';
-import PhotosSection from '@/app/app/components/photos-section';
-import PlaceDetailsSection from '@/app/app/components/place-details-section';
+import { NearbyPlacesSection } from '@/app/app/components/nearby-places-section';
+import { PhotosSection } from '@/app/app/components/photos-section';
+import { PlaceDetailsSection } from '@/app/app/components/place-details-section';
 import {
   DEFAULT_LOCATION,
-  DEFAULT_LIMIT,
   DEFAULT_PHOTO_ID,
   DEFAULT_PLACE_ID,
 } from '@/app/app/components/types';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Label } from '@/components/ui/label';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import type { DetailResponse } from '@/types/details';
 import type { PhotosResponse } from '@/types/google-photos';
 import type { PlacesResponse } from '@/types/places';
 
-// Main page component that handles feature flag check
 export default function AppPage() {
   const router = useRouter();
   const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
@@ -34,7 +32,7 @@ export default function AppPage() {
 
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [keysQuery, setKeysQuery] = useState('1|2');
-  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [limit, setLimit] = useState(1);
   const [bypassCache, setBypassCache] = useState(false);
   const [openNow, setOpenNow] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);

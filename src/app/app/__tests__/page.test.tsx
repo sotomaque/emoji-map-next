@@ -26,23 +26,25 @@ vi.mock('sonner', () => ({
 
 // Mock components
 vi.mock('@/app/app/components/nearby-places-section', () => ({
-  default: vi.fn(() => (
+  NearbyPlacesSection: vi.fn(() => (
     <div data-testid='nearby-places-section'>Nearby Places Section</div>
   )),
 }));
 
 vi.mock('@/app/app/components/photos-section', () => ({
-  default: vi.fn(() => <div data-testid='photos-section'>Photos Section</div>),
+  PhotosSection: vi.fn(() => (
+    <div data-testid='photos-section'>Photos Section</div>
+  )),
 }));
 
 vi.mock('@/app/app/components/place-details-section', () => ({
-  default: vi.fn(() => (
+  PlaceDetailsSection: vi.fn(() => (
     <div data-testid='place-details-section'>Place Details Section</div>
   )),
 }));
 
 vi.mock('@/components/ErrorBoundary', () => ({
-  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+  ErrorBoundary: vi.fn(({ children }: { children: React.ReactNode }) => (
     <div data-testid='error-boundary'>{children}</div>
   )),
 }));

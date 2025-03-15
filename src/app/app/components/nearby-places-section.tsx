@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { CATEGORY_MAP } from '@/constants/category-map';
@@ -19,10 +18,10 @@ import {
   RequestUrlDisplay,
   LoadingSpinner,
 } from './ui-components';
-import { useUser } from '../context/user-context';
+import { useUserData, useUpdateFavorites } from '../context/user-context';
 import type { NearbyPlacesSectionProps } from './types';
 
-const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
+export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   location,
   setLocation,
   keysQuery,
@@ -43,8 +42,8 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   handleGetPhotos,
   handleClearNearbyPlaces,
 }) => {
-  const user = useUser();
-  const queryClient = useQueryClient();
+  const userData = useUserData();
+  const { addFavorite, removeFavorite } = useUpdateFavorites();
 
   // Parse the keysQuery string into an array of numbers
   const selectedKeys = keysQuery
@@ -91,15 +90,24 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
       return response.json();
     },
-    onSuccess: (data) => {
-      const newStatus = data.action === 'added';
+    onSuccess: (data, placeId) => {
+      if (data.action === 'added') {
+        // Create a new favorite object
+        const newFavorite = {
+          id: data.favorite.id,
+          userId: userData.id,
+          placeId: placeId,
+          createdAt: new Date(data.favorite.createdAt),
+        };
 
-      toast.success(
-        newStatus ? 'Place added to favorites' : 'Place removed from favorites'
-      );
-
-      // Invalidate user query to refetch with updated favorites
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+        // Add to user context
+        addFavorite(newFavorite);
+        toast.success('Place added to favorites');
+      } else {
+        // Remove from user context
+        removeFavorite(placeId);
+        toast.success('Place removed from favorites');
+      }
     },
     onError: (error) => {
       console.error('Error toggling favorite:', error);
@@ -109,6 +117,25 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
   // Toggle favorite status
   const toggleFavorite = (placeId: string) => {
+    // Check if the place is already favorited
+    const isFavorited =
+      userData.favorites?.some((fav) => fav.placeId === placeId) || false;
+
+    // Optimistically update the UI
+    if (isFavorited) {
+      removeFavorite(placeId);
+    } else {
+      // Create a temporary favorite
+      const tempFavorite = {
+        id: `temp_${placeId}_${Date.now()}`,
+        userId: userData.id,
+        placeId: placeId,
+        createdAt: new Date(),
+      };
+      addFavorite(tempFavorite);
+    }
+
+    // Call the mutation
     toggleFavoriteMutation.mutate(placeId);
   };
 
@@ -159,8 +186,9 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   // Helper function to render a place card
   const renderPlaceCard = (place: Place) => {
     const isFavorited =
-      user.favorites?.some((favorite) => favorite.placeId === place.id) ||
+      userData.favorites?.some((favorite) => favorite.placeId === place.id) ||
       false;
+
     const isLoading =
       toggleFavoriteMutation.isPending &&
       toggleFavoriteMutation.variables === place.id;
@@ -543,5 +571,3 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     </div>
   );
 };
-
-export default NearbyPlacesSection;

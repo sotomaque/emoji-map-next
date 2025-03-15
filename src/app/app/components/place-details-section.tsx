@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { StarRating } from '@/components/ui/star-rating';
@@ -19,7 +18,7 @@ import {
 } from './ui-components';
 import type { PlaceDetailsSectionProps } from './types';
 
-const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
+export const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
   placeId,
   setPlaceId,
   showRawJson,
@@ -503,5 +502,3 @@ const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
     </div>
   );
 };
-
-export default PlaceDetailsSection;

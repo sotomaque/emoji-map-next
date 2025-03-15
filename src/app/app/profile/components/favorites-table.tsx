@@ -1,7 +1,10 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Eye, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { useUserData, useUpdateFavorites } from '../../context/user-context';
 import type { Favorite } from '@prisma/client';
 
 interface FavoritesTableProps {
@@ -13,6 +16,32 @@ export default function FavoritesTable({
   favorites,
   onViewPlace,
 }: FavoritesTableProps) {
+  const userData = useUserData();
+  const { removeFavorite, addFavorite } = useUpdateFavorites();
+
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (placeId: string) => {
+      const response = await fetch('/api/places/favorite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: placeId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
+      }
+
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to remove from favorites');
+    },
+  });
+
   // If no favorites, show a message
   if (!favorites || favorites.length === 0) {
     return (
@@ -27,7 +56,41 @@ export default function FavoritesTable({
   };
 
   const handleUnfavoriteClick = (placeId: string) => {
-    console.log('UNFAVORITE CLICKED', placeId);
+    // Store the current favorites for potential undo
+    const currentFavorites = [...(userData.favorites || [])];
+    const favoriteToRemove = currentFavorites.find(
+      (fav) => fav.placeId === placeId
+    );
+
+    // Optimistically update the UI by removing the favorite from the context
+    removeFavorite(placeId);
+
+    // Call the mutation to unfavorite the place
+    toggleFavoriteMutation.mutate(placeId, {
+      onSuccess: () => {
+        toast.success('Place removed from favorites', {
+          description: `Place ID: ${placeId}`,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              toast.info('Restoring favorite...');
+
+              // If we have the favorite object, add it back to the context
+              if (favoriteToRemove) {
+                addFavorite(favoriteToRemove);
+              }
+
+              // Call the mutation again to re-favorite the place
+              toggleFavoriteMutation.mutate(placeId, {
+                onSuccess: () => {
+                  toast.success('Place restored to favorites');
+                },
+              });
+            },
+          },
+        });
+      },
+    });
   };
 
   return (
@@ -87,9 +150,16 @@ export default function FavoritesTable({
                     size='sm'
                     className='text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30'
                     onClick={() => handleUnfavoriteClick(favorite.placeId)}
+                    disabled={
+                      toggleFavoriteMutation.isPending &&
+                      toggleFavoriteMutation.variables === favorite.placeId
+                    }
                   >
                     <Trash2 className='mr-1 h-4 w-4' />
-                    Unfavorite
+                    {toggleFavoriteMutation.isPending &&
+                    toggleFavoriteMutation.variables === favorite.placeId
+                      ? 'Removing...'
+                      : 'Unfavorite'}
                   </Button>
                 </td>
               </tr>

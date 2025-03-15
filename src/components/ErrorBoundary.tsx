@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Component } from 'react';
+import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,7 @@ interface State {
  * ErrorBoundary component that catches JavaScript errors in its child component tree,
  * logs those errors, and displays a fallback UI instead of the component tree that crashed.
  */
-class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -69,5 +69,3 @@ class ErrorBoundary extends Component<Props, State> {
     return children;
   }
 }
-
-export default ErrorBoundary;

@@ -1,12 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useUser } from '../../context/user-context';
+import { useUserData } from '../../context/user-context';
 import ProfilePage from '../page';
 import type { User, Favorite } from '@prisma/client';
 
 // Mock the useUser hook
 vi.mock('../../context/user-context', () => ({
   useUser: vi.fn(),
+  useUserData: vi.fn(),
 }));
 
 // Mock ProfileContent component
@@ -79,8 +80,8 @@ describe('ProfilePage', () => {
       favorites: mockFavorites,
     };
 
-    // Mock useUser to return user data
-    (useUser as ReturnType<typeof vi.fn>).mockReturnValue(mockUser);
+    // Mock useUserData to return user data
+    (useUserData as ReturnType<typeof vi.fn>).mockReturnValue(mockUser);
 
     render(<ProfilePage />);
 

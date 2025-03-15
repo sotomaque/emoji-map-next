@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import FavoritesTable from './components/favorites-table';
 import PlaceDetails from './components/place-details';
 import ProfileContent from './components/profile-content';
-import { useUser } from '../context/user-context';
+import { useUserData } from '../context/user-context';
 
 export default function ProfilePage() {
-  const user = useUser();
+  const userData = useUserData();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   const handleViewPlace = (placeId: string) => {
@@ -24,6 +24,10 @@ export default function ProfilePage() {
       });
     }, 100);
   };
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-gray-900 py-8'>
@@ -44,13 +48,13 @@ export default function ProfilePage() {
 
         {/* Profile content section */}
         <div className='bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8'>
-          <ProfileContent user={user} />
+          <ProfileContent user={userData} />
         </div>
 
         {/* Favorites table section */}
         <div className='bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8'>
           <FavoritesTable
-            favorites={user.favorites}
+            favorites={userData.favorites}
             onViewPlace={handleViewPlace}
           />
         </div>
