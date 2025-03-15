@@ -25,9 +25,15 @@ describe('fetchAndProcessGoogleData', () => {
   const mockLimit = 20;
   const mockRadiusMeters = 16000; // ~10 miles in meters
   const mockKeys = [1, 2, 3];
+  const mockPageToken = 'mock-page-token';
 
   const mockGoogleResponse: GooglePlacesResponse = {
     places: MOCK_GOOGLE_PLACES,
+  };
+
+  const mockGoogleResponseWithNextPage: GooglePlacesResponse = {
+    places: MOCK_GOOGLE_PLACES,
+    nextPageToken: 'next-page-token',
   };
 
   // Reset mocks before each test
@@ -59,6 +65,7 @@ describe('fetchAndProcessGoogleData', () => {
       openNow: mockOpenNow,
       limit: mockLimit,
       radiusMeters: mockRadiusMeters,
+      pageToken: undefined,
     });
 
     // Verify processGoogleResponse was called with correct parameters
@@ -73,6 +80,7 @@ describe('fetchAndProcessGoogleData', () => {
       data: MOCK_PLACES,
       count: MOCK_PLACES.length,
       cacheHit: false,
+      nextPageToken: undefined,
     });
   });
 
@@ -96,6 +104,7 @@ describe('fetchAndProcessGoogleData', () => {
       data: [],
       count: 0,
       cacheHit: false,
+      nextPageToken: undefined,
     });
   });
 
@@ -117,6 +126,7 @@ describe('fetchAndProcessGoogleData', () => {
       openNow: undefined,
       limit: undefined,
       radiusMeters: undefined,
+      pageToken: undefined,
     });
 
     // Verify processGoogleResponse was called with correct parameters
@@ -146,6 +156,7 @@ describe('fetchAndProcessGoogleData', () => {
       openNow: true,
       limit: undefined,
       radiusMeters: undefined,
+      pageToken: undefined,
     });
 
     // Verify processGoogleResponse was called with correct parameters including keys
@@ -205,6 +216,52 @@ describe('fetchAndProcessGoogleData', () => {
       data: MOCK_PLACES,
       count: MOCK_GOOGLE_PLACES.length,
       cacheHit: false,
+      nextPageToken: undefined,
+    });
+  });
+
+  it('should pass pageToken to fetchFromGoogle when provided', async () => {
+    // Mock the dependencies
+    vi.mocked(fetchFromGoogle).mockResolvedValue(mockGoogleResponse);
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
+
+    // Call the function with pageToken
+    await fetchAndProcessGoogleData({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      pageToken: mockPageToken,
+    });
+
+    // Verify fetchFromGoogle was called with pageToken
+    expect(fetchFromGoogle).toHaveBeenCalledWith({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      openNow: undefined,
+      limit: undefined,
+      radiusMeters: undefined,
+      pageToken: mockPageToken,
+    });
+  });
+
+  it('should include nextPageToken in the response when available', async () => {
+    // Mock the dependencies with a response that includes nextPageToken
+    vi.mocked(fetchFromGoogle).mockResolvedValue(
+      mockGoogleResponseWithNextPage
+    );
+    vi.mocked(processGoogleResponse).mockReturnValue(MOCK_PLACES);
+
+    // Call the function
+    const result = await fetchAndProcessGoogleData({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+    });
+
+    // Verify the result includes the nextPageToken
+    expect(result).toEqual({
+      data: MOCK_PLACES,
+      count: MOCK_PLACES.length,
+      cacheHit: false,
+      nextPageToken: 'next-page-token',
     });
   });
 });

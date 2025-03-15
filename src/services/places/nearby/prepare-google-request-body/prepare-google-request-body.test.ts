@@ -188,4 +188,70 @@ describe('prepareGoogleRequestBody', () => {
     // Verify the radius was used in the result
     expect(result.locationBias?.circle.radius).toBe(5000);
   });
+
+  // New tests for pageToken parameter
+
+  it('should set pageToken when provided', () => {
+    const mockPageToken = 'test-page-token';
+    const result = prepareGoogleRequestBody({
+      textQuery: 'coffee',
+      location: '40.7128,-74.0060',
+      pageToken: mockPageToken,
+    });
+
+    expect(result.pageToken).toBe(mockPageToken);
+  });
+
+  it('should not set pageToken when not provided', () => {
+    const result = prepareGoogleRequestBody({
+      textQuery: 'coffee',
+      location: '40.7128,-74.0060',
+    });
+
+    expect(result.pageToken).toBeUndefined();
+  });
+
+  it('should include pageToken in debug log when provided', () => {
+    const mockPageToken = 'test-page-token';
+    prepareGoogleRequestBody({
+      textQuery: 'coffee',
+      location: '40.7128,-74.0060',
+      pageToken: mockPageToken,
+    });
+
+    // Verify that log.debug was called at least once
+    expect(log.debug).toHaveBeenCalled();
+
+    // Based on the actual calls, we can see that the second call contains the request body
+    // with the pageToken included
+    const debugMock = vi.mocked(log.debug);
+
+    // Check that there's a call with the request body that includes the pageToken
+    expect(
+      debugMock.mock.calls.some(
+        (call) =>
+          typeof call[0] === 'string' &&
+          call[0].includes('[API] Request body') &&
+          call[0].includes('test-page-token')
+      )
+    ).toBe(true);
+  });
+
+  it('should set pageToken and other parameters correctly when all are provided', () => {
+    const mockPageToken = 'test-page-token';
+    const result = prepareGoogleRequestBody({
+      textQuery: 'coffee',
+      location: '40.7128,-74.0060',
+      openNow: true,
+      limit: 10,
+      radiusMeters: 5000,
+      pageToken: mockPageToken,
+    });
+
+    expect(result.textQuery).toBe('coffee');
+    expect(result.pageSize).toBe(10);
+    expect(result.openNow).toBe(true);
+    expect(result.pageToken).toBe(mockPageToken);
+    expect(result.locationBias).toBeDefined();
+  });
 });

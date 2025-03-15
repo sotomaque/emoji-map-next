@@ -58,6 +58,10 @@ vi.mock('@tanstack/react-query', () => ({
   useMutation: vi.fn(),
 }));
 
+// Mock fetch
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
 describe('FavoritesTable', () => {
   // Set a fixed date for all tests
   const fixedDate = new Date('2023-05-15T12:00:00Z');
@@ -90,6 +94,12 @@ describe('FavoritesTable', () => {
       reset: vi.fn(),
       mutateAsync: vi.fn(),
     } as unknown as reactQuery.UseMutationResult);
+
+    // Mock fetch to return a successful response
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    });
   });
 
   afterEach(() => {
@@ -271,5 +281,70 @@ describe('FavoritesTable', () => {
     // Check that the button is disabled
     const button = screen.getByText('Removing...').closest('button');
     expect(button).toBeDisabled();
+  });
+
+  it('verifies that userId is included in the API request', async () => {
+    render(
+      <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
+    );
+
+    // Find the first Unfavorite button and click it
+    const unfavoriteButtons = screen.getAllByText('Unfavorite');
+    fireEvent.click(unfavoriteButtons[0]);
+
+    // Get the mutation function from the useMutation hook
+    const mutationFnObj = vi.mocked(reactQuery.useMutation).mock.calls[0][0];
+    const mutationFn = mutationFnObj?.mutationFn;
+
+    // Call the mutation function with a place ID if it exists
+    if (mutationFn) {
+      await mutationFn('place_1');
+    }
+
+    // Check that fetch was called with the correct parameters
+    expect(mockFetch).toHaveBeenCalledWith('/api/places/favorite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: 'place_1', userId: 'user_123' }),
+    });
+  });
+
+  it('handles API errors correctly', async () => {
+    // Mock fetch to return an error response
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    });
+
+    render(
+      <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
+    );
+
+    // Get the mutation function from the useMutation hook
+    const mutationFnObj = vi.mocked(reactQuery.useMutation).mock.calls[0][0];
+    const mutationFn = mutationFnObj?.mutationFn;
+
+    // Call the mutation function with a place ID and expect it to throw
+    if (mutationFn) {
+      await expect(mutationFn('place_1')).rejects.toThrow(
+        'Failed to update favorite status'
+      );
+    }
+
+    // Check that the error callback would be called
+    const errorCallback = mutationFnObj?.onError;
+    if (errorCallback) {
+      errorCallback(
+        new Error('Failed to update favorite status'),
+        'place_1',
+        undefined
+      );
+    }
+
+    // Check that toast.error was called with the correct message
+    expect(toast.error).toHaveBeenCalledWith('Failed to remove from favorites');
   });
 });

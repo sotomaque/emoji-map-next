@@ -23,6 +23,9 @@ interface Params {
 
   /** Array of category keys */
   keys?: number[];
+
+  /** Page token for pagination */
+  pageToken?: string;
 }
 
 /**
@@ -40,13 +43,15 @@ interface Params {
  * @param params.location - Location in the format "latitude,longitude"
  * @param params.openNow - Whether to only return places that are currently open
  * @param params.limit - Maximum number of places to return
- * @param params.bufferMiles - Buffer distance in miles to extend the search radius
+ * @param params.radiusMeters - Radius distance in meters
  * @param params.keys - Array of category keys (for batch processing)
+ * @param params.pageToken - Page token for pagination
  *
  * @returns A {@link PlacesResponse} object containing:
  *   - data: Array of simplified place objects with emoji markers
  *   - count: Number of places in the response
  *   - cacheHit: Always false for fresh API requests (true only when served from cache)
+ *   - nextPageToken: Token for fetching the next page of results (if available)
  *
  * @example
  * ```typescript
@@ -65,6 +70,7 @@ export async function fetchAndProcessGoogleData({
   limit,
   radiusMeters,
   keys,
+  pageToken,
 }: Params): Promise<PlacesResponse> {
   // Fetch the data from Google Places API
   const googleData = await fetchFromGoogle({
@@ -73,6 +79,7 @@ export async function fetchAndProcessGoogleData({
     openNow,
     limit,
     radiusMeters,
+    pageToken,
   });
 
   // Process the response from Google Places API
@@ -87,5 +94,6 @@ export async function fetchAndProcessGoogleData({
     data: response,
     count: response.length,
     cacheHit: false,
+    nextPageToken: googleData.nextPageToken,
   };
 }

@@ -21,6 +21,9 @@ type Props = {
 
   /** Radius distance in meters */
   radiusMeters?: number;
+
+  /** Page token for pagination */
+  pageToken?: string;
 };
 
 const apiKey = env.GOOGLE_PLACES_API_KEY;
@@ -45,9 +48,11 @@ const path = 'places:searchText';
  * @param props.openNow - Whether to only return places that are currently open
  * @param props.limit - Maximum number of places to return
  * @param props.radiusMeters - Radius distance in meters
+ * @param props.pageToken - Page token for pagination (optional)
  *
  * @returns A {@link GooglePlacesResponse} object containing:
  *   - places: Array of raw Google Place objects
+ *   - nextPageToken: Token for fetching the next page of results (if available)
  *
  * @remarks
  * This function handles errors gracefully and will return an empty places array
@@ -68,6 +73,7 @@ export async function fetchFromGoogle({
   openNow,
   limit,
   radiusMeters,
+  pageToken,
 }: Props): Promise<GooglePlacesResponse> {
   try {
     const requestBody = prepareGoogleRequestBody({
@@ -76,6 +82,7 @@ export async function fetchFromGoogle({
       openNow,
       limit,
       radiusMeters,
+      pageToken,
     });
 
     const url = `${baseUrl}/${path}?key=${apiKey}`;
@@ -114,6 +121,7 @@ export async function fetchFromGoogle({
 
     return {
       places: limitedResults,
+      nextPageToken: data.nextPageToken,
     };
   } catch (error) {
     log.error(`[API] Error fetching from Google Places`, { error });

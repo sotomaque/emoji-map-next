@@ -81,7 +81,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: placeId }),
+        body: JSON.stringify({ id: placeId, userId: userData.id }),
       });
 
       if (!response.ok) {

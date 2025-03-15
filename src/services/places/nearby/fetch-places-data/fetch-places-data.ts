@@ -18,16 +18,18 @@ import { fetchAndProcessGoogleData } from '../fetch-and-process-google-data/fetc
  * @param props.textQuery - Text query to search for places (e.g., "restaurants", "coffee shops")
  * @param props.location - Location in the format "latitude,longitude"
  * @param props.openNow - Whether to only return places that are currently open
- * @param props.limit - Maximum number of places to return (defaults to NEARBY_CONFIG.DEFAULT_LIMIT)
+ * @param props.limit - Maximum number of results to return (defaults to NEARBY_CONFIG.DEFAULT_LIMIT)
  * @param props.radiusMeters - Radius distance in meters to extend the search radius (defaults to NEARBY_CONFIG.DEFAULT_RADIUS_METERS)
  * @param props.cacheKey - Cache key for storing and retrieving results (if null, caching is skipped)
  * @param props.bypassCache - Whether to bypass the cache and fetch directly from the API (defaults to false)
  * @param props.keys - Array of keys for fetching data from Google Places API
+ * @param props.pageToken - Page token for pagination
  *
  * @returns A {@link PlacesResponse} object containing:
  *   - data: Array of simplified place objects with emoji markers
  *   - count: Number of places in the response
  *   - cacheHit: Whether the data was retrieved from cache
+ *   - nextPageToken: Token for fetching the next page of results (if available)
  */
 export async function fetchPlacesData({
   textQuery,
@@ -38,6 +40,7 @@ export async function fetchPlacesData({
   cacheKey,
   bypassCache = false,
   keys,
+  pageToken,
 }: {
   textQuery: string;
   location: string;
@@ -47,7 +50,13 @@ export async function fetchPlacesData({
   cacheKey: string | null;
   bypassCache?: boolean;
   keys?: number[];
+  pageToken?: string;
 }): Promise<PlacesResponse> {
+  // If we have a pageToken, we should bypass the cache
+  if (pageToken) {
+    bypassCache = true;
+  }
+
   let cachedData: Place[] | null = null;
   // const hasFilters = !openNow; // TODO: add additional filters
 
@@ -105,10 +114,12 @@ export async function fetchPlacesData({
     limit,
     radiusMeters,
     keys,
+    pageToken,
   });
 
   // Cache results only if cacheKey is non-null and we have data to cache
-  if (cacheKey && processedPlaces.data.length > 0) {
+  // Don't cache results from pagination
+  if (cacheKey && processedPlaces.data.length > 0 && !pageToken) {
     log.success(`[CACHE SET]`, {
       cacheKey,
       data: processedPlaces.data,

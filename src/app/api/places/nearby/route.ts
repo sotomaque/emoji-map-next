@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { chunk } from 'lodash-es';
+import { chunk, toNumber } from 'lodash-es';
+import { NEARBY_CONFIG } from '@/constants/nearby';
 import { buildTextQueryFromKeys } from '@/services/places/nearby/build-text-query-from-string/build-text-query-from-string';
 import { fetchPlacesData } from '@/services/places/nearby/fetch-places-data/fetch-places-data';
 import { generateCacheKey } from '@/services/places/nearby/generate-cache-key/generate-cache-key';
@@ -45,6 +46,9 @@ import { log } from '@/utils/log';
 
 // Maximum number of keys to include in a single batch
 const MAX_KEYS_PER_BATCH = 2;
+
+// Maximum number of pages to fetch when using pagination (for single key)
+const MAX_PAGES = toNumber(NEARBY_CONFIG.SERIAL_REQUESTS_LIMIT);
 
 export async function GET(
   request: NextRequest
@@ -107,6 +111,91 @@ export async function GET(
 
       // Update the count
       mergedResults.count = mergedResults.data.length;
+
+      return NextResponse.json(mergedResults);
+    }
+
+    // If we have only one key, make multiple serial requests using pagination
+    if (keys && keys.length === 1) {
+      const textQuery = buildTextQueryFromKeys(keys);
+      const cacheKey = generateCacheKey({ location: location!, keys });
+
+      // First request (without pageToken)
+      const firstPageResult = await fetchPlacesData({
+        textQuery,
+        location: location!,
+        openNow,
+        limit,
+        radiusMeters,
+        cacheKey,
+        bypassCache,
+        keys,
+      });
+
+      // If there's no nextPageToken, return the first page result
+      if (!firstPageResult.nextPageToken) {
+        return NextResponse.json(firstPageResult);
+      }
+
+      // Initialize the merged results with the first page
+      const mergedResults: PlacesResponse = {
+        data: [...firstPageResult.data],
+        count: firstPageResult.data.length,
+        cacheHit: firstPageResult.cacheHit,
+      };
+
+      // Make additional requests using pagination
+      let currentPageToken: string | undefined = firstPageResult.nextPageToken;
+      let currentPage = 1;
+
+      while (currentPageToken && currentPage < MAX_PAGES) {
+        log.info(
+          `[API] Fetching page ${
+            currentPage + 1
+          } with token: ${currentPageToken}`
+        );
+
+        // Fetch the next page
+        const nextPageResult = await fetchPlacesData({
+          textQuery,
+          location: location!,
+          openNow,
+          limit,
+          radiusMeters,
+          cacheKey: null, // Don't cache pagination results
+          bypassCache: true, // Always bypass cache for pagination
+          keys,
+          pageToken: currentPageToken,
+        });
+
+        // Add unique places from the next page
+        for (const place of nextPageResult.data) {
+          if (!mergedResults.data.some((p) => p.id === place.id)) {
+            mergedResults.data.push(place);
+          }
+        }
+
+        // Update for the next iteration
+        currentPageToken = nextPageResult.nextPageToken;
+        currentPage++;
+
+        // If we've reached the limit or there's no more pages, break
+        if (
+          !currentPageToken ||
+          (limit && mergedResults.data.length >= limit)
+        ) {
+          break;
+        }
+      }
+
+      // Update the count
+      mergedResults.count = mergedResults.data.length;
+
+      // Apply the limit if specified
+      if (limit && mergedResults.data.length > limit) {
+        mergedResults.data = mergedResults.data.slice(0, limit);
+        mergedResults.count = mergedResults.data.length;
+      }
 
       return NextResponse.json(mergedResults);
     }

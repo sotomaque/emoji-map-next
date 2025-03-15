@@ -12,20 +12,23 @@ import { env } from '@/env';
  * @property {number} ABSOLUT_MAX_BUFFER_MILES - Maximum search radius in miles (100)
  * @property {string} CACHE_KEY - Redis cache key prefix for nearby places
  * @property {string} CACHE_KEY_VERSION - Version for cache invalidation
- * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in seconds (30 days)
+ * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in milliseconds (30 days)
  */
 export const NEARBY_CONFIG = {
   // Default limit for the Google Places API
   DEFAULT_LIMIT: 20,
   DEFAULT_RADIUS_METERS: 1000, // 1 km
-  DEFAULT_RANK_PREFERENCE: 'DISTANCE',
+  DEFAULT_RANK_PREFERENCE: 'RANK_PREFERENCE_UNSPECIFIED',
 
-  // Google Places API has a limit of 60 places per request
-  ABSOLUT_MAX_LIMIT: 60,
+  // Google Places API has a limit of 20 places per request
+  ABSOLUT_MAX_LIMIT: 20,
   ABSOLUT_MAX_BUFFER_MILES: 100,
+
+  // Serial requests
+  SERIAL_REQUESTS_LIMIT: env.NEARBY_SERIAL_REQUESTS_LIMIT,
 
   // Cache key for the nearby API
   CACHE_KEY: 'places',
   CACHE_KEY_VERSION: env.NEARBY_CACHE_KEY_VERSION,
-  CACHE_EXPIRATION_TIME: 60 * 60 * 24 * 30, // 30 days
+  CACHE_EXPIRATION_TIME: 60 * 60 * 24 * 30 * 1000, // 30 days in milliseconds
 } as const;

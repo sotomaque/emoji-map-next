@@ -42,6 +42,13 @@ describe('fetchPlacesData', () => {
     cacheHit: false,
   };
 
+  const mockProcessedPlacesWithNextPage: PlacesResponse = {
+    data: MOCK_PLACES,
+    count: MOCK_PLACES.length,
+    cacheHit: false,
+    nextPageToken: 'next-page-token',
+  };
+
   const defaultParams = {
     textQuery: 'restaurants',
     location: '40.7128,-74.006',
@@ -85,6 +92,8 @@ describe('fetchPlacesData', () => {
       openNow: undefined,
       limit: NEARBY_CONFIG.DEFAULT_LIMIT,
       radiusMeters: NEARBY_CONFIG.DEFAULT_RADIUS_METERS,
+      keys: undefined,
+      pageToken: undefined,
     });
     expect(setCacheResults).toHaveBeenCalledWith({
       cacheKey: defaultParams.cacheKey,
@@ -334,5 +343,83 @@ describe('fetchPlacesData', () => {
     expect(result.count).toBe(requestedLimit);
     // Verify that fetchAndProcessGoogleData was not called since we used cache
     expect(fetchAndProcessGoogleData).not.toHaveBeenCalled();
+  });
+
+  // New tests for the pageToken parameter functionality
+
+  it('should bypass cache when pageToken is provided', async () => {
+    // GIVEN
+    const cachedPlaces = [...MOCK_PLACES];
+    vi.mocked(redis.get).mockResolvedValue(cachedPlaces);
+    const mockPageToken = 'test-page-token';
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      pageToken: mockPageToken,
+    });
+
+    // THEN
+    // Should not check cache when pageToken is provided
+    expect(redis.get).not.toHaveBeenCalled();
+    // Should call fetchAndProcessGoogleData with pageToken
+    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageToken: mockPageToken,
+      })
+    );
+  });
+
+  it('should pass pageToken to fetchAndProcessGoogleData', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    const mockPageToken = 'test-page-token';
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      pageToken: mockPageToken,
+    });
+
+    // THEN
+    expect(fetchAndProcessGoogleData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageToken: mockPageToken,
+      })
+    );
+  });
+
+  it('should not cache results when pageToken is provided', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    const mockPageToken = 'test-page-token';
+
+    // WHEN
+    await fetchPlacesDataModule.fetchPlacesData({
+      ...defaultParams,
+      pageToken: mockPageToken,
+    });
+
+    // THEN
+    // Should not cache results when pageToken is provided
+    expect(setCacheResults).not.toHaveBeenCalled();
+    expect(log.error).toHaveBeenCalledWith(
+      '[CACHE SKIPPED]',
+      expect.any(Object)
+    );
+  });
+
+  it('should include nextPageToken in the response when available', async () => {
+    // GIVEN
+    vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(fetchAndProcessGoogleData).mockResolvedValue(
+      mockProcessedPlacesWithNextPage
+    );
+
+    // WHEN
+    const result = await fetchPlacesDataModule.fetchPlacesData(defaultParams);
+
+    // THEN
+    expect(result.nextPageToken).toBe('next-page-token');
   });
 });

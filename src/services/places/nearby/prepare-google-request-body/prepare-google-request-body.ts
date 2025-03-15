@@ -14,6 +14,8 @@ export interface GoogleRequestBody {
   rankPreference?: 'DISTANCE' | 'POPULARITY' | 'RANK_PREFERENCE_UNSPECIFIED';
   openNow?: boolean;
   locationBias?: LocationBias;
+
+  pageToken?: string; // Next page token
 }
 
 /**
@@ -23,7 +25,8 @@ export interface GoogleRequestBody {
  * @param location - The location string in format "latitude,longitude"
  * @param openNow - Whether to only return places that are open now
  * @param limit - The maximum number of results to return
- * @param bufferMiles - The buffer distance in miles (default: 10)
+ * @param radiusMeters - The radius distance in meters
+ * @param pageToken - The page token for pagination
  * @returns The prepared request body for the Google Places API
  */
 export function prepareGoogleRequestBody({
@@ -32,12 +35,14 @@ export function prepareGoogleRequestBody({
   openNow,
   limit = NEARBY_CONFIG.DEFAULT_LIMIT,
   radiusMeters = NEARBY_CONFIG.DEFAULT_RADIUS_METERS,
+  pageToken,
 }: {
   textQuery: string;
   location: string;
   openNow?: boolean;
   limit?: number;
   radiusMeters?: number;
+  pageToken?: string;
 }): GoogleRequestBody {
   // Initialize the request body
   const requestBody: GoogleRequestBody = {
@@ -48,6 +53,11 @@ export function prepareGoogleRequestBody({
   // Add openNow if provided
   if (openNow) {
     requestBody.openNow = openNow;
+  }
+
+  // Add pageToken if provided
+  if (pageToken) {
+    requestBody.pageToken = pageToken;
   }
 
   // Set rankPreference to DISTANCE by default

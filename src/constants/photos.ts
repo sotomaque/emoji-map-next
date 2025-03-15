@@ -10,7 +10,7 @@ import { env } from '@/env';
  * @property {number} ABSOLUTE_MAX_HEIGHT_LIMIT - Maximum allowed height for photos (4000px)
  * @property {string} CACHE_KEY - Redis cache key prefix for place photos
  * @property {string} CACHE_VERSION - Version for cache invalidation
- * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in seconds (30 days)
+ * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in milliseconds (30 days)
  */
 export const PHOTOS_CONFIG = {
   // DEFAULTS
@@ -23,5 +23,5 @@ export const PHOTOS_CONFIG = {
   // CACHE KEY
   CACHE_KEY: 'photos',
   CACHE_VERSION: env.PHOTOS_CACHE_KEY_VERSION,
-  CACHE_EXPIRATION_TIME: 60 * 60 * 24 * 30, // 30 days
+  CACHE_EXPIRATION_TIME: 60 * 60 * 24 * 30 * 1000, // 30 days in milliseconds
 } as const;

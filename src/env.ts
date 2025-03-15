@@ -46,6 +46,9 @@ export const env = createEnv({
     NEARBY_CACHE_KEY_VERSION: z.string().min(1),
     DETAILS_CACHE_KEY_VERSION: z.string().min(1),
     PHOTOS_CACHE_KEY_VERSION: z.string().min(1),
+
+    // SERIAL REQUESTS
+    NEARBY_SERIAL_REQUESTS_LIMIT: z.string().max(5),
   },
 
   /**
@@ -116,6 +119,9 @@ export const env = createEnv({
     NEARBY_CACHE_KEY_VERSION: process.env.NEARBY_CACHE_KEY_VERSION,
     DETAILS_CACHE_KEY_VERSION: process.env.DETAILS_CACHE_KEY_VERSION,
     PHOTOS_CACHE_KEY_VERSION: process.env.PHOTOS_CACHE_KEY_VERSION,
+
+    // SERIAL REQUESTS
+    NEARBY_SERIAL_REQUESTS_LIMIT: process.env.NEARBY_SERIAL_REQUESTS_LIMIT,
   },
 
   /**
