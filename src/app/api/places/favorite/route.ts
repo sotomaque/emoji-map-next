@@ -30,9 +30,11 @@ export async function POST(request: NextRequest): Promise<
     | ErrorResponse
   >
 > {
+  console.log('POST request received');
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
+    console.log('Unauthorized no clerkId');
     log.error('Unauthorized no clerkId');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -41,6 +43,8 @@ export async function POST(request: NextRequest): Promise<
     const { id } = await request.json();
 
     if (!id) {
+      console.log('Place ID is required');
+      log.error('Place ID is required');
       return NextResponse.json(
         { error: 'Place ID is required' },
         { status: 400 }
@@ -55,7 +59,10 @@ export async function POST(request: NextRequest): Promise<
       where: { clerkId: clerkId as string },
     });
 
+    console.log('User found', { user });
+
     if (!user) {
+      console.log('User not found', { clerkId });
       log.error('User not found', { clerkId });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -67,6 +74,7 @@ export async function POST(request: NextRequest): Promise<
 
     // If place doesn't exist, create it
     if (!place) {
+      console.log('Place not found, creating it');
       log.debug('Place not found, creating it');
       place = await prisma.place.create({
         data: {
@@ -90,6 +98,7 @@ export async function POST(request: NextRequest): Promise<
 
     // If favorite exists, remove it (toggle off)
     if (existingFavorite) {
+      console.log('Favorite exists, removing it');
       log.debug('Favorite exists, removing it');
       await prisma.favorite.delete({
         where: {
@@ -99,6 +108,7 @@ export async function POST(request: NextRequest): Promise<
 
       action = 'removed';
     } else {
+      console.log('Favorite does not exist, creating it');
       log.debug('Favorite does not exist, creating it');
       // If favorite doesn't exist, create it (toggle on)
       favorite = await prisma.favorite.create({
