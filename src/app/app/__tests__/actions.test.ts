@@ -7,7 +7,7 @@ import {
   afterEach,
   beforeAll,
 } from 'vitest';
-import type { Favorite, User } from '@prisma/client';
+import type { Favorite, User, Rating } from '@prisma/client';
 
 // Mock Clerk's currentUser
 vi.mock('@clerk/nextjs/server', () => ({
@@ -40,7 +40,18 @@ describe('getCurrentUser', () => {
     },
   ];
 
-  const mockUser: User & { favorites: Favorite[] } = {
+  const mockRatings: Rating[] = [
+    {
+      id: 'rating_1',
+      userId: 'user_123',
+      placeId: 'place_1',
+      rating: 4,
+      createdAt: new Date('2023-02-01'),
+      updatedAt: new Date('2023-02-01'),
+    },
+  ];
+
+  const mockUser: User & { favorites: Favorite[]; ratings: Rating[] } = {
     id: 'user_123',
     email: 'test@example.com',
     firstName: 'Test',
@@ -50,6 +61,7 @@ describe('getCurrentUser', () => {
     createdAt: new Date('2023-01-01'),
     updatedAt: new Date('2023-01-02'),
     favorites: mockFavorites,
+    ratings: mockRatings,
   };
 
   // Mock console.error to prevent test output pollution
@@ -107,7 +119,7 @@ describe('getCurrentUser', () => {
     vi.useRealTimers();
   });
 
-  it('should return user data with favorites when fetch is successful', async () => {
+  it('should return user data with favorites and ratings when fetch is successful', async () => {
     // Re-import the function to use the fresh mocks
     const { getCurrentUser: getUser } = await import('../actions');
 
@@ -131,6 +143,11 @@ describe('getCurrentUser', () => {
     expect(result?.favorites).toHaveLength(2);
     expect(result?.favorites?.[0].id).toBe('fav_1');
     expect(result?.favorites?.[1].id).toBe('fav_2');
+
+    // Verify the result has ratings
+    expect(result?.ratings).toHaveLength(1);
+    expect(result?.ratings?.[0].id).toBe('rating_1');
+    expect(result?.ratings?.[0].rating).toBe(4);
 
     // Verify dates are consistent with our fixed system time
     expect(result?.createdAt).toEqual(new Date('2023-01-01'));
@@ -257,20 +274,10 @@ describe('getCurrentUser', () => {
     // Re-import the function to use our mock
     const { getCurrentUser: getUser } = await import('../actions');
 
-    // Setup fetch mock to return error (since userId will be undefined)
-    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      {
-        ok: false,
-        status: 400,
-      }
-    );
-
     const result = await getUser();
 
-    // Verify fetch was called with undefined userId
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/user?userId=undefined'
-    );
+    // Verify fetch was NOT called since we return early when user is null
+    expect(global.fetch).not.toHaveBeenCalled();
 
     // Verify the result is null
     expect(result).toBeNull();
