@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import type { ErrorResponse } from '@/types/error-response';
 import { getOrCreateUser, getCurrentDbUser } from '../../../lib/user-service';
-import type { User } from '@prisma/client';
+import type { User, Favorite } from '@prisma/client';
 
 export async function POST(): Promise<
   NextResponse<
@@ -42,7 +42,7 @@ export async function POST(): Promise<
 export async function GET(): Promise<
   NextResponse<
     | {
-        user: User;
+        user: User & { favorites?: Favorite[] };
       }
     | ErrorResponse
   >
@@ -55,8 +55,8 @@ export async function GET(): Promise<
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the user from our database
-    const dbUser = await getCurrentDbUser();
+    // Get the user from our database with favorites included
+    const dbUser = await getCurrentDbUser(true); // Pass true to include favorites
 
     if (!dbUser) {
       return NextResponse.json(

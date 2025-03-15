@@ -1,27 +1,35 @@
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from './db';
-import type { User } from '@prisma/client';
+import type { User, Favorite } from '@prisma/client';
 
 /**
  * Get a user by their Clerk ID
  */
-export async function getUserByClerkId(clerkId: string): Promise<User | null> {
+export async function getUserByClerkId(
+  clerkId: string,
+  includeFavorites: boolean = false
+): Promise<(User & { favorites?: Favorite[] }) | null> {
   return await prisma.user.findUnique({
     where: { clerkId },
+    include: {
+      favorites: includeFavorites,
+    },
   });
 }
 
 /**
  * Get the current authenticated user from the database
  */
-export async function getCurrentDbUser(): Promise<User | null> {
+export async function getCurrentDbUser(
+  includeFavorites: boolean = false
+): Promise<(User & { favorites?: Favorite[] }) | null> {
   const user = await currentUser();
 
   if (!user) {
     return null;
   }
 
-  return await getUserByClerkId(user.id);
+  return await getUserByClerkId(user.id, includeFavorites);
 }
 
 /**
