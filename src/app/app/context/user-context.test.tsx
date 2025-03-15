@@ -8,9 +8,9 @@ const TestComponent = () => {
   const user = useUser();
   return (
     <div>
-      <div data-testid="user-id">{user.id}</div>
-      <div data-testid="user-email">{user.email}</div>
-      <div data-testid="favorites-count">{user.favorites?.length || 0}</div>
+      <div data-testid='user-id'>{user.id}</div>
+      <div data-testid='user-email'>{user.email}</div>
+      <div data-testid='favorites-count'>{user.favorites?.length || 0}</div>
     </div>
   );
 };
@@ -52,7 +52,9 @@ describe('UserContext', () => {
     );
 
     expect(screen.getByTestId('user-id')).toHaveTextContent('user_123');
-    expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com');
+    expect(screen.getByTestId('user-email')).toHaveTextContent(
+      'test@example.com'
+    );
     expect(screen.getByTestId('favorites-count')).toHaveTextContent('2');
   });
 
@@ -69,4 +71,4 @@ describe('UserContext', () => {
     // Restore console.error
     console.error = originalConsoleError;
   });
-}); 
+});

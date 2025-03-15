@@ -108,9 +108,6 @@ export default function AppPage() {
       }
 
       try {
-        console.log({
-          locationURL: `/api/places/nearby?${params.toString()}`,
-        });
         const response = await fetch(`/api/places/nearby?${params.toString()}`);
 
         if (!response.ok) {

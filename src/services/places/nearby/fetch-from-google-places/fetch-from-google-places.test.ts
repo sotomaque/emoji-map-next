@@ -43,8 +43,6 @@ describe('fetchFromGoogle', () => {
       bufferMiles: 10,
     });
 
-    // For debugging: console.log({ result });
-
     // Verify results
     expect(result).toHaveProperty('places');
     expect(Array.isArray(result.places)).toBe(true);

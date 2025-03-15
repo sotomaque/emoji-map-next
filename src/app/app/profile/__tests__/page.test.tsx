@@ -1,19 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useUser } from '../context/user-context';
+import { useUser } from '../../context/user-context';
 import ProfilePage from '../page';
 import type { User, Favorite } from '@prisma/client';
 
 // Mock the useUser hook
-vi.mock('../context/user-context', () => ({
+vi.mock('../../context/user-context', () => ({
   useUser: vi.fn(),
 }));
 
 // Mock ProfileContent component
 vi.mock('../components/profile-content', () => ({
   default: ({ user }: { user: User }) => (
-    <div data-testid="profile-content">
-      <div>Name: {user.firstName} {user.lastName}</div>
+    <div data-testid='profile-content'>
+      <div>
+        Name: {user.firstName} {user.lastName}
+      </div>
       <div>Email: {user.email}</div>
       {user.username && <div>Username: @{user.username}</div>}
     </div>
@@ -23,7 +25,7 @@ vi.mock('../components/profile-content', () => ({
 // Mock FavoritesTable component
 vi.mock('../components/favorites-table', () => ({
   default: ({ favorites }: { favorites?: Favorite[] }) => (
-    <div data-testid="favorites-table">
+    <div data-testid='favorites-table'>
       <div>Favorites count: {favorites?.length || 0}</div>
     </div>
   ),
@@ -78,7 +80,7 @@ describe('ProfilePage', () => {
     };
 
     // Mock useUser to return user data
-    vi.mocked(useUser).mockReturnValue(mockUser);
+    (useUser as ReturnType<typeof vi.fn>).mockReturnValue(mockUser);
 
     render(<ProfilePage />);
 
@@ -97,4 +99,4 @@ describe('ProfilePage', () => {
     expect(backButton).toBeInTheDocument();
     expect(backButton.closest('a')).toHaveAttribute('href', '/app');
   });
-}); 
+});

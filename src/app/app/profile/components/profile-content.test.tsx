@@ -56,11 +56,15 @@ describe('ProfileContent', () => {
     expect(screen.getByText('@testuser')).toBeInTheDocument();
     expect(screen.getByAltText("Test's profile")).toBeInTheDocument();
 
-    // Check for Member Since section with the expected date format
+    // Check for Member Since section
     expect(screen.getByText('Member Since')).toBeInTheDocument();
 
-    // The date format is 12/31/2022 (based on the actual output)
-    expect(screen.getByText('12/31/2022')).toBeInTheDocument();
+    // Check for User ID section
+    expect(screen.getByText('User ID')).toBeInTheDocument();
+    expect(screen.getByText('user_123')).toBeInTheDocument();
+
+    // Check for Last Updated section
+    expect(screen.getByText('Last Updated')).toBeInTheDocument();
   });
 
   it('handles missing optional user data', () => {
@@ -79,7 +83,12 @@ describe('ProfileContent', () => {
     expect(screen.getByText('Email')).toBeInTheDocument();
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
 
-    // Username section should not be rendered
+    // Username should not be rendered
     expect(screen.queryByText('@testuser')).not.toBeInTheDocument();
+
+    // Check for fallback avatar (first letter of email)
+    const avatarDiv = screen.getByText('t');
+    expect(avatarDiv).toBeInTheDocument();
+    expect(avatarDiv.classList.contains('rounded-full')).toBe(true);
   });
-}); 
+});

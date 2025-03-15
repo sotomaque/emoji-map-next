@@ -8,44 +8,81 @@ interface ProfileContentProps {
 }
 
 export default function ProfileContent({ user }: ProfileContentProps) {
-
   return (
-    <div className="space-y-4">
-      {user.imageUrl && (
-        <div className="flex justify-center">
+    <div className='flex flex-col md:flex-row gap-8'>
+      {/* Profile image */}
+      <div className='flex-shrink-0'>
+        {user.imageUrl ? (
           <Image
             src={user.imageUrl}
             alt={`${user.firstName}'s profile`}
-            className="w-24 h-24 rounded-full border-2 border-cyan-400"
-            width={96}
-            height={96}
+            className='w-32 h-32 rounded-full border-2 border-cyan-400 shadow-md'
+            width={128}
+            height={128}
           />
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-          <span className="text-gray-500 dark:text-gray-400">Name</span>
-          <span className="font-medium">{user.firstName} {user.lastName}</span>
-        </div>
-
-        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-          <span className="text-gray-500 dark:text-gray-400">Email</span>
-          <span className="font-medium">{user.email}</span>
-        </div>
-
-        {user.username && (
-          <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-            <span className="text-gray-500 dark:text-gray-400">Username</span>
-            <span className="font-medium">@{user.username}</span>
+        ) : (
+          <div className='w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-4xl'>
+            {user.firstName?.charAt(0) || user.email.charAt(0)}
           </div>
         )}
+      </div>
 
-        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2">
-          <span className="text-gray-500 dark:text-gray-400">Member Since</span>
-          <span className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</span>
+      {/* Profile details */}
+      <div className='flex-grow'>
+        <h3 className='text-xl font-semibold mb-4 text-gray-900 dark:text-white'>
+          {user.firstName} {user.lastName}
+          {user.username && (
+            <span className='ml-2 text-sm text-gray-500 dark:text-gray-400'>
+              @{user.username}
+            </span>
+          )}
+        </h3>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='space-y-2'>
+            <div className='flex flex-col'>
+              <span className='text-sm text-gray-500 dark:text-gray-400'>
+                Email
+              </span>
+              <span className='font-medium text-gray-900 dark:text-white'>
+                {user.email}
+              </span>
+            </div>
+
+            <div className='flex flex-col'>
+              <span className='text-sm text-gray-500 dark:text-gray-400'>
+                Member Since
+              </span>
+              <span className='font-medium text-gray-900 dark:text-white'>
+                {new Date(user.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          <div className='space-y-2'>
+            <div className='flex flex-col'>
+              <span className='text-sm text-gray-500 dark:text-gray-400'>
+                User ID
+              </span>
+              <span
+                className='font-medium text-gray-900 dark:text-white truncate'
+                title={user.id}
+              >
+                {user.id}
+              </span>
+            </div>
+
+            <div className='flex flex-col'>
+              <span className='text-sm text-gray-500 dark:text-gray-400'>
+                Last Updated
+              </span>
+              <span className='font-medium text-gray-900 dark:text-white'>
+                {new Date(user.updatedAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-} 
+}

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import FavoritesTable from './favorites-table';
 import type { Favorite } from '@prisma/client';
@@ -34,8 +34,13 @@ describe('FavoritesTable', () => {
     },
   ];
 
+  // Mock function for onViewPlace prop
+  const mockOnViewPlace = vi.fn();
+
   it('renders favorites table with data', () => {
-    render(<FavoritesTable favorites={mockFavorites} />);
+    render(
+      <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
+    );
 
     // Check for the heading with count
     expect(screen.getByText('Your Favorite Places (2)')).toBeInTheDocument();
@@ -55,14 +60,51 @@ describe('FavoritesTable', () => {
   });
 
   it('displays message when no favorites exist', () => {
-    render(<FavoritesTable favorites={[]} />);
+    render(<FavoritesTable favorites={[]} onViewPlace={mockOnViewPlace} />);
 
-    expect(screen.getByText("You haven't favorited any places yet.")).toBeInTheDocument();
+    expect(
+      screen.getByText("You haven't favorited any places yet.")
+    ).toBeInTheDocument();
   });
 
   it('displays message when favorites is undefined', () => {
-    render(<FavoritesTable favorites={undefined} />);
+    render(
+      <FavoritesTable favorites={undefined} onViewPlace={mockOnViewPlace} />
+    );
 
-    expect(screen.getByText("You haven't favorited any places yet.")).toBeInTheDocument();
+    expect(
+      screen.getByText("You haven't favorited any places yet.")
+    ).toBeInTheDocument();
   });
-}); 
+
+  it('calls onViewPlace when View button is clicked', () => {
+    render(
+      <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
+    );
+
+    // Find the first View button and click it
+    const viewButtons = screen.getAllByText('View');
+    fireEvent.click(viewButtons[0]);
+
+    // Check that onViewPlace was called with the correct place ID
+    expect(mockOnViewPlace).toHaveBeenCalledWith('place_1');
+  });
+
+  it('logs to console when Unfavorite button is clicked', () => {
+    const consoleSpy = vi.spyOn(console, 'log');
+
+    render(
+      <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
+    );
+
+    // Find the first Unfavorite button and click it
+    const unfavoriteButtons = screen.getAllByText('Unfavorite');
+    fireEvent.click(unfavoriteButtons[0]);
+
+    // Check that console.log was called with the correct message
+    expect(consoleSpy).toHaveBeenCalledWith('UNFAVORITE CLICKED', 'place_1');
+
+    // Clean up
+    consoleSpy.mockRestore();
+  });
+});

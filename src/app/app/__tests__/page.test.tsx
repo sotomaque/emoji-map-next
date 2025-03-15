@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import AppPage from './page';
+import AppPage from '../page';
 
 // Mock dependencies
 vi.mock('next/navigation', () => ({

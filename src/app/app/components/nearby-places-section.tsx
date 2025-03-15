@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { CATEGORY_MAP } from '@/constants/category-map';
@@ -18,6 +19,7 @@ import {
   RequestUrlDisplay,
   LoadingSpinner,
 } from './ui-components';
+import { useUser } from '../context/user-context';
 import type { NearbyPlacesSectionProps } from './types';
 
 const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
@@ -41,13 +43,8 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   handleGetPhotos,
   handleClearNearbyPlaces,
 }) => {
-  // State to track favorited places
-  const [favoritedPlaces, setFavoritedPlaces] = useState<
-    Record<string, boolean>
-  >({});
-  const [loadingFavorites, setLoadingFavorites] = useState<
-    Record<string, boolean>
-  >({});
+  const user = useUser();
+  const queryClient = useQueryClient();
 
   // Parse the keysQuery string into an array of numbers
   const selectedKeys = keysQuery
@@ -77,67 +74,42 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     setKeysQuery(currentKeys.join('|'));
   };
 
-  // Fetch favorites when places data changes
-  useEffect(() => {
-    if (
-      nearbyPlacesQuery.data?.data &&
-      nearbyPlacesQuery.data.data.length > 0
-    ) {
-      checkFavoriteStatus(nearbyPlacesQuery.data.data);
-    }
-  }, [nearbyPlacesQuery.data]);
-
-  // Check favorite status for all places
-  const checkFavoriteStatus = async (places: Place[]) => {
-    for (const place of places) {
-      try {
-        const response = await fetch(`/api/places/favorite?id=${place.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setFavoritedPlaces((prev) => ({
-            ...prev,
-            [place.id]: data.isFavorite,
-          }));
-        }
-      } catch (error) {
-        console.error(`Error checking favorite status for ${place.id}:`, error);
-      }
-    }
-  };
-
-  // Toggle favorite status
-  const toggleFavorite = async (placeId: string) => {
-    setLoadingFavorites((prev) => ({ ...prev, [placeId]: true }));
-
-    try {
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (placeId: string) => {
       const response = await fetch('/api/places/favorite', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ id: placeId }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const newStatus = data.action === 'added';
-
-        setFavoritedPlaces((prev) => ({
-          ...prev,
-          [placeId]: newStatus,
-        }));
-
-        toast.success(
-          newStatus
-            ? 'Place added to favorites'
-            : 'Place removed from favorites'
-        );
-      } else {
-        toast.error('Failed to update favorite status');
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
       }
-    } catch (error) {
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      const newStatus = data.action === 'added';
+
+      toast.success(
+        newStatus ? 'Place added to favorites' : 'Place removed from favorites'
+      );
+
+      // Invalidate user query to refetch with updated favorites
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+    onError: (error) => {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorite status');
-    } finally {
-      setLoadingFavorites((prev) => ({ ...prev, [placeId]: false }));
-    }
+    },
+  });
+
+  // Toggle favorite status
+  const toggleFavorite = (placeId: string) => {
+    toggleFavoriteMutation.mutate(placeId);
   };
 
   // Construct the request URL for display
@@ -186,8 +158,12 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
   // Helper function to render a place card
   const renderPlaceCard = (place: Place) => {
-    const isFavorited = favoritedPlaces[place.id] || false;
-    const isLoading = loadingFavorites[place.id] || false;
+    const isFavorited =
+      user.favorites?.some((favorite) => favorite.placeId === place.id) ||
+      false;
+    const isLoading =
+      toggleFavoriteMutation.isPending &&
+      toggleFavoriteMutation.variables === place.id;
 
     return (
       <li
