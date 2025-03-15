@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import AppPage from './page';
+import AppPage from '../page';
 
 // Mock dependencies
 vi.mock('next/navigation', () => ({
@@ -26,23 +26,25 @@ vi.mock('sonner', () => ({
 
 // Mock components
 vi.mock('@/app/app/components/nearby-places-section', () => ({
-  default: vi.fn(() => (
+  NearbyPlacesSection: vi.fn(() => (
     <div data-testid='nearby-places-section'>Nearby Places Section</div>
   )),
 }));
 
 vi.mock('@/app/app/components/photos-section', () => ({
-  default: vi.fn(() => <div data-testid='photos-section'>Photos Section</div>),
+  PhotosSection: vi.fn(() => (
+    <div data-testid='photos-section'>Photos Section</div>
+  )),
 }));
 
 vi.mock('@/app/app/components/place-details-section', () => ({
-  default: vi.fn(() => (
+  PlaceDetailsSection: vi.fn(() => (
     <div data-testid='place-details-section'>Place Details Section</div>
   )),
 }));
 
 vi.mock('@/components/ErrorBoundary', () => ({
-  default: vi.fn(({ children }: { children: React.ReactNode }) => (
+  ErrorBoundary: vi.fn(({ children }: { children: React.ReactNode }) => (
     <div data-testid='error-boundary'>{children}</div>
   )),
 }));
@@ -335,5 +337,22 @@ describe('AppPage', () => {
 
     // Verify the query data is set
     expect(queryClient.getQueryData(['photo', 'photo1', false])).toBeTruthy();
+  });
+
+  it('renders the profile link with correct href', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppPage />
+      </QueryClientProvider>
+    );
+
+    // Find the link by its text content
+    const profileLink = screen.getByText('View Profile').closest('a');
+
+    // Assert the link exists
+    expect(profileLink).toBeInTheDocument();
+
+    // Assert the link has the correct href attribute
+    expect(profileLink).toHaveAttribute('href', '/app/profile');
   });
 });

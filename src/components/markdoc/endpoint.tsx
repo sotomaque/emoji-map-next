@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -9,7 +9,7 @@ interface EndpointProps {
   method: HttpMethod;
   path: string;
   description?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**
@@ -19,7 +19,7 @@ interface EndpointProps {
  * @param {HttpMethod} props.method - HTTP method (GET, POST, PUT, DELETE, PATCH)
  * @param {string} props.path - API endpoint path
  * @param {string} [props.description] - Optional description of the endpoint
- * @param {React.ReactNode} props.children - Content with additional endpoint details
+ * @param {ReactNode} props.children - Content with additional endpoint details
  * @returns {JSX.Element} Endpoint component
  */
 export function Endpoint({

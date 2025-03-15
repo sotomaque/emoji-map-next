@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
 } from './ui-components';
 import type { PhotosSectionProps } from './types';
 
-const PhotosSection: React.FC<PhotosSectionProps> = ({
+export const PhotosSection: React.FC<PhotosSectionProps> = ({
   photoId,
   setPhotoId,
   showRawJson,
@@ -263,5 +263,3 @@ const PhotosSection: React.FC<PhotosSectionProps> = ({
     </div>
   );
 };
-
-export default PhotosSection;

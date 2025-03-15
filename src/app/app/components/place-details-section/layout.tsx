@@ -1,5 +1,3 @@
-// Server component for the layout of PlaceDetailsSection
-import React from 'react';
 import {
   HackerCard,
   HackerCardHeader,

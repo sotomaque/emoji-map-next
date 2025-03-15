@@ -1,8 +1,3 @@
-// Server components that don't require client-side interactivity
-// These components can be rendered on the server for better performance
-
-import React from 'react';
-
 // Static UI components that don't need client-side interactivity
 export const HackerTitle = ({ children }: { children: React.ReactNode }) => (
   <div className='font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center space-x-2 text-lg mb-1'>

@@ -31,7 +31,8 @@
     "convert:lodash": "bash scripts/convert-lodash-imports.sh",
     "changeset": "changeset",
     "changeset:create": "node scripts/create-changeset.js",
-    "changeset:version": "changeset version"
+    "changeset:version": "changeset version",
+    "clean": "rm -rf node_modules/.vite && rm -rf .next && rm -rf node_modules"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -63,6 +64,7 @@
     "next-themes": "^0.4.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-use": "^17.6.0",
     "sonner": "^2.0.1",
     "svix": "^1.61.3",
     "tailwind-merge": "^2.6.0",

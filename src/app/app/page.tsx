@@ -1,27 +1,26 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import NearbyPlacesSection from '@/app/app/components/nearby-places-section';
-import PhotosSection from '@/app/app/components/photos-section';
-import PlaceDetailsSection from '@/app/app/components/place-details-section';
+import { NearbyPlacesSection } from '@/app/app/components/nearby-places-section';
+import { PhotosSection } from '@/app/app/components/photos-section';
+import { PlaceDetailsSection } from '@/app/app/components/place-details-section';
 import {
   DEFAULT_LOCATION,
-  DEFAULT_LIMIT,
   DEFAULT_PHOTO_ID,
   DEFAULT_PLACE_ID,
 } from '@/app/app/components/types';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Label } from '@/components/ui/label';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import type { DetailResponse } from '@/types/details';
 import type { PhotosResponse } from '@/types/google-photos';
 import type { PlacesResponse } from '@/types/places';
 
-// Main page component that handles feature flag check
 export default function AppPage() {
   const router = useRouter();
   const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
@@ -33,7 +32,7 @@ export default function AppPage() {
 
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [keysQuery, setKeysQuery] = useState('1|2');
-  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [limit, setLimit] = useState(1);
   const [bypassCache, setBypassCache] = useState(false);
   const [openNow, setOpenNow] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -107,9 +106,6 @@ export default function AppPage() {
       }
 
       try {
-        console.log({
-          locationURL: `/api/places/nearby?${params.toString()}`,
-        });
         const response = await fetch(`/api/places/nearby?${params.toString()}`);
 
         if (!response.ok) {
@@ -333,6 +329,28 @@ export default function AppPage() {
           <span>API_DEBUG_TOOLS</span>
           <span className='ml-2 animate-pulse text-purple-500'>_</span>
         </h1>
+        <div>
+          <Link
+            href='/app/profile'
+            className='text-cyan-400 hover:text-cyan-300 transition-colors font-medium flex items-center'
+          >
+            <span>View Profile</span>
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-4 w-4 ml-1'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M9 5l7 7-7 7'
+              />
+            </svg>
+          </Link>
+        </div>
         <div className='flex items-center space-x-2'>
           <input
             type='checkbox'

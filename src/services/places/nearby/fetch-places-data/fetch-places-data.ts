@@ -70,8 +70,8 @@ export async function fetchPlacesData({
         if (!limit || cachedData.length >= limit) {
           return {
             cacheHit: true,
-            data: cachedData,
-            count: cachedData.length,
+            data: cachedData.slice(0, limit),
+            count: cachedData.slice(0, limit).length,
           };
         }
 

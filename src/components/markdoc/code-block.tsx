@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CodeBlockProps {
   language?: string;
   title?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**

@@ -2,10 +2,40 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import type { ErrorResponse } from '@/types/error-response';
+import { log } from '@/utils/log';
+import type { Favorite, Place } from '@prisma/client';
 
-export async function POST(request: NextRequest) {
+/**
+ * POST handler for favoriting a place
+ * if the place is already favorited, it will be removed from the users favorites
+ * if the place is not favorited, it will first create the place in the database
+ * and then create the favorite relationship
+ *
+ * @param request - The Next.js request object containing the place ID in the body
+ * @returns A NextResponse with:
+ *   - 401 if user is not authenticated
+ *   - 400 if place ID is missing
+ *   - 404 if user is not found
+ *   - 200 with favorite data on success
+ */
+export async function POST(request: NextRequest): Promise<
+  NextResponse<
+    | {
+        message: string;
+        place: Place;
+        favorite: Favorite | null;
+        action: 'added' | 'removed';
+      }
+    | ErrorResponse
+  >
+> {
+  console.log('POST request received');
   const { userId: clerkId } = await auth();
+
   if (!clerkId) {
+    console.log('Unauthorized no clerkId');
+    log.error('Unauthorized no clerkId');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -13,18 +43,27 @@ export async function POST(request: NextRequest) {
     const { id } = await request.json();
 
     if (!id) {
+      console.log('Place ID is required');
+      log.error('Place ID is required');
       return NextResponse.json(
         { error: 'Place ID is required' },
         { status: 400 }
       );
     }
 
+    log.debug('Place ID', { placeId: id });
+    log.debug('Clerk ID', { clerkId });
+
     // Find the user by clerkId
     const user = await prisma.user.findUnique({
-      where: { clerkId },
+      where: { clerkId: clerkId as string },
     });
 
+    console.log('User found', { user });
+
     if (!user) {
+      console.log('User not found', { clerkId });
+      log.error('User not found', { clerkId });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -35,6 +74,8 @@ export async function POST(request: NextRequest) {
 
     // If place doesn't exist, create it
     if (!place) {
+      console.log('Place not found, creating it');
+      log.debug('Place not found, creating it');
       place = await prisma.place.create({
         data: {
           id,
@@ -52,11 +93,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    let action;
-    let favorite;
+    let action: 'added' | 'removed';
+    let favorite: Favorite | null = null;
 
     // If favorite exists, remove it (toggle off)
     if (existingFavorite) {
+      console.log('Favorite exists, removing it');
+      log.debug('Favorite exists, removing it');
       await prisma.favorite.delete({
         where: {
           id: existingFavorite.id,
@@ -65,6 +108,8 @@ export async function POST(request: NextRequest) {
 
       action = 'removed';
     } else {
+      console.log('Favorite does not exist, creating it');
+      log.debug('Favorite does not exist, creating it');
       // If favorite doesn't exist, create it (toggle on)
       favorite = await prisma.favorite.create({
         data: {
@@ -85,7 +130,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch {
+  } catch (error) {
+    log.error('Failed to process favorite', { error });
     return NextResponse.json(
       { error: 'Failed to process favorite' },
       { status: 500 }
@@ -93,10 +139,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// TODO: prob dont want to do this on the current /app route, instead want to query for all given users favorites
-
-// thats one request vs this being 1 request per place
-export async function GET(request: NextRequest) {
+/**
+ * GET endpoint to check if a place is favorited by the authenticated user
+ *
+ * @param request - Next.js request object containing search params with place ID
+ * @returns NextResponse with:
+ *  - 200: {isFavorite: boolean, place: Place, favorite: Favorite | null} if successful
+ *  - 400: {error: string} if place ID missing
+ *  - 401: {error: string} if unauthorized
+ *  - 404: {error: string} if user not found
+ *  - 500: {error: string} if server error
+ */
+export async function GET(request: NextRequest): Promise<
+  NextResponse<
+    | {
+        isFavorite: boolean;
+        place?: Place;
+        favorite?: Favorite | null;
+        message?: string;
+      }
+    | ErrorResponse
+  >
+> {
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
@@ -115,9 +179,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    log.debug('placeId', { placeId });
+
     // Find the user by clerkId
     const user = await prisma.user.findUnique({
-      where: { clerkId },
+      where: { clerkId: clerkId as string },
     });
 
     if (!user) {
@@ -157,7 +223,8 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch {
+  } catch (error) {
+    log.error('Failed to check favorite status', { error });
     return NextResponse.json(
       { error: 'Failed to check favorite status' },
       { status: 500 }

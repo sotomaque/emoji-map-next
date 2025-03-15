@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { CATEGORY_MAP } from '@/constants/category-map';
@@ -18,9 +18,10 @@ import {
   RequestUrlDisplay,
   LoadingSpinner,
 } from './ui-components';
+import { useUserData, useUpdateFavorites } from '../context/user-context';
 import type { NearbyPlacesSectionProps } from './types';
 
-const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
+export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   location,
   setLocation,
   keysQuery,
@@ -41,13 +42,8 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   handleGetPhotos,
   handleClearNearbyPlaces,
 }) => {
-  // State to track favorited places
-  const [favoritedPlaces, setFavoritedPlaces] = useState<
-    Record<string, boolean>
-  >({});
-  const [loadingFavorites, setLoadingFavorites] = useState<
-    Record<string, boolean>
-  >({});
+  const userData = useUserData();
+  const { addFavorite, removeFavorite } = useUpdateFavorites();
 
   // Parse the keysQuery string into an array of numbers
   const selectedKeys = keysQuery
@@ -77,67 +73,70 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     setKeysQuery(currentKeys.join('|'));
   };
 
-  // Fetch favorites when places data changes
-  useEffect(() => {
-    if (
-      nearbyPlacesQuery.data?.data &&
-      nearbyPlacesQuery.data.data.length > 0
-    ) {
-      checkFavoriteStatus(nearbyPlacesQuery.data.data);
-    }
-  }, [nearbyPlacesQuery.data]);
-
-  // Check favorite status for all places
-  const checkFavoriteStatus = async (places: Place[]) => {
-    for (const place of places) {
-      try {
-        const response = await fetch(`/api/places/favorite?id=${place.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setFavoritedPlaces((prev) => ({
-            ...prev,
-            [place.id]: data.isFavorite,
-          }));
-        }
-      } catch (error) {
-        console.error(`Error checking favorite status for ${place.id}:`, error);
-      }
-    }
-  };
-
-  // Toggle favorite status
-  const toggleFavorite = async (placeId: string) => {
-    setLoadingFavorites((prev) => ({ ...prev, [placeId]: true }));
-
-    try {
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (placeId: string) => {
       const response = await fetch('/api/places/favorite', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ id: placeId }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const newStatus = data.action === 'added';
-
-        setFavoritedPlaces((prev) => ({
-          ...prev,
-          [placeId]: newStatus,
-        }));
-
-        toast.success(
-          newStatus
-            ? 'Place added to favorites'
-            : 'Place removed from favorites'
-        );
-      } else {
-        toast.error('Failed to update favorite status');
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status');
       }
-    } catch (error) {
+
+      return response.json();
+    },
+    onSuccess: (data, placeId) => {
+      if (data.action === 'added') {
+        // Create a new favorite object
+        const newFavorite = {
+          id: data.favorite.id,
+          userId: userData.id,
+          placeId: placeId,
+          createdAt: new Date(data.favorite.createdAt),
+        };
+
+        // Add to user context
+        addFavorite(newFavorite);
+        toast.success('Place added to favorites');
+      } else {
+        // Remove from user context
+        removeFavorite(placeId);
+        toast.success('Place removed from favorites');
+      }
+    },
+    onError: (error) => {
       console.error('Error toggling favorite:', error);
       toast.error('Failed to update favorite status');
-    } finally {
-      setLoadingFavorites((prev) => ({ ...prev, [placeId]: false }));
+    },
+  });
+
+  // Toggle favorite status
+  const toggleFavorite = (placeId: string) => {
+    // Check if the place is already favorited
+    const isFavorited =
+      userData.favorites?.some((fav) => fav.placeId === placeId) || false;
+
+    // Optimistically update the UI
+    if (isFavorited) {
+      removeFavorite(placeId);
+    } else {
+      // Create a temporary favorite
+      const tempFavorite = {
+        id: `temp_${placeId}_${Date.now()}`,
+        userId: userData.id,
+        placeId: placeId,
+        createdAt: new Date(),
+      };
+      addFavorite(tempFavorite);
     }
+
+    // Call the mutation
+    toggleFavoriteMutation.mutate(placeId);
   };
 
   // Construct the request URL for display
@@ -186,8 +185,13 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
   // Helper function to render a place card
   const renderPlaceCard = (place: Place) => {
-    const isFavorited = favoritedPlaces[place.id] || false;
-    const isLoading = loadingFavorites[place.id] || false;
+    const isFavorited =
+      userData.favorites?.some((favorite) => favorite.placeId === place.id) ||
+      false;
+
+    const isLoading =
+      toggleFavoriteMutation.isPending &&
+      toggleFavoriteMutation.variables === place.id;
 
     return (
       <li
@@ -567,5 +571,3 @@ const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     </div>
   );
 };
-
-export default NearbyPlacesSection;

@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { getOrCreateUser } from '../../../lib/user-service';
+import type { ErrorResponse } from '@/types/error-response';
+import { log } from '@/utils/log';
+import { getOrCreateUser, getCurrentDbUser } from '../../../lib/user-service';
+import type { User, Favorite } from '@prisma/client';
 
-export async function POST() {
+export async function POST(): Promise<
+  NextResponse<
+    | {
+        user: User;
+      }
+    | ErrorResponse
+  >
+> {
   try {
     const user = await currentUser();
 
@@ -30,23 +40,36 @@ export async function POST() {
   }
 }
 
-export async function GET() {
+export async function GET(): Promise<
+  NextResponse<
+    | {
+        user: User & { favorites?: Favorite[] };
+      }
+    | ErrorResponse
+  >
+> {
   try {
-    const user = await currentUser();
+    // Get the current Clerk user
+    const clerkUser = await currentUser();
 
-    if (!user) {
+    log.debug('clerkUser', { clerkUser });
+    if (!clerkUser) {
+      log.error('Unauthorized no clerkUser');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get or create the user in our database
-    const dbUser = await getOrCreateUser({
-      clerkId: user.id,
-      email: user.emailAddresses[0].emailAddress,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      imageUrl: user.imageUrl,
-    });
+    // Get the user from our database with favorites included
+    const dbUser = await getCurrentDbUser(true); // Pass true to include favorites
+
+    log.debug('dbUser', { dbUser });
+
+    if (!dbUser) {
+      log.error('User not found in database');
+      return NextResponse.json(
+        { error: 'User not found in database' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ user: dbUser });
   } catch (error) {
