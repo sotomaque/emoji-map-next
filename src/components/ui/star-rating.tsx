@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface StarRatingProps {
   rating: number;
   maxRating?: number;

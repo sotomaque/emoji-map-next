@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import type { ReactNode } from 'react';
 import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ type CalloutType = 'note' | 'warning' | 'error' | 'success' | 'info';
 interface CalloutProps {
   type?: CalloutType;
   title?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**

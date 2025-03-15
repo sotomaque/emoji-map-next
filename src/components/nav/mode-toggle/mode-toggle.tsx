@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { useState } from 'react';
 import {
   MoonIcon,
   SunIcon,
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 
 export function ModeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
