@@ -6,9 +6,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   // Optimize image handling

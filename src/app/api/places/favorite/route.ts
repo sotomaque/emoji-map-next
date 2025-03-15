@@ -33,6 +33,7 @@ export async function POST(request: NextRequest): Promise<
   const { userId: clerkId } = await auth();
 
   if (!clerkId) {
+    log.error('Unauthorized no clerkId');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest): Promise<
 
     // If place doesn't exist, create it
     if (!place) {
+      log.debug('Place not found, creating it');
       place = await prisma.place.create({
         data: {
           id,
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest): Promise<
 
     // If favorite exists, remove it (toggle off)
     if (existingFavorite) {
+      log.debug('Favorite exists, removing it');
       await prisma.favorite.delete({
         where: {
           id: existingFavorite.id,
@@ -96,6 +99,7 @@ export async function POST(request: NextRequest): Promise<
 
       action = 'removed';
     } else {
+      log.debug('Favorite does not exist, creating it');
       // If favorite doesn't exist, create it (toggle on)
       favorite = await prisma.favorite.create({
         data: {

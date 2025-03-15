@@ -8,6 +8,7 @@ interface ProfileContentProps {
 }
 
 export default function ProfileContent({ user }: ProfileContentProps) {
+  console.log(user);
   return (
     <div className='flex flex-col md:flex-row gap-8'>
       {/* Profile image */}
