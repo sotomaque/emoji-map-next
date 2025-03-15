@@ -1,7 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server';
+import { log } from '@/utils/log';
 import { prisma } from './db';
 import type { User, Favorite } from '@prisma/client';
-import { log } from '@/utils/log';
 
 /**
  * Get a user by their Clerk ID

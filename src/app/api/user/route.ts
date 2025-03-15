@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import type { ErrorResponse } from '@/types/error-response';
 import { getOrCreateUser, getCurrentDbUser } from '../../../lib/user-service';
 import type { User, Favorite } from '@prisma/client';
+import { log } from '@/utils/log';
 
 export async function POST(): Promise<
   NextResponse<
@@ -14,6 +15,8 @@ export async function POST(): Promise<
 > {
   try {
     const user = await currentUser();
+
+    return NextResponse.json(user, { status: 200 });
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -51,14 +54,19 @@ export async function GET(): Promise<
     // Get the current Clerk user
     const clerkUser = await currentUser();
 
+    log.debug('clerkUser', { clerkUser });
     if (!clerkUser) {
+      log.error('Unauthorized no clerkUser');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get the user from our database with favorites included
     const dbUser = await getCurrentDbUser(true); // Pass true to include favorites
 
+    log.debug('dbUser', { dbUser });
+
     if (!dbUser) {
+      log.error('User not found in database');
       return NextResponse.json(
         { error: 'User not found in database' },
         { status: 404 }
