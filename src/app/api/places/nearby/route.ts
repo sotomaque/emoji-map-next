@@ -17,7 +17,7 @@ import { log } from '@/utils/log';
 // TODO:
 // - add support for filtering by price levels ($, $$, $$$, $$$$)
 // - add support for filtering by minimumRating
-// - add support for filtering by open now ✅ (passing filter though now)
+// - make ios app pass radiusMeters
 
 /**
  * Nearby Places API Route Handler
@@ -27,7 +27,7 @@ import { log } from '@/utils/log';
  * - keys: Category keys to filter places by (defaults to all categories)
  * - openNow: Filter for currently open places
  * - limit: Maximum number of results to return
- * - bufferMiles: Search radius in miles
+ * - radiusMeters: Search radius in meters
  * - bypassCache: Force fresh data fetch
  *
  * The handler:
@@ -50,7 +50,7 @@ export async function GET(
   request: NextRequest
 ): Promise<NextResponse<PlacesResponse | ErrorResponse>> {
   try {
-    const { keys, location, bypassCache, openNow, limit, bufferMiles } =
+    const { keys, location, bypassCache, openNow, limit, radiusMeters } =
       getSearchParams(request);
 
     if (!location) {
@@ -78,7 +78,7 @@ export async function GET(
           location: location!,
           openNow,
           limit,
-          bufferMiles,
+          radiusMeters,
           cacheKey,
           bypassCache,
           keys: keyBatch,
@@ -126,7 +126,7 @@ export async function GET(
       location: location!,
       openNow,
       limit,
-      bufferMiles,
+      radiusMeters,
       cacheKey,
       bypassCache,
       keys,

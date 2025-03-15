@@ -18,8 +18,8 @@ interface Params {
   /** Maximum number of places to return */
   limit?: number;
 
-  /** Buffer distance in miles to extend the search radius */
-  bufferMiles?: number;
+  /** Radius distance in meters */
+  radiusMeters?: number;
 
   /** Array of category keys */
   keys?: number[];
@@ -63,7 +63,7 @@ export async function fetchAndProcessGoogleData({
   location,
   openNow,
   limit,
-  bufferMiles,
+  radiusMeters,
   keys,
 }: Params): Promise<PlacesResponse> {
   // Fetch the data from Google Places API
@@ -72,7 +72,7 @@ export async function fetchAndProcessGoogleData({
     location,
     openNow,
     limit,
-    bufferMiles,
+    radiusMeters,
   });
 
   // Process the response from Google Places API

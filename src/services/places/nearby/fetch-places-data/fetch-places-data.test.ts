@@ -84,7 +84,7 @@ describe('fetchPlacesData', () => {
       location: defaultParams.location,
       openNow: undefined,
       limit: NEARBY_CONFIG.DEFAULT_LIMIT,
-      bufferMiles: NEARBY_CONFIG.DEFAULT_BUFFER_MILES,
+      radiusMeters: NEARBY_CONFIG.DEFAULT_RADIUS_METERS,
     });
     expect(setCacheResults).toHaveBeenCalledWith({
       cacheKey: defaultParams.cacheKey,
@@ -178,24 +178,24 @@ describe('fetchPlacesData', () => {
     expect(setCacheResults).toHaveBeenCalled();
   });
 
-  it('should pass custom limit and bufferMiles to fetchAndProcessGoogleData', async () => {
+  it('should pass custom limit and radiusMeters to fetchAndProcessGoogleData', async () => {
     // GIVEN
     vi.mocked(redis.get).mockResolvedValue(null);
     const customLimit = 5;
-    const customBufferMiles = 2;
+    const customRadiusMeters = 2000;
 
     // WHEN
     await fetchPlacesDataModule.fetchPlacesData({
       ...defaultParams,
       limit: customLimit,
-      bufferMiles: customBufferMiles,
+      radiusMeters: customRadiusMeters,
     });
 
     // THEN
     expect(fetchAndProcessGoogleData).toHaveBeenCalledWith(
       expect.objectContaining({
         limit: customLimit,
-        bufferMiles: customBufferMiles,
+        radiusMeters: customRadiusMeters,
       })
     );
   });

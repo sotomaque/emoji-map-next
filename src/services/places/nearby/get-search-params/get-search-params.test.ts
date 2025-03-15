@@ -28,13 +28,13 @@ describe('getSearchParams', () => {
       bypassCache: undefined,
       keys: [1, 2, 3],
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
   });
 
   it('should parse all parameters correctly', () => {
     const request = createMockRequest(
-      'http://localhost?location=London&openNow=true&bypassCache=true&keys=1&keys=2&keys=3&limit=10&bufferMiles=5'
+      'http://localhost?location=London&openNow=true&bypassCache=true&keys=1&keys=2&keys=3&limit=10&radiusMeters=5'
     );
     const result = getSearchParams(request);
 
@@ -44,7 +44,7 @@ describe('getSearchParams', () => {
       bypassCache: true,
       keys: [1, 2, 3],
       limit: 10,
-      bufferMiles: 5,
+      radiusMeters: 5,
     });
   });
 
@@ -104,18 +104,18 @@ describe('getSearchParams', () => {
     expect(result.limit).toBe(undefined);
   });
 
-  it('should handle bufferMiles parameter correctly', () => {
-    const request = createMockRequest('http://localhost?bufferMiles=15');
+  it('should handle radiusMeters parameter correctly', () => {
+    const request = createMockRequest('http://localhost?radiusMeters=15');
     const result = getSearchParams(request);
 
-    expect(result.bufferMiles).toBe(15);
+    expect(result.radiusMeters).toBe(15);
   });
 
-  it('should handle invalid bufferMiles value', () => {
-    const request = createMockRequest('http://localhost?bufferMiles=abc');
+  it('should handle invalid radiusMeters value', () => {
+    const request = createMockRequest('http://localhost?radiusMeters=abc');
     const result = getSearchParams(request);
 
-    expect(result.bufferMiles).toBe(undefined);
+    expect(result.radiusMeters).toBe(undefined);
   });
 
   it('should set bypassCache to true when parameter is present without value', () => {

@@ -17,7 +17,7 @@ import { env } from '@/env';
 export const NEARBY_CONFIG = {
   // Default limit for the Google Places API
   DEFAULT_LIMIT: 20,
-  DEFAULT_BUFFER_MILES: 15,
+  DEFAULT_RADIUS_METERS: 1000, // 1 km
   DEFAULT_RANK_PREFERENCE: 'DISTANCE',
 
   // Google Places API has a limit of 60 places per request

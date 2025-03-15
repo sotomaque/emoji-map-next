@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { currentUser } from '@clerk/nextjs/server';
 import { env } from '@/env';
 import type { User, Favorite } from '@prisma/client';
 
@@ -12,18 +12,12 @@ export async function getCurrentUser(): Promise<
   (User & { favorites?: Favorite[] }) | null
 > {
   try {
-    // Get cookies for authentication
-    const cookieStore = await cookies();
+    const user = await currentUser();
 
     const response = await fetch(
-      `${env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/user`,
-      {
-        headers: {
-          // Pass the cookie header for authentication
-          cookie: cookieStore.toString(),
-        },
-        cache: 'no-store',
-      }
+      `${env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/user?userId=${
+        user?.id
+      }`
     );
 
     if (!response.ok) {

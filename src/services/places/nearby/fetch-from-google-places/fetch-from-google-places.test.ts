@@ -40,7 +40,7 @@ describe('fetchFromGoogle', () => {
     const result = await fetchFromGoogle({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000, // ~10 miles in meters
     });
 
     // Verify results
@@ -60,7 +60,7 @@ describe('fetchFromGoogle', () => {
     const result = await fetchFromGoogle({
       textQuery: 'nonexistent',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000, // ~10 miles in meters
     });
 
     // Verify results
@@ -81,7 +81,7 @@ describe('fetchFromGoogle', () => {
     const result = await fetchFromGoogle({
       textQuery: 'invalid',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000, // ~10 miles in meters
     });
 
     // Verify results
@@ -99,7 +99,7 @@ describe('fetchFromGoogle', () => {
     const result = await fetchFromGoogle({
       textQuery: 'error',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000, // ~10 miles in meters
     });
 
     // Verify results
@@ -126,7 +126,7 @@ describe('fetchFromGoogle', () => {
     await fetchFromGoogle({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000, // ~10 miles in meters
       limit: 10,
     });
 
@@ -134,7 +134,7 @@ describe('fetchFromGoogle', () => {
     expect(prepareGoogleRequestBody).toHaveBeenCalledWith({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: 10,
+      radiusMeters: 16000,
       openNow: undefined,
       limit: 10,
     });
@@ -165,7 +165,7 @@ describe('fetchFromGoogle', () => {
     expect(prepareGoogleRequestBody).toHaveBeenCalledWith({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: undefined,
+      radiusMeters: undefined,
       openNow: true,
       limit: undefined,
     });
@@ -190,7 +190,7 @@ describe('fetchFromGoogle', () => {
     await fetchFromGoogle({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: 5,
+      radiusMeters: 8000, // ~5 miles in meters
       openNow: true,
       limit: 20,
     });
@@ -199,7 +199,7 @@ describe('fetchFromGoogle', () => {
     expect(prepareGoogleRequestBody).toHaveBeenCalledWith({
       textQuery: 'pizza',
       location: '40.7128,-74.0060',
-      bufferMiles: 5,
+      radiusMeters: 8000,
       openNow: true,
       limit: 20,
     });

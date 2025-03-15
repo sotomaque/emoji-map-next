@@ -1,6 +1,6 @@
 import { NEARBY_CONFIG } from '@/constants/nearby';
-import type { LocationRestriction } from '@/types/geo-types';
-import { createLocationBuffer, isValidLocation } from '@/utils/geo/geo';
+import type { LocationBias } from '@/types/geo-types';
+import { createLocationBias, getValidLocation } from '@/utils/geo/geo';
 import { log } from '@/utils/log';
 
 export interface GoogleRequestBody {
@@ -13,7 +13,7 @@ export interface GoogleRequestBody {
 
   rankPreference?: 'DISTANCE' | 'POPULARITY' | 'RANK_PREFERENCE_UNSPECIFIED';
   openNow?: boolean;
-  locationRestriction?: LocationRestriction;
+  locationBias?: LocationBias;
 }
 
 /**
@@ -31,13 +31,13 @@ export function prepareGoogleRequestBody({
   location,
   openNow,
   limit = NEARBY_CONFIG.DEFAULT_LIMIT,
-  bufferMiles = NEARBY_CONFIG.DEFAULT_BUFFER_MILES,
+  radiusMeters = NEARBY_CONFIG.DEFAULT_RADIUS_METERS,
 }: {
   textQuery: string;
   location: string;
   openNow?: boolean;
   limit?: number;
-  bufferMiles?: number;
+  radiusMeters?: number;
 }): GoogleRequestBody {
   // Initialize the request body
   const requestBody: GoogleRequestBody = {
@@ -53,29 +53,28 @@ export function prepareGoogleRequestBody({
   // Set rankPreference to DISTANCE by default
   requestBody.rankPreference = NEARBY_CONFIG.DEFAULT_RANK_PREFERENCE;
 
-  // Add location restriction if location is valid
-  if (isValidLocation(location)) {
+  const validatedLocation = getValidLocation(location);
+
+  if (validatedLocation) {
+    log.debug(`[API] Valid location: ${location}`);
+
     // Create a buffer around the location
-    const locationBuffer = createLocationBuffer(
+    const locationBias = createLocationBias({
       location,
-      Math.min(bufferMiles, NEARBY_CONFIG.ABSOLUT_MAX_BUFFER_MILES)
-    );
+      radiusMeters,
+    });
 
-    // Add the location buffer as a rectangle restriction if valid
-    if (locationBuffer) {
-      requestBody.locationRestriction = {
-        rectangle: locationBuffer,
+    if (locationBias) {
+      requestBody.locationBias = {
+        circle: locationBias.circle,
       };
-
-      log.debug(
-        `[API] Using locationRestriction with rectangle: SW=(${locationBuffer.low.latitude},${locationBuffer.low.longitude}), NE=(${locationBuffer.high.latitude},${locationBuffer.high.longitude})`
-      );
     }
   } else {
     log.warn(
-      `[API] Invalid location format: ${location}, not using locationRestriction`
+      `[API] Invalid location format: ${location}, not using locationBias`
     );
   }
 
+  log.debug(`[API] Request body: ${JSON.stringify(requestBody)}`);
   return requestBody;
 }

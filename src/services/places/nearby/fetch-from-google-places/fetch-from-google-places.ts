@@ -19,8 +19,8 @@ type Props = {
   /** Maximum number of places to return */
   limit?: number;
 
-  /** Buffer distance in miles to extend the search radius */
-  bufferMiles?: number;
+  /** Radius distance in meters */
+  radiusMeters?: number;
 };
 
 const apiKey = env.GOOGLE_PLACES_API_KEY;
@@ -44,7 +44,7 @@ const path = 'places:searchText';
  * @param props.location - Location in the format "latitude,longitude"
  * @param props.openNow - Whether to only return places that are currently open
  * @param props.limit - Maximum number of places to return
- * @param props.bufferMiles - Buffer distance in miles to extend the search radius
+ * @param props.radiusMeters - Radius distance in meters
  *
  * @returns A {@link GooglePlacesResponse} object containing:
  *   - places: Array of raw Google Place objects
@@ -67,7 +67,7 @@ export async function fetchFromGoogle({
   location,
   openNow,
   limit,
-  bufferMiles,
+  radiusMeters,
 }: Props): Promise<GooglePlacesResponse> {
   try {
     const requestBody = prepareGoogleRequestBody({
@@ -75,7 +75,7 @@ export async function fetchFromGoogle({
       location,
       openNow,
       limit,
-      bufferMiles,
+      radiusMeters,
     });
 
     const url = `${baseUrl}/${path}?key=${apiKey}`;

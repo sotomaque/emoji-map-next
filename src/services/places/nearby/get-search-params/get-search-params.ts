@@ -11,7 +11,7 @@ interface SearchParams {
   openNow?: boolean;
   bypassCache?: boolean;
   limit?: number;
-  bufferMiles?: number;
+  radiusMeters?: number;
 }
 
 /**
@@ -19,6 +19,19 @@ interface SearchParams {
  *
  * @param request - The NextRequest object containing the request details
  * @returns An object containing the validated search parameters
+ *
+ * @example
+ * ```ts
+ * const searchParams = getSearchParams(request);
+ * {
+ *   keys: [1, 2, 3],
+ *   location: '40.7128,-74.0060',
+ *   openNow: true,
+ *   bypassCache: true,
+ *   limit: 10,
+ *   radiusMeters: 10,
+ * }
+ * ```
  *
  * @remarks
  * The `bypassCache` parameter is considered true in any of these cases:
@@ -56,12 +69,12 @@ export function getSearchParams(request: NextRequest): SearchParams {
   // LOCATION
   const location = searchParams.get('location');
 
-  // BUFFER MILES
-  const bufferMilesParam = searchParams.get('bufferMiles');
-  const bufferMiles = isNull(bufferMilesParam)
+  // RADIUS METERS
+  const radiusMetersParam = searchParams.get('radiusMeters');
+  const radiusMeters = isNull(radiusMetersParam)
     ? undefined
-    : Number.isFinite(toNumber(bufferMilesParam))
-    ? toNumber(bufferMilesParam)
+    : Number.isFinite(toNumber(radiusMetersParam))
+    ? toNumber(radiusMetersParam)
     : undefined;
 
   // OPEN NOW
@@ -96,7 +109,7 @@ export function getSearchParams(request: NextRequest): SearchParams {
 
   return {
     location,
-    bufferMiles,
+    radiusMeters,
     openNow,
     bypassCache,
     keys,

@@ -23,7 +23,8 @@ describe('fetchAndProcessGoogleData', () => {
   const mockLocation = '32.8662,-117.2268';
   const mockOpenNow = true;
   const mockLimit = 20;
-  const mockBufferMiles = 10;
+  const mockRadiusMeters = 16000; // ~10 miles in meters
+  const mockKeys = [1, 2, 3];
 
   const mockGoogleResponse: GooglePlacesResponse = {
     places: MOCK_GOOGLE_PLACES,
@@ -47,7 +48,8 @@ describe('fetchAndProcessGoogleData', () => {
       location: mockLocation,
       openNow: mockOpenNow,
       limit: mockLimit,
-      bufferMiles: mockBufferMiles,
+      radiusMeters: mockRadiusMeters,
+      keys: mockKeys,
     });
 
     // Verify fetchFromGoogle was called with correct parameters
@@ -56,13 +58,14 @@ describe('fetchAndProcessGoogleData', () => {
       location: mockLocation,
       openNow: mockOpenNow,
       limit: mockLimit,
-      bufferMiles: mockBufferMiles,
+      radiusMeters: mockRadiusMeters,
     });
 
     // Verify processGoogleResponse was called with correct parameters
     expect(processGoogleResponse).toHaveBeenCalledWith({
       googleData: mockGoogleResponse,
       textQuery: mockTextQuery,
+      keys: mockKeys,
     });
 
     // Verify the result
@@ -113,7 +116,14 @@ describe('fetchAndProcessGoogleData', () => {
       location: mockLocation,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
+    });
+
+    // Verify processGoogleResponse was called with correct parameters
+    expect(processGoogleResponse).toHaveBeenCalledWith({
+      googleData: mockGoogleResponse,
+      textQuery: mockTextQuery,
+      keys: undefined,
     });
 
     // Reset mocks
@@ -126,6 +136,7 @@ describe('fetchAndProcessGoogleData', () => {
       textQuery: mockTextQuery,
       location: mockLocation,
       openNow: true,
+      keys: mockKeys,
     });
 
     // Verify fetchFromGoogle was called with the correct parameters
@@ -134,7 +145,14 @@ describe('fetchAndProcessGoogleData', () => {
       location: mockLocation,
       openNow: true,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
+    });
+
+    // Verify processGoogleResponse was called with correct parameters including keys
+    expect(processGoogleResponse).toHaveBeenCalledWith({
+      googleData: mockGoogleResponse,
+      textQuery: mockTextQuery,
+      keys: mockKeys,
     });
   });
 

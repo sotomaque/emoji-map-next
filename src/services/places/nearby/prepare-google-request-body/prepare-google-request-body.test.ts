@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NEARBY_CONFIG } from '@/constants/nearby';
-import { createLocationBuffer, isValidLocation } from '@/utils/geo/geo';
+import type { GeoPoint } from '@/types/geo-types';
+import { createLocationBias, getValidLocation } from '@/utils/geo/geo';
 import { log } from '@/utils/log';
 import { prepareGoogleRequestBody } from './prepare-google-request-body';
 
 // Mock the geo utilities
 vi.mock('@/utils/geo/geo', () => ({
-  isValidLocation: vi.fn(),
-  createLocationBuffer: vi.fn(),
+  getValidLocation: vi.fn(),
+  createLocationBias: vi.fn(),
+}));
+
+vi.mock('@/utils/log', () => ({
+  log: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+  },
 }));
 
 describe('prepareGoogleRequestBody', () => {
@@ -15,10 +23,13 @@ describe('prepareGoogleRequestBody', () => {
     vi.resetAllMocks();
 
     // Default mock implementations
-    vi.mocked(isValidLocation).mockReturnValue(true);
-    vi.mocked(createLocationBuffer).mockReturnValue({
-      low: { latitude: 40.6, longitude: -74.1 },
-      high: { latitude: 40.8, longitude: -73.9 },
+    const mockGeoPoint: GeoPoint = { latitude: 40.7128, longitude: -74.006 };
+    vi.mocked(getValidLocation).mockReturnValue(mockGeoPoint);
+    vi.mocked(createLocationBias).mockReturnValue({
+      circle: {
+        center: { latitude: 40.7128, longitude: -74.006 },
+        radius: 1000,
+      },
     });
   });
 
@@ -69,54 +80,57 @@ describe('prepareGoogleRequestBody', () => {
     expect(result.openNow).toBeUndefined();
   });
 
-  it('should set locationRestriction when location is valid', () => {
-    // Mock isValidLocation to return true
-    vi.mocked(isValidLocation).mockReturnValue(true);
+  it('should set locationBias when location is valid', () => {
+    // Mock getValidLocation to return a valid GeoPoint
+    const mockGeoPoint: GeoPoint = { latitude: 40.7128, longitude: -74.006 };
+    vi.mocked(getValidLocation).mockReturnValue(mockGeoPoint);
 
-    // Mock createLocationBuffer to return a rectangle
-    const mockBuffer = {
-      low: { latitude: 40.6, longitude: -74.1 },
-      high: { latitude: 40.8, longitude: -73.9 },
+    // Mock createLocationBias to return a circle
+    const mockBias = {
+      circle: {
+        center: { latitude: 40.7128, longitude: -74.006 },
+        radius: 1000,
+      },
     };
-    vi.mocked(createLocationBuffer).mockReturnValue(mockBuffer);
+    vi.mocked(createLocationBias).mockReturnValue(mockBias);
 
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
     });
 
-    // Verify isValidLocation was called with the correct location
-    expect(isValidLocation).toHaveBeenCalledWith('40.7128,-74.0060');
+    // Verify getValidLocation was called with the correct location
+    expect(getValidLocation).toHaveBeenCalledWith('40.7128,-74.0060');
 
-    // Verify createLocationBuffer was called with the correct parameters
-    expect(createLocationBuffer).toHaveBeenCalledWith(
-      '40.7128,-74.0060',
-      NEARBY_CONFIG.DEFAULT_BUFFER_MILES // Since no bufferMiles was provided
-    );
+    // Verify createLocationBias was called with the correct parameters
+    expect(createLocationBias).toHaveBeenCalledWith({
+      location: '40.7128,-74.0060',
+      radiusMeters: NEARBY_CONFIG.DEFAULT_RADIUS_METERS, // Since no radiusMeters was provided
+    });
 
-    // Verify the locationRestriction was set correctly
-    expect(result.locationRestriction).toEqual({
-      rectangle: mockBuffer,
+    // Verify the locationBias was set correctly
+    expect(result.locationBias).toEqual({
+      circle: mockBias.circle,
     });
   });
 
-  it('should not set locationRestriction when location is invalid', () => {
-    // Mock isValidLocation to return false
-    vi.mocked(isValidLocation).mockReturnValue(false);
+  it('should not set locationBias when location is invalid', () => {
+    // Mock getValidLocation to return null for invalid location
+    vi.mocked(getValidLocation).mockReturnValue(null);
 
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: 'invalid',
     });
 
-    // Verify isValidLocation was called with the correct location
-    expect(isValidLocation).toHaveBeenCalledWith('invalid');
+    // Verify getValidLocation was called with the correct location
+    expect(getValidLocation).toHaveBeenCalledWith('invalid');
 
-    // Verify createLocationBuffer was not called
-    expect(createLocationBuffer).not.toHaveBeenCalled();
+    // Verify createLocationBias was not called
+    expect(createLocationBias).not.toHaveBeenCalled();
 
-    // Verify the locationRestriction was not set
-    expect(result.locationRestriction).toBeUndefined();
+    // Verify the locationBias was not set
+    expect(result.locationBias).toBeUndefined();
 
     // Verify a warning was logged
     expect(log.warn).toHaveBeenCalledWith(
@@ -124,35 +138,36 @@ describe('prepareGoogleRequestBody', () => {
     );
   });
 
-  it('should not set locationRestriction when createLocationBuffer returns null', () => {
-    // Mock isValidLocation to return true
-    vi.mocked(isValidLocation).mockReturnValue(true);
+  it('should not set locationBias when createLocationBias returns null', () => {
+    // Mock getValidLocation to return a valid GeoPoint
+    const mockGeoPoint: GeoPoint = { latitude: 40.7128, longitude: -74.006 };
+    vi.mocked(getValidLocation).mockReturnValue(mockGeoPoint);
 
-    // Mock createLocationBuffer to return null
-    vi.mocked(createLocationBuffer).mockReturnValue(null);
+    // Mock createLocationBias to return null
+    vi.mocked(createLocationBias).mockReturnValue(null);
 
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
     });
 
-    // Verify the locationRestriction was not set
-    expect(result.locationRestriction).toBeUndefined();
+    // Verify the locationBias was not set
+    expect(result.locationBias).toBeUndefined();
   });
 
-  it('should use custom buffer size when provided', () => {
-    // Mock createLocationBuffer to verify the buffer size
-    vi.mocked(createLocationBuffer).mockImplementation(
-      (loc, bufferSize = 10) => {
-        // Return a mock buffer with the buffer size in the coordinates for testing
+  it('should use custom radius when provided', () => {
+    // Mock getValidLocation to return a valid GeoPoint
+    const mockGeoPoint: GeoPoint = { latitude: 40.7128, longitude: -74.006 };
+    vi.mocked(getValidLocation).mockReturnValue(mockGeoPoint);
+
+    // Mock createLocationBias to verify the radius
+    vi.mocked(createLocationBias).mockImplementation(
+      (params: { location: string; radiusMeters: number }) => {
+        // Return a mock bias with the radius for testing
         return {
-          low: {
-            latitude: 40 - bufferSize / 100,
-            longitude: -74 - bufferSize / 100,
-          },
-          high: {
-            latitude: 40 + bufferSize / 100,
-            longitude: -74 + bufferSize / 100,
+          circle: {
+            center: { latitude: 40.7128, longitude: -74.006 },
+            radius: params.radiusMeters,
           },
         };
       }
@@ -161,20 +176,16 @@ describe('prepareGoogleRequestBody', () => {
     const result = prepareGoogleRequestBody({
       textQuery: 'coffee',
       location: '40.7128,-74.0060',
-      bufferMiles: 5,
+      radiusMeters: 5000,
     });
 
-    // Verify createLocationBuffer was called with the custom buffer size
-    expect(createLocationBuffer).toHaveBeenCalledWith('40.7128,-74.0060', 5);
+    // Verify createLocationBias was called with the custom radius
+    expect(createLocationBias).toHaveBeenCalledWith({
+      location: '40.7128,-74.0060',
+      radiusMeters: 5000,
+    });
 
-    // Verify the buffer size was used in the result
-    expect(result.locationRestriction?.rectangle.low.latitude).toBeCloseTo(
-      39.95,
-      2
-    );
-    expect(result.locationRestriction?.rectangle.high.latitude).toBeCloseTo(
-      40.05,
-      2
-    );
+    // Verify the radius was used in the result
+    expect(result.locationBias?.circle.radius).toBe(5000);
   });
 });

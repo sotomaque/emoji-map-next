@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from '@/app/api/admin/route';
@@ -5,6 +6,15 @@ import { GET } from '@/app/api/admin/route';
 // Mock the entire Clerk module
 vi.mock('@clerk/nextjs/server', () => ({
   currentUser: vi.fn(),
+}));
+
+// Mock NextResponse
+vi.mock('next/server', () => ({
+  NextResponse: {
+    json: vi.fn((data) => ({
+      json: () => Promise.resolve(data),
+    })),
+  },
 }));
 
 describe('Admin API Route', () => {
@@ -30,6 +40,10 @@ describe('Admin API Route', () => {
     // Verify the response
     expect(data).toEqual({ isAdmin: true });
     expect(currentUser).toHaveBeenCalledTimes(1);
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { isAdmin: true },
+      { status: 200 }
+    );
   });
 
   it('should return isAdmin: false when user does not have admin metadata', async () => {
@@ -49,9 +63,13 @@ describe('Admin API Route', () => {
     // Verify the response
     expect(data).toEqual({ isAdmin: false });
     expect(currentUser).toHaveBeenCalledTimes(1);
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { isAdmin: false },
+      { status: 200 }
+    );
   });
 
-  it('should return isAdmin: undefined when user is null', async () => {
+  it('should return isAdmin: false with status 401 when user is null', async () => {
     // Setup the mock to return null (no user)
     (currentUser as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
       null
@@ -64,7 +82,11 @@ describe('Admin API Route', () => {
     const data = await response.json();
 
     // Verify the response
-    expect(data).toEqual({ isAdmin: undefined });
+    expect(data).toEqual({ isAdmin: false });
     expect(currentUser).toHaveBeenCalledTimes(1);
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { isAdmin: false },
+      { status: 401 }
+    );
   });
 });

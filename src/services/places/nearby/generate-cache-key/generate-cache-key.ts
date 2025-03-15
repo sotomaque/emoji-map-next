@@ -33,7 +33,7 @@ export function generateCacheKey({
   }
 
   // Normalize the location by rounding the coordinates
-  const normalizedLocation = normalizeLocation(location, 4);
+  const normalizedLocation = normalizeLocation(location, 1);
 
   const cacheKey = `${NEARBY_CONFIG.CACHE_KEY}:${NEARBY_CONFIG.CACHE_KEY_VERSION}:${normalizedLocation}`;
 

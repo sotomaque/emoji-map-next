@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
-import {
-  auth,
-  currentUser,
-  type User as ClerkUser,
-} from '@clerk/nextjs/server';
+import type { NextRequest } from 'next/server';
+import { currentUser, type User as ClerkUser } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET, POST } from '@/app/api/user/route';
 import { prisma } from '@/lib/db';
-import { log } from '@/utils/log';
-import type { User } from '@prisma/client';
+import type { User, Favorite } from '@prisma/client';
 
 // Mock dependencies
 vi.mock('@clerk/nextjs/server', () => ({
@@ -25,20 +21,23 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
-vi.mock('@/utils/log', () => ({
-  log: {
-    debug: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+// Create a proper mock for NextRequest
+class MockNextRequest {
+  nextUrl: URL;
+
+  constructor(url: string) {
+    this.nextUrl = new URL(url);
+  }
+}
 
 vi.mock('next/server', () => {
-  const originalModule = vi.importActual('next/server');
   return {
-    ...originalModule,
     NextResponse: {
       json: vi.fn((data, options) => ({ data, options })),
     },
+    NextRequest: vi.fn().mockImplementation((url) => {
+      return new MockNextRequest(url);
+    }),
   };
 });
 
@@ -151,7 +150,7 @@ describe('User API Routes', () => {
         new Error('Database error')
       );
 
-      // Mock console.error to prevent test output pollution
+      // Spy on console.error instead of mocking it
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
@@ -169,37 +168,34 @@ describe('User API Routes', () => {
   });
 
   describe('GET /api/user', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      // Mock auth to return null userId (unauthenticated)
-      // @ts-expect-error Mocking auth
-      vi.mocked(auth).mockResolvedValue({ userId: null });
+    it('should return a 400 if no userId is provided', async () => {
+      const mockRequest = new MockNextRequest('https://example.com/api/user');
 
-      await GET();
+      await GET(mockRequest as unknown as NextRequest);
 
-      expect(log.debug).toHaveBeenCalledWith('userId', { userId: null });
-      expect(log.error).toHaveBeenCalledWith('Unauthorized no userId');
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 400 }
       );
     });
 
     it('should return 404 if user is not found in database', async () => {
-      // Mock authenticated user
-      // @ts-expect-error Mocking auth
-      vi.mocked(auth).mockResolvedValue({ userId: 'user_123' });
+      // Create a mock request with userId
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user?userId=user_123'
+      );
 
       // Mock user not found in database
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
-      await GET();
+      await GET(mockRequest as unknown as NextRequest);
 
-      expect(log.debug).toHaveBeenCalledWith('userId', { userId: 'user_123' });
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user_123' },
+        include: {
+          favorites: true,
+        },
       });
-      expect(log.debug).toHaveBeenCalledWith('dbUser', { dbUser: null });
-      expect(log.error).toHaveBeenCalledWith('User not found in database');
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'User not found in database' },
         { status: 404 }
@@ -207,12 +203,13 @@ describe('User API Routes', () => {
     });
 
     it('should return user if found in database', async () => {
-      // Mock authenticated user
-      // @ts-expect-error Mocking auth
-      vi.mocked(auth).mockResolvedValue({ userId: 'user_123' });
+      // Create a mock request with userId
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user?userId=user_123'
+      );
 
-      // Mock user found in database
-      const mockDbUser: User = {
+      // Mock user found in database with favorites
+      const mockDbUser = {
         id: 'user_123',
         email: 'test@example.com',
         firstName: 'Test',
@@ -221,35 +218,44 @@ describe('User API Routes', () => {
         imageUrl: 'https://example.com/image.jpg',
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
+        favorites: [] as Favorite[],
       };
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockDbUser);
 
-      await GET();
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(
+        mockDbUser as User & { favorites: Favorite[] }
+      );
 
-      expect(log.debug).toHaveBeenCalledWith('userId', { userId: 'user_123' });
+      await GET(mockRequest as unknown as NextRequest);
+
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user_123' },
+        include: {
+          favorites: true,
+        },
       });
-      expect(log.debug).toHaveBeenCalledWith('dbUser', { dbUser: mockDbUser });
-      expect(NextResponse.json).toHaveBeenCalledWith({ user: mockDbUser });
+      expect(NextResponse.json).toHaveBeenCalledWith({
+        user: mockDbUser,
+        status: 200,
+      });
     });
 
     it('should handle errors and return 500 status', async () => {
-      // Mock authenticated user
-      // @ts-expect-error Mocking auth
-      vi.mocked(auth).mockResolvedValue({ userId: 'user_123' });
+      // Create a mock request with userId
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user?userId=user_123'
+      );
 
       // Mock database error
       vi.mocked(prisma.user.findUnique).mockRejectedValue(
         new Error('Database error')
       );
 
-      // Mock console.error to prevent test output pollution
+      // Spy on console.error
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      await GET();
+      await GET(mockRequest as unknown as NextRequest);
 
       expect(consoleErrorSpy).toHaveBeenCalled();
       expect(NextResponse.json).toHaveBeenCalledWith(

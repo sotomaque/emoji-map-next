@@ -19,7 +19,7 @@ import { fetchAndProcessGoogleData } from '../fetch-and-process-google-data/fetc
  * @param props.location - Location in the format "latitude,longitude"
  * @param props.openNow - Whether to only return places that are currently open
  * @param props.limit - Maximum number of places to return (defaults to NEARBY_CONFIG.DEFAULT_LIMIT)
- * @param props.bufferMiles - Buffer distance in miles to extend the search radius (defaults to NEARBY_CONFIG.DEFAULT_BUFFER_MILES)
+ * @param props.radiusMeters - Radius distance in meters to extend the search radius (defaults to NEARBY_CONFIG.DEFAULT_RADIUS_METERS)
  * @param props.cacheKey - Cache key for storing and retrieving results (if null, caching is skipped)
  * @param props.bypassCache - Whether to bypass the cache and fetch directly from the API (defaults to false)
  * @param props.keys - Array of keys for fetching data from Google Places API
@@ -34,7 +34,7 @@ export async function fetchPlacesData({
   location,
   openNow,
   limit = NEARBY_CONFIG.DEFAULT_LIMIT,
-  bufferMiles = NEARBY_CONFIG.DEFAULT_BUFFER_MILES,
+  radiusMeters = NEARBY_CONFIG.DEFAULT_RADIUS_METERS,
   cacheKey,
   bypassCache = false,
   keys,
@@ -43,7 +43,7 @@ export async function fetchPlacesData({
   location: string;
   openNow?: boolean;
   limit?: number;
-  bufferMiles?: number;
+  radiusMeters?: number;
   cacheKey: string | null;
   bypassCache?: boolean;
   keys?: number[];
@@ -103,7 +103,7 @@ export async function fetchPlacesData({
     location,
     openNow,
     limit,
-    bufferMiles,
+    radiusMeters,
     keys,
   });
 

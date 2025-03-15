@@ -2,7 +2,7 @@
  * Utility functions for geographic operations
  */
 
-import type { GeoRectangle } from '@/types/geo-types';
+import type { GeoPoint, LocationBias } from '@/types/geo-types';
 
 /**
  * Validates if a location string is properly formatted
@@ -14,6 +14,13 @@ import type { GeoRectangle } from '@/types/geo-types';
  * - Not be empty
  * - Contain at least one numeric coordinate
  * - If it contains a comma, both parts (latitude and longitude) must be present
+ *
+ * @example
+ * ```ts
+ * isValidLocation('37.7937,-122.3965'); // true
+ * isValidLocation('37.7937'); // false
+ * isValidLocation('37.7937,'); // false
+ * ```
  */
 export function isValidLocation(location: string): boolean {
   if (!location) {
@@ -41,6 +48,37 @@ export function isValidLocation(location: string): boolean {
 }
 
 /**
+ * Returns a valid GeoPoint from a location string
+ *
+ * @param location - The location string to validate
+ * @returns A GeoPoint representing the location, or null if the location is invalid
+ *
+ * @example
+ * ```ts
+ * const geoPoint = getValidLocation('37.7937,-122.3965');
+ * {
+ *   "latitude": 37.7937,
+ *   "longitude": -122.3965
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * const geoPoint = getValidLocation('37.7937'); // null
+ * ```
+ */
+export function getValidLocation(location: string): GeoPoint | null {
+  if (!isValidLocation(location)) {
+    return null;
+  }
+
+  return {
+    latitude: parseFloat(location.split(',')[0]),
+    longitude: parseFloat(location.split(',')[1]),
+  };
+}
+
+/**
  * Checks if a string is a valid latitude value
  *
  * @param latitude - The latitude string to validate
@@ -58,6 +96,12 @@ export function isValidLatitude(latitude: string): boolean {
  *
  * @param longitude - The longitude string to validate
  * @returns True if the longitude is valid, false otherwise
+ *
+ * @example
+ * ```ts
+ * isValidLongitude('122.3965'); // true
+ * isValidLongitude('122.3965'); // false
+ * ```
  */
 export function isValidLongitude(longitude: string): boolean {
   if (!longitude) return false;
@@ -67,46 +111,50 @@ export function isValidLongitude(longitude: string): boolean {
 }
 
 /**
- * Earth radius in miles
- */
-const EARTH_RADIUS_MILES = 3963.19;
-
-/**
- * Convert degrees to radians
+ * Creates a location bias for a given location and radius
  *
- * @param degrees - The angle in degrees
- * @returns The angle in radians
- */
-function degreesToRadians(degrees: number): number {
-  return (degrees * Math.PI) / 180;
-}
-
-/**
- * Convert radians to degrees
+ * Location bias Specifies an area to search. This location serves as
+ * a bias which means results around the specified location can be
+ * returned, including results outside the specified area.
  *
- * @param radians - The angle in radians
- * @returns The angle in degrees
- */
-function radiansToDegrees(radians: number): number {
-  return (radians * 180) / Math.PI;
-}
-
-/**
- * Creates a buffered rectangle around a location point
+ * A circle is defined by center point and radius in meters. The
+ * radius must be between 0.0 and 50000.0, inclusive. The default
+ * radius is 0.0. For example:
+ *
+ * "locationBias": {
+ *   "circle": {
+ *     "center": {
+ *       "latitude": 37.7937,
+ *       "longitude": -122.3965
+ *     },
+ *     "radius": 500.0
+ *   }
+ * }
  *
  * @param location - The location string in format "latitude,longitude"
- * @param bufferMiles - The buffer distance in miles (default: 10)
- * @returns A GeoRectangle representing the buffered area, or null if the location is invalid
+ * @param radiusMeters - The radius in meters
+ * @returns A LocationBias representing the location bias, or null if the location is invalid
  *
- * @remarks
- * This function creates a rectangle around the given point by extending
- * the specified distance in all four directions (north, south, east, west).
- * The calculation takes into account the Earth's curvature.
+ * @example
+ * ```ts
+ * const locationBias = createLocationBias('37.7937,-122.3965', 10);
+ * {
+ *   "circle": {
+ *     "center": {
+ *       "latitude": 37.7937,
+ *       "longitude": -122.3965
+ *     },
+ *     "radius": 16093.4
+ *   }
+ * }
  */
-export function createLocationBuffer(
-  location: string,
-  bufferMiles: number = 10
-): GeoRectangle | null {
+export function createLocationBias({
+  location,
+  radiusMeters,
+}: {
+  location: string;
+  radiusMeters: number;
+}): LocationBias | null {
   // Validate the location
   if (!isValidLocation(location)) {
     return null;
@@ -122,38 +170,13 @@ export function createLocationBuffer(
     return null;
   }
 
-  // Convert latitude and longitude to radians
-  const latRad = degreesToRadians(lat);
-  const lngRad = degreesToRadians(lng);
-
-  // Calculate the angular distance in radians
-  const angularDistance = bufferMiles / EARTH_RADIUS_MILES;
-
-  // Calculate the latitude bounds
-  const latNorth = latRad + angularDistance;
-  const latSouth = latRad - angularDistance;
-
-  // Calculate the longitude bounds
-  // This takes into account that the distance between longitude lines varies with latitude
-  const deltaLng = Math.asin(Math.sin(angularDistance) / Math.cos(latRad));
-  const lngWest = lngRad - deltaLng;
-  const lngEast = lngRad + deltaLng;
-
-  // Convert back to degrees and handle edge cases
-  const northLat = Math.min(radiansToDegrees(latNorth), 90);
-  const southLat = Math.max(radiansToDegrees(latSouth), -90);
-  const westLng = radiansToDegrees(lngWest);
-  const eastLng = radiansToDegrees(lngEast);
-
-  // Create the rectangle
   return {
-    low: {
-      latitude: southLat,
-      longitude: westLng < -180 ? westLng + 360 : westLng,
-    },
-    high: {
-      latitude: northLat,
-      longitude: eastLng > 180 ? eastLng - 360 : eastLng,
+    circle: {
+      center: {
+        latitude: lat,
+        longitude: lng,
+      },
+      radius: radiusMeters,
     },
   };
 }

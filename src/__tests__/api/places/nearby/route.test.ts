@@ -67,7 +67,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     (generateCacheKey as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
@@ -113,7 +113,7 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
       cacheKey: mockCacheKey,
       bypassCache: false,
       keys: mockKeys,
@@ -140,7 +140,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: 20, // Less than cachedResponse.count (25)
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -159,7 +159,7 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: undefined,
       limit: 20,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
       cacheKey: mockCacheKey,
       bypassCache: false,
       keys: mockKeys,
@@ -174,7 +174,7 @@ describe('Places Nearby API', () => {
       bypassCache: true,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -191,7 +191,7 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
       cacheKey: mockCacheKey,
       bypassCache: true,
       keys: mockKeys,
@@ -206,7 +206,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: 10,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -220,7 +220,7 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: undefined,
       limit: 10,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
       cacheKey: mockCacheKey,
       bypassCache: false,
       keys: mockKeys,
@@ -235,7 +235,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -261,7 +261,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -287,7 +287,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: undefined,
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -331,11 +331,11 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: true,
       limit: 20,
-      bufferMiles: 5,
+      radiusMeters: 1000,
     });
 
     const request = new NextRequest(
-      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&openNow=true&limit=20&bufferMiles=5`
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&openNow=true&limit=20&radiusMeters=1000`
     );
 
     await GET(request);
@@ -346,7 +346,7 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: true,
       limit: 20,
-      bufferMiles: 5,
+      radiusMeters: 1000,
       cacheKey: mockCacheKey,
       bypassCache: false,
       keys: mockKeys,
@@ -361,7 +361,7 @@ describe('Places Nearby API', () => {
       bypassCache: false,
       openNow: true, // Set openNow to true
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
     });
 
     const request = new NextRequest(
@@ -375,7 +375,36 @@ describe('Places Nearby API', () => {
       location: mockLocation,
       openNow: true, // Verify openNow is passed as true
       limit: undefined,
-      bufferMiles: undefined,
+      radiusMeters: undefined,
+      cacheKey: mockCacheKey,
+      bypassCache: false,
+      keys: mockKeys,
+    });
+  });
+
+  it('should pass radiusMeters parameter to fetchPlacesData when provided', async () => {
+    // Mock radiusMeters parameter
+    (getSearchParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      keys: mockKeys,
+      location: mockLocation,
+      bypassCache: false,
+      openNow: undefined,
+      limit: undefined,
+      radiusMeters: 2000, // Set radiusMeters to 2000
+    });
+
+    const request = new NextRequest(
+      `https://example.com/api/places/v2?key=1&key=2&location=${mockLocation}&radiusMeters=2000`
+    );
+    await GET(request);
+
+    // Verify radiusMeters was passed to fetchPlacesData
+    expect(fetchPlacesData).toHaveBeenCalledWith({
+      textQuery: mockTextQuery,
+      location: mockLocation,
+      openNow: undefined,
+      limit: undefined,
+      radiusMeters: 2000, // Verify radiusMeters is passed as 2000
       cacheKey: mockCacheKey,
       bypassCache: false,
       keys: mockKeys,
