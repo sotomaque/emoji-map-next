@@ -48,29 +48,57 @@ export const JsonDisplay = ({ data }: { data: any }) => {
 
 // Request URL display component with client-side functionality
 export const RequestUrlDisplay = ({ url }: { url: string }) => {
+  const isPostRequest = url.startsWith('POST ');
+
   const copyToClipboard = () => {
-    navigator.clipboard
-      .writeText(`curl ${url}`)
-      .then(() => {
-        toast.success('cURL command copied to clipboard');
-      })
-      .catch((err) => {
-        console.error('Failed to copy cURL command: ', err);
-        toast.error('Failed to copy cURL command');
-      });
+    // Check if this is a POST request with a body
+    if (isPostRequest) {
+      // Extract the endpoint and body from the display string
+      const [requestLine, ...bodyLines] = url.split('\n');
+      const endpoint = requestLine.replace('POST ', '').trim();
+      const bodyJson = bodyLines.join('\n').replace('Body: ', '');
+
+      // Create a proper cURL command for a POST request with JSON body
+      const curlCommand = `curl -X POST "${endpoint}" -H "Content-Type: application/json" -d '${bodyJson}'`;
+
+      navigator.clipboard
+        .writeText(curlCommand)
+        .then(() => {
+          toast.success('cURL command copied to clipboard');
+        })
+        .catch((err) => {
+          console.error('Failed to copy cURL command: ', err);
+          toast.error('Failed to copy cURL command');
+        });
+    } else {
+      // Handle GET requests (original behavior)
+      navigator.clipboard
+        .writeText(`curl ${url}`)
+        .then(() => {
+          toast.success('cURL command copied to clipboard');
+        })
+        .catch((err) => {
+          console.error('Failed to copy cURL command: ', err);
+          toast.error('Failed to copy cURL command');
+        });
+    }
   };
 
   return (
-    <div className='flex-1 overflow-x-auto group relative'>
-      <pre className='text-xs text-cyan-700 dark:text-cyan-700 font-mono'>
-        $ curl {url}
+    <div className='mt-4 mb-2'>
+      <div className='flex justify-between items-center mb-1'>
+        <h3 className='text-sm font-mono text-cyan-400'>Request URL:</h3>
+        <button
+          onClick={copyToClipboard}
+          className='text-xs text-cyan-500 hover:text-cyan-400 transition-colors'
+          title='Copy as cURL command'
+        >
+          Copy as cURL
+        </button>
+      </div>
+      <pre className='bg-gray-900 p-2 rounded text-xs font-mono text-cyan-300 overflow-x-auto whitespace-pre-wrap'>
+        {url}
       </pre>
-      <button
-        onClick={copyToClipboard}
-        className='opacity-0 group-hover:opacity-100 absolute right-0 top-0 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 px-2 py-1 rounded-sm text-xs font-mono transition-opacity'
-      >
-        [COPY]
-      </button>
     </div>
   );
 };

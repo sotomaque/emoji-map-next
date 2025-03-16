@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { chunk, toNumber } from 'lodash-es';
+import { CATEGORY_MAP } from '@/constants/category-map';
 import { NEARBY_CONFIG } from '@/constants/nearby';
 import { buildTextQueryFromKeys } from '@/services/places/nearby/build-text-query-from-string/build-text-query-from-string';
 import { fetchPlacesData } from '@/services/places/nearby/fetch-places-data/fetch-places-data';
@@ -118,6 +119,13 @@ export async function GET(
     // If we have only one key, make multiple serial requests using pagination
     if (keys && keys.length === 1) {
       const textQuery = buildTextQueryFromKeys(keys);
+      const primaryTypes = Object.values(CATEGORY_MAP)
+        .filter((cat) => keys.includes(cat.key))
+        .map((cat) => cat.primaryType)
+        .join('|');
+
+      log.error('primaryTypes', { primaryTypes });
+
       const cacheKey = generateCacheKey({ location: location!, keys });
 
       // First request (without pageToken)

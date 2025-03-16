@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import type { DetailResponse } from '@/types/details';
 import type { PhotosResponse } from '@/types/google-photos';
 import type { PlacesResponse } from '@/types/places';
@@ -67,6 +68,8 @@ export interface NearbyPlacesSectionProps {
   getCurrentLocation: () => void;
   showRawJson: boolean;
   setShowRawJson: (value: boolean) => void;
+  selectedPriceLevels: number[];
+  setSelectedPriceLevels: Dispatch<SetStateAction<number[]>>;
   nearbyPlacesQuery: UseQueryResult<PlacesResponse, Error>;
   handleGetDetails: (id: string) => void;
   handleGetPhotos: (id: string) => void;

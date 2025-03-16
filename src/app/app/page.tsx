@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useGateValue } from '@statsig/react-bindings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { NearbyPlacesSection } from '@/app/app/components/nearby-places-section';
 import { PhotosSection } from '@/app/app/components/photos-section';
 import { PlaceDetailsSection } from '@/app/app/components/place-details-section';
 import {
@@ -20,6 +19,7 @@ import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import type { DetailResponse } from '@/types/details';
 import type { PhotosResponse } from '@/types/google-photos';
 import type { PlacesResponse } from '@/types/places';
+import { NearbyPlacesSection } from './components/nearby-places-section';
 
 export default function AppPage() {
   const router = useRouter();
@@ -37,6 +37,7 @@ export default function AppPage() {
   const [openNow, setOpenNow] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [selectedPriceLevels, setSelectedPriceLevels] = useState<number[]>([]);
 
   // Individual raw JSON toggles for each section
   const [showRawJsonNearby, setShowRawJsonNearby] = useState(false);
@@ -76,37 +77,45 @@ export default function AppPage() {
       limit,
       bypassCache,
       openNow,
+      selectedPriceLevels,
     ],
     queryFn: async () => {
-      const params = new URLSearchParams();
+      // Parse location string into latitude and longitude
+      const [latitude, longitude] = location.split(',').map(Number);
 
-      // Add location parameter
-      params.append('location', location);
+      // Parse keys from the keysQuery string
+      const keys = keysQuery
+        ? keysQuery
+            .split('|')
+            .map((k) => Number(k.trim()))
+            .filter(Boolean)
+        : undefined;
 
-      // Add keys parameters for each key
-      if (keysQuery) {
-        const keys = keysQuery.split('|').map((k) => k.trim());
-        keys.forEach((key) => {
-          if (key) {
-            params.append('keys', key);
-          }
-        });
-      }
-
-      // Add limit parameter
-      params.append('limit', limit.toString());
-
-      // Add optional parameters
-      if (bypassCache) {
-        params.append('bypassCache', 'true');
-      }
-
-      if (openNow) {
-        params.append('openNow', 'true');
-      }
+      // Prepare request body for the search endpoint
+      const requestBody = {
+        location: {
+          latitude,
+          longitude,
+        },
+        keys,
+        openNow: openNow || undefined,
+        bypassCache,
+        // Include price levels if any are selected
+        ...(selectedPriceLevels.length > 0 && {
+          priceLevels: selectedPriceLevels,
+        }),
+        // Use limit as maxResultCount if provided
+        ...(limit && { maxResultCount: limit }),
+      };
 
       try {
-        const response = await fetch(`/api/places/nearby?${params.toString()}`);
+        const response = await fetch('/api/places/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -115,11 +124,21 @@ export default function AppPage() {
           );
         }
 
-        return response.json() as Promise<PlacesResponse>;
+        const searchResponse = await response.json();
+
+        // Transform the search response to match the expected PlacesResponse format
+        // The NearbyPlacesSection expects data in the format { data: Place[], count: number, cacheHit: boolean }
+        const placesResponse: PlacesResponse = {
+          data: searchResponse.results || [],
+          count: searchResponse.count || 0,
+          cacheHit: searchResponse.cacheHit || false,
+        };
+
+        return placesResponse;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
-        toast.error(`Nearby places query failed: ${errorMessage}`);
+        toast.error(`Places search query failed: ${errorMessage}`);
         throw error;
       }
     },
@@ -386,6 +405,8 @@ export default function AppPage() {
             getCurrentLocation={getCurrentLocation}
             showRawJson={showRawJsonNearby}
             setShowRawJson={setShowRawJsonNearby}
+            selectedPriceLevels={selectedPriceLevels}
+            setSelectedPriceLevels={setSelectedPriceLevels}
             nearbyPlacesQuery={nearbyPlacesQuery}
             handleGetDetails={handleGetDetails}
             handleGetPhotos={handleGetPhotos}
