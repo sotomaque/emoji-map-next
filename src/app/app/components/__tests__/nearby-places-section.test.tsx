@@ -16,6 +16,9 @@ const mockRemoveFavorite = vi.fn();
 // Mock the setSelectedPriceLevels function
 const mockSetSelectedPriceLevels = vi.fn();
 
+// Mock the setMinimumRating function
+const mockSetMinimumRating = vi.fn();
+
 vi.mock('../../context/user-context', () => ({
   useUserData: () => ({
     id: 'user_123',
@@ -83,6 +86,8 @@ describe('NearbyPlacesSection', () => {
     setShowRawJson: vi.fn(),
     selectedPriceLevels: [1, 2],
     setSelectedPriceLevels: mockSetSelectedPriceLevels,
+    minimumRating: null,
+    setMinimumRating: mockSetMinimumRating,
     // @ts-expect-error - Mocking the query result
     nearbyPlacesQuery: {
       data: {
@@ -317,5 +322,33 @@ describe('NearbyPlacesSection', () => {
 
     // Check that setSelectedPriceLevels was called with an empty array
     expect(mockSetSelectedPriceLevels).toHaveBeenCalledWith([]);
+  });
+
+  it('updates minimumRating when input changes', async () => {
+    render(
+      <NearbyPlacesSection {...(mockProps as NearbyPlacesSectionProps)} />
+    );
+
+    // Find the fourth star button (for a rating of 4)
+    const fourthStar = screen.getByLabelText('Set minimum rating to 4 stars');
+
+    // Click the star button
+    await user.click(fourthStar);
+
+    // Check that setMinimumRating was called with the correct value
+    expect(mockSetMinimumRating).toHaveBeenCalledWith(4);
+  });
+
+  it('resets minimumRating when reset button is clicked', async () => {
+    render(
+      <NearbyPlacesSection {...(mockProps as NearbyPlacesSectionProps)} />
+    );
+
+    // Find and click the reset button using userEvent
+    const resetButton = screen.getByText('[RESET]');
+    await user.click(resetButton);
+
+    // Check that setMinimumRating was called with null
+    expect(mockSetMinimumRating).toHaveBeenCalledWith(null);
   });
 });

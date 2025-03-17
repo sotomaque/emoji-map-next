@@ -6,6 +6,12 @@ import { redis } from '@/lib/redis';
 import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
 
+// TODO:
+// in the default case where no keys are provided
+// instead of taking all of our categories primary types and making a bunch of requests
+// lets potentially just hard code the desired type to "food" / "restaurant"
+// or whatever google expect
+
 // Cache configuration
 const CACHE_CONFIG = {
   KEY_PREFIX: 'search',
@@ -181,6 +187,7 @@ const GooglePlaceSchema = z.object({
     })
     .optional(),
   priceLevel: priceLevelEnum.optional().default('PRICE_LEVEL_UNSPECIFIED'),
+  rating: z.number().optional(),
 });
 
 const GooglePlacesResponseSchema = z.object({
@@ -328,8 +335,15 @@ function matchesPriceLevel(
   place: GooglePlaceResult,
   priceLevels?: number[]
 ): boolean {
+  // Debug logging
+  console.log(
+    `Checking place ${place.name} with price level ${place.priceLevel} against requested levels:`,
+    priceLevels
+  );
+
   // If priceLevels is not set or empty, don't filter
   if (!priceLevels || priceLevels.length === 0) {
+    console.log('No price levels specified, not filtering');
     return true;
   }
 
@@ -341,16 +355,25 @@ function matchesPriceLevel(
     priceLevels.includes(3) &&
     priceLevels.includes(4)
   ) {
+    console.log('All price levels selected, not filtering');
     return true;
   }
 
-  // If the place doesn't have a price level or it's unspecified, exclude it
+  // If the place doesn't have a price level or it's unspecified, include it if we're filtering for level 1 (inexpensive)
+  // This is a compromise to avoid filtering out too many places
   if (!place.priceLevel || place.priceLevel === 'PRICE_LEVEL_UNSPECIFIED') {
-    return false;
+    const includeUnspecified = priceLevels.includes(1);
+    console.log(
+      `Place has no price level or unspecified, ${
+        includeUnspecified ? 'including' : 'excluding'
+      } (treating as level 1)`
+    );
+    return includeUnspecified;
   }
 
   // Always include free places regardless of the requested price levels
   if (place.priceLevel === 'PRICE_LEVEL_FREE') {
+    console.log('Place is free, including regardless of filters');
     return true;
   }
 
@@ -370,11 +393,45 @@ function matchesPriceLevel(
       placeNumericLevel = 4;
       break;
     default:
+      console.log('Unknown price level, excluding');
       return false; // Shouldn't happen, but just in case
   }
 
   // Check if the place's price level is in the requested levels
-  return priceLevels.includes(placeNumericLevel);
+  const matches = priceLevels.includes(placeNumericLevel);
+  console.log(`Place numeric level: ${placeNumericLevel}, matches: ${matches}`);
+  return matches;
+}
+
+/**
+ * Checks if a place meets the minimum rating requirement
+ * @param place The Google Place result to check
+ * @param minimumRating The minimum rating to filter by (1-5)
+ * @returns True if the place meets the minimum rating or if minimumRating is not set, false otherwise
+ */
+function meetsMinimumRating(
+  place: GooglePlaceResult,
+  minimumRating?: number
+): boolean {
+  // If minimumRating is not set, don't filter
+  if (minimumRating === undefined) {
+    return true;
+  }
+
+  // If the place doesn't have a rating, exclude it
+  if (place.rating === undefined) {
+    console.log(
+      `Place ${place.name} has no rating, excluding from minimum rating filter`
+    );
+    return false;
+  }
+
+  // Check if the place's rating meets the minimum
+  const meets = place.rating >= minimumRating;
+  console.log(
+    `Place ${place.name} has rating ${place.rating}, minimum required: ${minimumRating}, meets: ${meets}`
+  );
+  return meets;
 }
 
 /**
@@ -511,6 +568,7 @@ async function limitConcurrency<T>(
  * @param openNow Whether to filter for places that are open now
  * @param priceLevels Array of price levels to filter by
  * @param maxResultCount Optional maxResultCount to limit the cached results
+ * @param minimumRating Optional minimum rating to filter by
  * @returns An array of Google Place results
  */
 async function fetchPlacesForKey(
@@ -521,7 +579,8 @@ async function fetchPlacesForKey(
   shouldBypassCache: boolean,
   openNow?: boolean,
   priceLevels?: number[],
-  maxResultCount?: number
+  maxResultCount?: number,
+  minimumRating?: number
 ): Promise<{ places: GooglePlaceResult[]; isCacheHit: boolean }> {
   // Get the category for this key
   const category = CATEGORY_MAP.find((cat) => cat.key === key);
@@ -549,7 +608,15 @@ async function fetchPlacesForKey(
   );
 
   if (cachedPlaces) {
-    return { places: cachedPlaces, isCacheHit };
+    // Filter the cached places based on openNow and priceLevels
+    const filteredCachedPlaces = cachedPlaces.filter(
+      (place) =>
+        isPlaceOpen(place, openNow) &&
+        matchesPriceLevel(place, priceLevels) &&
+        meetsMinimumRating(place, minimumRating)
+    );
+
+    return { places: filteredCachedPlaces, isCacheHit };
   }
 
   // Get primary types for this category
@@ -584,6 +651,7 @@ async function fetchPlacesForKey(
       'places.location',
       'places.currentOpeningHours.openNow',
       'places.priceLevel',
+      'places.rating',
     ].join(',');
     const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${fields}&key=${GOOGLE_API_KEY}`;
 
@@ -633,6 +701,7 @@ async function fetchPlacesForKey(
  * @param shouldBypassCache Whether to bypass the cache
  * @param openNow Whether to filter for places that are open now
  * @param priceLevels Array of price levels to filter by
+ * @param minimumRating Optional minimum rating to filter by
  * @returns An array of Google Place results with their associated keys
  */
 async function fetchPlacesForMultipleKeys(
@@ -642,7 +711,8 @@ async function fetchPlacesForMultipleKeys(
   radius: number,
   shouldBypassCache: boolean,
   openNow?: boolean,
-  priceLevels?: number[]
+  priceLevels?: number[],
+  minimumRating?: number
 ): Promise<{
   places: (GooglePlaceResult & { key?: number })[];
   isCacheHit: boolean;
@@ -665,9 +735,11 @@ async function fetchPlacesForMultipleKeys(
   if (openNow !== undefined) {
     combinedCacheKey += `:openNow=${openNow}`;
   }
-
   if (priceLevels !== undefined && priceLevels.length > 0) {
-    combinedCacheKey += `:priceLevels=${priceLevels.sort().join('-')}`;
+    combinedCacheKey += `:priceLevels=${priceLevels.join('|')}`;
+  }
+  if (minimumRating !== undefined) {
+    combinedCacheKey += `:minimumRating=${minimumRating}`;
   }
 
   // Check combined cache first if not bypassing
@@ -756,6 +828,7 @@ async function fetchPlacesForMultipleKeys(
       'places.location',
       'places.currentOpeningHours.openNow',
       'places.priceLevel',
+      'places.rating',
     ].join(',');
     const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${fields}&key=${GOOGLE_API_KEY}`;
 
@@ -976,6 +1049,7 @@ function groupSimilarCategories(keys: number[]): number[][] {
  * @param {number} req.body.location.longitude - Longitude coordinate
  * @param {boolean} [req.body.stream=false] - Whether to stream results
  * @param {boolean} [req.body.bypassCache=false] - Whether to bypass Redis cache
+ * @param {number} [req.body.minimumRating] - Minimum rating to filter results (integer between 1 and 5 inclusive)
  *
  * @returns {Promise<NextResponse<SearchResponse | ErrorResponse>>} JSON response containing:
  *  - results: Array of transformed place objects with id, location, and emoji
@@ -992,6 +1066,7 @@ export async function POST(
     return await withTimeout(
       async () => {
         const body = await req.json();
+
         const zodSchema = z.object({
           keys: z
             .array(z.number())
@@ -1015,6 +1090,7 @@ export async function POST(
           stream: z.boolean().optional().default(false),
           bypassCache: z.boolean().optional().default(false),
           maxResultCount: z.number().optional(),
+          minimumRating: z.number().min(1).max(5).optional(),
         });
 
         const {
@@ -1026,9 +1102,30 @@ export async function POST(
           stream,
           bypassCache,
           maxResultCount,
+          minimumRating,
         } = zodSchema.parse(body);
 
-        const MAX_RESULTS_PER_REQUEST = 20; // Google's maximum
+        log.debug('Search request', {
+          keys,
+          openNow,
+          priceLevels,
+          radius,
+          location,
+        });
+
+        // Log the minimumRating parameter (not used yet)
+        if (minimumRating !== undefined) {
+          log.debug('Minimum rating parameter received', { minimumRating });
+        }
+
+        // Debug logging for price levels
+        console.log('Search request with price levels:', priceLevels);
+
+        // Log the total number of places before filtering
+        let totalPlacesBeforeFiltering = 0;
+        let totalPlacesAfterFiltering = 0;
+        let placesWithPriceLevelCount = 0;
+        let placesWithoutPriceLevelCount = 0;
 
         // Check if priceLevels contains all possible values [1,2,3,4]
         const hasAllPriceLevels =
@@ -1041,15 +1138,18 @@ export async function POST(
 
         // Determine if we should bypass the cache
         // Always bypass if openNow is provided or if priceLevels is provided but doesn't contain all values
+        // Also bypass if minimumRating is provided
         const shouldBypassCache =
           bypassCache ||
           openNow !== undefined ||
+          minimumRating !== undefined ||
           (priceLevels !== undefined &&
             priceLevels.length > 0 &&
             !hasAllPriceLevels);
 
         if (
           openNow !== undefined ||
+          minimumRating !== undefined ||
           (priceLevels !== undefined &&
             priceLevels.length > 0 &&
             !hasAllPriceLevels)
@@ -1057,6 +1157,7 @@ export async function POST(
           log.debug('Bypassing cache due to dynamic parameters', {
             openNow,
             priceLevels,
+            minimumRating,
           });
         }
 
@@ -1066,7 +1167,7 @@ export async function POST(
           regionCode: 'US',
           includedTypes: [],
           excludedPrimaryTypes: [],
-          maxResultCount: maxResultCount || MAX_RESULTS_PER_REQUEST,
+          maxResultCount: maxResultCount || 20,
         };
 
         // We don't set openNow or maxPriceLevel in the API request
@@ -1133,7 +1234,8 @@ export async function POST(
                   radius,
                   shouldBypassCache,
                   openNow,
-                  priceLevels
+                  priceLevels,
+                  minimumRating
                 );
 
                 // Update cache hit tracking
@@ -1151,6 +1253,9 @@ export async function POST(
 
                   // Skip if the place doesn't match the requested price levels
                   if (!matchesPriceLevel(place, priceLevels)) continue;
+
+                  // Skip if the place doesn't meet the minimum rating
+                  if (!meetsMinimumRating(place, minimumRating)) continue;
 
                   seenIds.add(place.id);
 
@@ -1189,7 +1294,8 @@ export async function POST(
                         shouldBypassCache,
                         openNow,
                         priceLevels,
-                        maxResultCount
+                        maxResultCount,
+                        minimumRating
                       );
                       return {
                         result,
@@ -1204,7 +1310,8 @@ export async function POST(
                         radius,
                         shouldBypassCache,
                         openNow,
-                        priceLevels
+                        priceLevels,
+                        minimumRating
                       );
                       return {
                         result,
@@ -1251,6 +1358,9 @@ export async function POST(
 
                     // Skip if the place doesn't match the requested price levels
                     if (!matchesPriceLevel(place, priceLevels)) continue;
+
+                    // Skip if the place doesn't meet the minimum rating
+                    if (!meetsMinimumRating(place, minimumRating)) continue;
 
                     seenIds.add(place.id);
 
@@ -1331,7 +1441,8 @@ export async function POST(
               radius,
               shouldBypassCache,
               openNow,
-              priceLevels
+              priceLevels,
+              minimumRating
             );
 
             // Update cache hit tracking
@@ -1355,7 +1466,8 @@ export async function POST(
                     shouldBypassCache,
                     openNow,
                     priceLevels,
-                    maxResultCount
+                    maxResultCount,
+                    minimumRating
                   );
 
                   // Add the key to each place
@@ -1376,7 +1488,8 @@ export async function POST(
                     radius,
                     shouldBypassCache,
                     openNow,
-                    priceLevels
+                    priceLevels,
+                    minimumRating
                   );
 
                   return {
@@ -1431,13 +1544,84 @@ export async function POST(
                 .filter(
                   (place) =>
                     isPlaceOpen(place, openNow) &&
-                    matchesPriceLevel(place, priceLevels)
+                    matchesPriceLevel(place, priceLevels) &&
+                    meetsMinimumRating(place, minimumRating)
                 )
                 .map((place) => [place.id, place])
             ).values()
           );
 
+          // Count places with and without price levels
+          totalPlacesBeforeFiltering = allResults.length;
+
+          // Count places with each price level
+          const priceLevelCounts = {
+            PRICE_LEVEL_UNSPECIFIED: 0,
+            PRICE_LEVEL_FREE: 0,
+            PRICE_LEVEL_INEXPENSIVE: 0,
+            PRICE_LEVEL_MODERATE: 0,
+            PRICE_LEVEL_EXPENSIVE: 0,
+            PRICE_LEVEL_VERY_EXPENSIVE: 0,
+            undefined: 0,
+          };
+
+          allResults.forEach((place) => {
+            if (!place.priceLevel) {
+              priceLevelCounts['undefined']++;
+              placesWithoutPriceLevelCount++;
+            } else {
+              priceLevelCounts[place.priceLevel]++;
+              placesWithPriceLevelCount++;
+            }
+          });
+
+          totalPlacesAfterFiltering = uniqueResults.length;
+
+          console.log('Places before filtering:', totalPlacesBeforeFiltering);
+          console.log('Places with price level:', placesWithPriceLevelCount);
+          console.log(
+            'Places without price level:',
+            placesWithoutPriceLevelCount
+          );
+          console.log('Price level distribution:', priceLevelCounts);
+          console.log('Places after filtering:', totalPlacesAfterFiltering);
+          console.log('Requested price levels:', priceLevels);
+
           log.debug('Total unique results', { count: uniqueResults.length });
+
+          // Add rating distribution logging similar to price level distribution
+          // Count places with and without ratings
+          let placesWithRatingCount = 0;
+          let placesWithoutRatingCount = 0;
+
+          // Count places with each rating range
+          const ratingCounts = {
+            'No Rating': 0,
+            '1.0-1.9': 0,
+            '2.0-2.9': 0,
+            '3.0-3.9': 0,
+            '4.0-4.9': 0,
+            '5.0': 0,
+          };
+
+          allResults.forEach((place) => {
+            if (place.rating === undefined) {
+              ratingCounts['No Rating']++;
+              placesWithoutRatingCount++;
+            } else {
+              if (place.rating < 2) ratingCounts['1.0-1.9']++;
+              else if (place.rating < 3) ratingCounts['2.0-2.9']++;
+              else if (place.rating < 4) ratingCounts['3.0-3.9']++;
+              else if (place.rating < 5) ratingCounts['4.0-4.9']++;
+              else ratingCounts['5.0']++;
+              placesWithRatingCount++;
+            }
+          });
+
+          console.log('Places with rating:', placesWithRatingCount);
+          console.log('Places without rating:', placesWithoutRatingCount);
+          console.log('Rating distribution:', ratingCounts);
+          console.log('Minimum rating filter:', minimumRating);
 
           // Transform the results to the desired shape
           const transformedResults: TransformedPlace[] = uniqueResults.map(
@@ -1449,7 +1633,7 @@ export async function POST(
             ? transformedResults.slice(0, maxResultCount)
             : transformedResults;
 
-          // Return the transformed results with cacheHit flag
+          // Update the response object to only include results, cacheHit, and count
           return NextResponse.json({
             results: limitedResults,
             count: limitedResults.length,

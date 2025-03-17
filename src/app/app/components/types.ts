@@ -70,6 +70,8 @@ export interface NearbyPlacesSectionProps {
   setShowRawJson: (value: boolean) => void;
   selectedPriceLevels: number[];
   setSelectedPriceLevels: Dispatch<SetStateAction<number[]>>;
+  minimumRating: number | null;
+  setMinimumRating: Dispatch<SetStateAction<number | null>>;
   nearbyPlacesQuery: UseQueryResult<PlacesResponse, Error>;
   handleGetDetails: (id: string) => void;
   handleGetPhotos: (id: string) => void;

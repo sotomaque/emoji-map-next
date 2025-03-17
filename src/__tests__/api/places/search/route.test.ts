@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/places/search/route';
 import { redis } from '@/lib/redis';
+import { log } from '@/utils/log';
 
 // Mock dependencies
 vi.mock('next/server', () => {
@@ -616,5 +617,26 @@ describe('Places Search API', () => {
         (place: { id: string }) => place.id === 'cached-id-3'
       )
     ).toBe(false);
+  });
+
+  it('should accept minimumRating parameter', async () => {
+    // Mock the log.debug function
+    const debugSpy = vi.spyOn(log, 'debug');
+
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        keys: [1],
+        minimumRating: 4.5,
+      }),
+    });
+
+    await POST(request);
+
+    // Should log the minimumRating parameter
+    expect(debugSpy).toHaveBeenCalledWith('Minimum rating parameter received', {
+      minimumRating: 4.5,
+    });
   });
 });

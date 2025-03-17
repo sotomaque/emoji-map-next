@@ -38,6 +38,7 @@ export default function AppPage() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [selectedPriceLevels, setSelectedPriceLevels] = useState<number[]>([]);
+  const [minimumRating, setMinimumRating] = useState<number | null>(null);
 
   // Individual raw JSON toggles for each section
   const [showRawJsonNearby, setShowRawJsonNearby] = useState(false);
@@ -78,6 +79,7 @@ export default function AppPage() {
       bypassCache,
       openNow,
       selectedPriceLevels,
+      minimumRating,
     ],
     queryFn: async () => {
       // Parse location string into latitude and longitude
@@ -106,6 +108,8 @@ export default function AppPage() {
         }),
         // Use limit as maxResultCount if provided
         ...(limit && { maxResultCount: limit }),
+        // Include minimumRating if provided
+        ...(minimumRating !== null && { minimumRating }),
       };
 
       try {
@@ -407,6 +411,8 @@ export default function AppPage() {
             setShowRawJson={setShowRawJsonNearby}
             selectedPriceLevels={selectedPriceLevels}
             setSelectedPriceLevels={setSelectedPriceLevels}
+            minimumRating={minimumRating}
+            setMinimumRating={setMinimumRating}
             nearbyPlacesQuery={nearbyPlacesQuery}
             handleGetDetails={handleGetDetails}
             handleGetPhotos={handleGetPhotos}

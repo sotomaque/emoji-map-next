@@ -43,6 +43,8 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   handleGetDetails,
   handleGetPhotos,
   handleClearNearbyPlaces,
+  minimumRating,
+  setMinimumRating,
 }) => {
   const userData = useUserData();
   const { addFavorite, removeFavorite } = useUpdateFavorites();
@@ -188,6 +190,8 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
       }),
       // Use limit as maxResultCount if provided
       ...(limit && { maxResultCount: limit }),
+      // Include minimumRating if provided
+      ...(minimumRating !== null && { minimumRating }),
     };
 
     // For display purposes, show both the endpoint and the request body
@@ -290,6 +294,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     setBypassCache(false);
     setOpenNow(false);
     setSelectedPriceLevels([]);
+    setMinimumRating(null);
     setShowRawJson(false);
     handleClearNearbyPlaces(); // Clear the query data
     toast.success('Nearby places form reset');
@@ -472,6 +477,67 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Minimum Rating Filter */}
+          <div className='space-y-3'>
+            <label
+              htmlFor='minimumRating'
+              className='text-sm font-medium text-cyan-400 dark:text-cyan-400 font-mono flex items-center'
+            >
+              Minimum Rating
+              <span className='ml-2 text-xs text-cyan-600 opacity-80'>
+                (select stars)
+              </span>
+            </label>
+            <div className='flex items-center space-x-2'>
+              <div className='flex'>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={`star-${star}`}
+                    className={`text-2xl focus:outline-none transition-colors ${
+                      minimumRating !== null && star <= minimumRating
+                        ? 'text-yellow-400'
+                        : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'
+                    }`}
+                    onClick={() =>
+                      setMinimumRating(minimumRating === star ? null : star)
+                    }
+                    aria-label={`Set minimum rating to ${star} stars`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              {minimumRating !== null && (
+                <span className='ml-2 text-sm text-cyan-400'>
+                  {minimumRating.toFixed(1)}
+                </span>
+              )}
+              {minimumRating !== null && (
+                <button
+                  onClick={() => setMinimumRating(null)}
+                  className='ml-2 text-xs text-cyan-600 hover:text-cyan-400'
+                  aria-label='Clear minimum rating'
+                >
+                  [clear]
+                </button>
+              )}
+            </div>
+            <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+              {minimumRating === null ? (
+                <span className='text-cyan-500 font-medium'>
+                  No minimum rating filter applied
+                </span>
+              ) : (
+                <span>
+                  <span className='text-cyan-500 font-medium'>
+                    Minimum rating:
+                  </span>{' '}
+                  {minimumRating.toFixed(1)} ★
+                </span>
+              )}
+            </div>
           </div>
 
           <div className='flex items-center space-x-3 pt-2'>
