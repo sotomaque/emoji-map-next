@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CATEGORY_MAP } from '@/constants/category-map';
+import { SEARCH_CONFIG } from '@/constants/search';
 import { env } from '@/env';
 import { redis } from '@/lib/redis';
 import type { ErrorResponse } from '@/types/error-response';
@@ -12,14 +13,6 @@ import { log } from '@/utils/log';
 // lets potentially just hard code the desired type to "food" / "restaurant"
 // or whatever google expect
 
-// Cache configuration
-const CACHE_CONFIG = {
-  KEY_PREFIX: 'search',
-  VERSION: 'v1',
-  EXPIRATION_TIME: 24 * 60 * 60 * 1000, // 24 hours in ms
-  LOCATION_DIGIS: 2,
-};
-
 /**
  * Generates a cache key for the search request
  * @param latitude Latitude of the search location
@@ -29,6 +22,9 @@ const CACHE_CONFIG = {
  * @param openNow Whether to filter for places that are open now
  * @param priceLevels Array of price levels to filter by
  * @returns A formatted cache key
+ *
+ * @example
+ * generateCacheKey(37.7749, -122.4194, 1000, 1) // "search:v1:37.77:37.77:-122.42:1000:1"
  */
 function generateCacheKey(
   latitude: number,
@@ -38,11 +34,11 @@ function generateCacheKey(
   openNow?: boolean,
   priceLevels?: number[]
 ): string {
-  // Round coordinates to CACHE_CONFIG.LOCATION_DIGITS decimal places for better cache hits
-  const roundedLat = Number(latitude).toFixed(CACHE_CONFIG.LOCATION_DIGIS);
-  const roundedLng = Number(longitude).toFixed(CACHE_CONFIG.LOCATION_DIGIS);
+  // Round coordinates to SEARCH_CONFIG.LOCATION_DIGITS decimal places for better cache hits
+  const roundedLat = Number(latitude).toFixed(SEARCH_CONFIG.LOCATION_DIGITS);
+  const roundedLng = Number(longitude).toFixed(SEARCH_CONFIG.LOCATION_DIGITS);
 
-  let cacheKey = `${CACHE_CONFIG.KEY_PREFIX}:${CACHE_CONFIG.VERSION}:${roundedLat}:${roundedLng}:${radius}:${key}`;
+  let cacheKey = `${SEARCH_CONFIG.CACHE_KEY}:${SEARCH_CONFIG.CACHE_KEY_VERSION}:${roundedLat}:${roundedLng}:${radius}:${key}`;
 
   // Add optional parameters to the cache key if they're provided
   if (openNow !== undefined) {
@@ -291,7 +287,7 @@ async function cachePlaces(
 
   try {
     await redis.set(cacheKey, places, {
-      ex: CACHE_CONFIG.EXPIRATION_TIME,
+      ex: SEARCH_CONFIG.CACHE_EXPIRATION_TIME,
     });
     log.success(`[CACHE SET] for key ${key}`, { cacheKey });
   } catch (error) {
@@ -718,15 +714,15 @@ async function fetchPlacesForMultipleKeys(
   // Generate a combined cache key for all keys
   // Round coordinates to CACHE_CONFIG.LOCATION_DIGITS decimal places for better cache hits
   const roundedLat = Number(location.latitude).toFixed(
-    CACHE_CONFIG.LOCATION_DIGIS
+    SEARCH_CONFIG.LOCATION_DIGITS
   );
   const roundedLng = Number(location.longitude).toFixed(
-    CACHE_CONFIG.LOCATION_DIGIS
+    SEARCH_CONFIG.LOCATION_DIGITS
   );
 
   // Start with the base key format
-  let combinedCacheKey = `${CACHE_CONFIG.KEY_PREFIX}:${
-    CACHE_CONFIG.VERSION
+  let combinedCacheKey = `${SEARCH_CONFIG.CACHE_KEY}:${
+    SEARCH_CONFIG.CACHE_KEY_VERSION
   }:combined:${roundedLat}:${roundedLng}:${radius}:${keys.join(',')}`;
 
   // Add optional parameters if they're provided, matching the format of individual cache keys
@@ -885,7 +881,7 @@ async function fetchPlacesForMultipleKeys(
   if (allPlaces.length > 0 && !shouldBypassCache) {
     try {
       await redis.set(combinedCacheKey, allPlaces, {
-        ex: CACHE_CONFIG.EXPIRATION_TIME,
+        ex: SEARCH_CONFIG.CACHE_EXPIRATION_TIME,
       });
       log.success(`[CACHE SET] for combined keys`, { combinedCacheKey });
     } catch (error) {
@@ -1041,7 +1037,7 @@ function groupSimilarCategories(keys: number[]): number[][] {
  *   Note: Places with no price level or PRICE_LEVEL_UNSPECIFIED are excluded when this filter is applied.
  *   Places with PRICE_LEVEL_FREE are always included regardless of the requested price levels.
  *   If all price levels [1,2,3,4] are provided, it's treated as if no price level filter was applied.
- * @param {number} [req.body.radius=5000] - Search radius in meters from location
+ * @param {number} [req.body.radius=SEARCH_CONFIG.DEFAULT_RADIUS_METERS] - Search radius in meters from location
  * @param {Object} req.body.location - Center point for location-based search (required)
  * @param {number} req.body.location.latitude - Latitude coordinate
  * @param {number} req.body.location.longitude - Longitude coordinate
@@ -1080,7 +1076,10 @@ export async function POST(
               }
             )
             .optional(),
-          radius: z.number().optional().default(5000),
+          radius: z
+            .number()
+            .optional()
+            .default(SEARCH_CONFIG.DEFAULT_RADIUS_METERS),
           location: z.object({
             latitude: z.number(),
             longitude: z.number(),

@@ -157,7 +157,7 @@ export const internalApiHandlers = [
   }),
 
   // Places API
-  http.get('*/api/places/nearby*', () => {
+  http.get('*/api/places/search*', () => {
     return HttpResponse.json(placesNearbyResponse, { status: 200 });
   }),
 
@@ -184,7 +184,7 @@ export const internalApiHandlers = [
   }),
 
   // Handle missing parameters for API routes
-  http.get('*/api/places/nearby', ({ request }) => {
+  http.get('*/api/places/search', ({ request }) => {
     const url = new URL(request.url);
     if (!url.searchParams.get('location')) {
       return HttpResponse.json(
@@ -207,7 +207,7 @@ export const internalApiHandlers = [
   }),
 
   // Handle server errors
-  http.get('*/api/places/nearby/error', () => {
+  http.get('*/api/places/search/error', () => {
     return HttpResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

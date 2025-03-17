@@ -256,7 +256,7 @@ describe('AppPage', () => {
         params.append('keys', '2');
         params.append('limit', '20');
 
-        const response = await fetch(`/api/places/nearby?${params.toString()}`);
+        const response = await fetch(`/api/places/search?${params.toString()}`);
 
         if (!response.ok) {
           const errorText = await response.text();

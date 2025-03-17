@@ -19,7 +19,7 @@ Our APIs are designed to be simple to use, well-documented, and follow REST prin
 
 #### Endpoints
 
-- [**Nearby Places API**](/docs/api/places/nearby) - Search for places near a specific location with filtering options
+
 - [**Place Details API**](/docs/api/places/details) - Get comprehensive information about a specific place
 - [**Place Photos API**](/docs/api/places/photos) - Retrieve photos for a specific place
 

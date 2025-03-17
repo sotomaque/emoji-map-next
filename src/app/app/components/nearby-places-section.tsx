@@ -310,7 +310,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
             <span>nearby_places_api</span>
           </div>
           <div className='text-cyan-700 dark:text-cyan-700 font-mono text-xs mt-2'>
-            Test the /api/places/nearby endpoint with custom parameters
+            Test the /api/places/search endpoint with custom parameters
           </div>
         </HackerCardHeader>
 
