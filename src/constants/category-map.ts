@@ -44,7 +44,12 @@ export const CATEGORY_MAP = [
     emoji: '🍔',
     name: 'burger',
     keywords: ['fries', 'diner', 'cheeseburger', 'shake', 'grill'],
-    primaryType: ['hamburger_restaurant', 'american_restaurant', 'diner'],
+    primaryType: [
+      'hamburger_restaurant',
+      'american_restaurant',
+      'diner',
+      'fast_food_restaurant',
+    ],
   },
   {
     key: 6,
@@ -124,8 +129,8 @@ export const CATEGORY_MAP = [
     key: 15,
     emoji: '🍗',
     name: 'chicken',
-    keywords: ['fried', 'grilled', 'wings', 'nuggets', 'roast'],
-    primaryType: ['brazilian_restaurant'],
+    keywords: ['fried', 'grilled', 'wings', 'nuggets', 'roast', 'chick'],
+    primaryType: ['brazilian_restaurant', 'fast_food_restaurant'],
   },
   {
     key: 16,
@@ -201,7 +206,6 @@ export const CATEGORY_MAP = [
     keywords: ['restaurant', 'eatery', 'diner', 'cafe', 'bistro'],
     primaryType: ['restaurant', 'food_court', 'buffet_restaurant'],
   },
-  // New entries added based on your list
   {
     key: 26,
     emoji: '🥣',
