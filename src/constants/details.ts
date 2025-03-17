@@ -7,11 +7,11 @@ import { env } from '@/env';
  *
  * @property {string} CACHE_KEY - Redis cache key prefix for place details
  * @property {string} CACHE_KEY_VERSION - Version for cache invalidation
- * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in seconds (1 day)
+ * @property {number} CACHE_EXPIRATION_TIME - Cache TTL in milliseconds (1 day)
  */
 export const DETAILS_CONFIG = {
   // Cache key for the details API
   CACHE_KEY: 'details',
   CACHE_KEY_VERSION: env.DETAILS_CACHE_KEY_VERSION,
-  CACHE_EXPIRATION_TIME: 60 * 60 * 24, // 1 day
+  CACHE_EXPIRATION_TIME: 60 * 60 * 24 * 1000, // 1 day in milliseconds
 } as const;

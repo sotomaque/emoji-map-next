@@ -261,7 +261,7 @@ export const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
                       <div className='space-y-3 mt-4'>
                         {/* Name */}
                         <h3 className='text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500'>
-                          {placeDetailsQuery.data.data.name ||
+                          {placeDetailsQuery.data.data.displayName ||
                             'Name not available'}
                         </h3>
 
@@ -269,6 +269,10 @@ export const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
                           <div className='space-y-1'>
                             {renderDetailField(
                               'Name',
+                              placeDetailsQuery.data.data.displayName
+                            )}
+                            {renderDetailField(
+                              'ID',
                               placeDetailsQuery.data.data.name
                             )}
                             {renderDetailField(

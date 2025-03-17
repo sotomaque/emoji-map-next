@@ -37,10 +37,14 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   getCurrentLocation,
   showRawJson,
   setShowRawJson,
+  selectedPriceLevels,
+  setSelectedPriceLevels,
   nearbyPlacesQuery,
   handleGetDetails,
   handleGetPhotos,
   handleClearNearbyPlaces,
+  minimumRating,
+  setMinimumRating,
 }) => {
   const userData = useUserData();
   const { addFavorite, removeFavorite } = useUpdateFavorites();
@@ -73,6 +77,25 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     setKeysQuery(currentKeys.join('|'));
   };
 
+  // Toggle a price level in the selectedPriceLevels array
+  const togglePriceLevel = (level: number) => {
+    setSelectedPriceLevels((prev: number[]) => {
+      const isSelected = prev.includes(level);
+      if (isSelected) {
+        // Remove the level if it's already selected
+        return prev.filter((l: number) => l !== level);
+      } else {
+        // Add the level if it's not selected
+        return [...prev, level].sort((a, b) => a - b);
+      }
+    });
+  };
+
+  // Helper function to get the display symbol for a price level
+  const getPriceLevelSymbol = (level: number) => {
+    return '$'.repeat(level);
+  };
+
   // Toggle favorite mutation
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (placeId: string) => {
@@ -81,7 +104,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: placeId }),
+        body: JSON.stringify({ id: placeId, userId: userData.id }),
       });
 
       if (!response.ok) {
@@ -139,35 +162,44 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     toggleFavoriteMutation.mutate(placeId);
   };
 
-  // Construct the request URL for display
+  // Construct the request URL and body for display
   const getRequestUrl = () => {
-    const params = new URLSearchParams();
+    // Parse location string into latitude and longitude
+    const [latitude, longitude] = location.split(',').map(Number);
 
-    // Add location parameter
-    params.append('location', location);
+    // Parse keys from the keysQuery string
+    const keys = keysQuery
+      ? keysQuery
+          .split('|')
+          .map((k) => Number(k.trim()))
+          .filter(Boolean)
+      : undefined;
 
-    // Add keys parameters for each key
-    if (keysQuery) {
-      const keys = keysQuery.split('|').map((k) => k.trim());
-      keys.forEach((key) => {
-        if (key) {
-          params.append('keys', key);
-        }
-      });
-    }
+    // Prepare request body for the search endpoint
+    const requestBody = {
+      location: {
+        latitude,
+        longitude,
+      },
+      keys,
+      openNow: openNow || undefined,
+      bypassCache,
+      // Include price levels if any are selected
+      ...(selectedPriceLevels.length > 0 && {
+        priceLevels: selectedPriceLevels,
+      }),
+      // Use limit as maxResultCount if provided
+      ...(limit && { maxResultCount: limit }),
+      // Include minimumRating if provided
+      ...(minimumRating !== null && { minimumRating }),
+    };
 
-    // Add limit parameter
-    params.append('limit', limit.toString());
-
-    if (bypassCache) {
-      params.append('bypassCache', 'true');
-    }
-
-    if (openNow) {
-      params.append('openNow', 'true');
-    }
-
-    return `/api/places/nearby?${params.toString()}`;
+    // For display purposes, show both the endpoint and the request body
+    return `POST /api/places/search\nBody: ${JSON.stringify(
+      requestBody,
+      null,
+      2
+    )}`;
   };
 
   // Helper function to copy text to clipboard
@@ -261,6 +293,8 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
     setLimit(20);
     setBypassCache(false);
     setOpenNow(false);
+    setSelectedPriceLevels([]);
+    setMinimumRating(null);
     setShowRawJson(false);
     handleClearNearbyPlaces(); // Clear the query data
     toast.success('Nearby places form reset');
@@ -276,7 +310,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
             <span>nearby_places_api</span>
           </div>
           <div className='text-cyan-700 dark:text-cyan-700 font-mono text-xs mt-2'>
-            Test the /api/places/nearby endpoint with custom parameters
+            Test the /api/places/search endpoint with custom parameters
           </div>
         </HackerCardHeader>
 
@@ -398,6 +432,112 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
               onChange={(e) => setLimit(parseInt(e.target.value) || 20)}
               placeholder='20'
             />
+          </div>
+
+          {/* Price Level Filter */}
+          <div className='space-y-3'>
+            <label className='text-sm font-medium text-cyan-400 dark:text-cyan-400 font-mono flex items-center'>
+              Price Level
+              <span className='ml-2 text-xs text-cyan-600 opacity-80'>
+                (click to toggle)
+              </span>
+            </label>
+            <div className='flex flex-wrap gap-2'>
+              {[1, 2, 3, 4].map((level) => (
+                <button
+                  key={`price-level-${level}`}
+                  onClick={() => togglePriceLevel(level)}
+                  className={`px-4 py-2 rounded-full text-sm font-mono flex items-center transition-colors ${
+                    selectedPriceLevels.includes(level)
+                      ? 'bg-cyan-800 text-white border border-cyan-600 shadow-[0_0_8px_rgba(8,145,178,0.3)]'
+                      : 'bg-zinc-900 text-cyan-400 border border-zinc-800 hover:bg-zinc-800'
+                  }`}
+                  title={`Price Level ${level}`}
+                >
+                  {getPriceLevelSymbol(level)}
+                </button>
+              ))}
+            </div>
+            {selectedPriceLevels.length > 0 ? (
+              <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+                <span className='text-cyan-500 font-medium'>
+                  Selected price levels:
+                </span>{' '}
+                {selectedPriceLevels.map((level, index) => (
+                  <span key={level} className='inline-flex items-center'>
+                    {index > 0 && <span className='mx-1'>•</span>}
+                    <span>{getPriceLevelSymbol(level)}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+                <span className='text-cyan-500 font-medium'>
+                  No price level filter applied
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Minimum Rating Filter */}
+          <div className='space-y-3'>
+            <label
+              htmlFor='minimumRating'
+              className='text-sm font-medium text-cyan-400 dark:text-cyan-400 font-mono flex items-center'
+            >
+              Minimum Rating
+              <span className='ml-2 text-xs text-cyan-600 opacity-80'>
+                (select stars)
+              </span>
+            </label>
+            <div className='flex items-center space-x-2'>
+              <div className='flex'>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={`star-${star}`}
+                    className={`text-2xl focus:outline-none transition-colors ${
+                      minimumRating !== null && star <= minimumRating
+                        ? 'text-yellow-400'
+                        : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'
+                    }`}
+                    onClick={() =>
+                      setMinimumRating(minimumRating === star ? null : star)
+                    }
+                    aria-label={`Set minimum rating to ${star} stars`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              {minimumRating !== null && (
+                <span className='ml-2 text-sm text-cyan-400'>
+                  {minimumRating.toFixed(1)}
+                </span>
+              )}
+              {minimumRating !== null && (
+                <button
+                  onClick={() => setMinimumRating(null)}
+                  className='ml-2 text-xs text-cyan-600 hover:text-cyan-400'
+                  aria-label='Clear minimum rating'
+                >
+                  [clear]
+                </button>
+              )}
+            </div>
+            <div className='text-xs text-cyan-600 font-mono mt-2 p-2 border border-cyan-900 bg-zinc-950 rounded-md'>
+              {minimumRating === null ? (
+                <span className='text-cyan-500 font-medium'>
+                  No minimum rating filter applied
+                </span>
+              ) : (
+                <span>
+                  <span className='text-cyan-500 font-medium'>
+                    Minimum rating:
+                  </span>{' '}
+                  {minimumRating.toFixed(1)} ★
+                </span>
+              )}
+            </div>
           </div>
 
           <div className='flex items-center space-x-3 pt-2'>

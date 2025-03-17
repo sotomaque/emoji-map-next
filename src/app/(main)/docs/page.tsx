@@ -42,23 +42,6 @@ export default function ApiDocsPage() {
         {/* Quick navigation cards */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-12'>
           <Link
-            href='/docs/api/places/nearby'
-            className='group flex flex-col p-6 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all'
-          >
-            <div className='flex items-center justify-between mb-4'>
-              <div className='p-2 bg-primary/10 rounded-full'>
-                <Map className='h-5 w-5 text-primary' />
-              </div>
-              <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors' />
-            </div>
-            <h3 className='text-lg font-semibold mb-2'>Nearby Places API</h3>
-            <p className='text-muted-foreground text-sm'>
-              Search for places near a specific location with powerful filtering
-              options
-            </p>
-          </Link>
-
-          <Link
             href='/docs/api/places/details'
             className='group flex flex-col p-6 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all'
           >

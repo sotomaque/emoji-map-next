@@ -27,6 +27,7 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   favorites Favorite[] // Relation to favorite places
+  ratings   Rating[] // Relation to ratings for this user
 
   @@index([id])
 }
@@ -40,6 +41,7 @@ model Place {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   favorites   Favorite[] // Relation to users who favorited this place
+  ratings     Rating[] // Relation to ratings for this place
 
   @@index([name])
 }
@@ -54,6 +56,22 @@ model Favorite {
   place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, placeId]) // Prevents duplicate favorites
+  @@index([userId])
+  @@index([placeId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  placeId   String
+  rating    Int // Rating value (e.g., 1-5, validated in application code)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, placeId]) // Prevents duplicate ratings from same user for same place
   @@index([userId])
   @@index([placeId])
 }

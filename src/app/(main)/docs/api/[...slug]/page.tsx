@@ -74,17 +74,6 @@ export default function ApiDocsSlugPage({ params }: ApiDocsPageProps) {
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             {slug[0] === 'places' && (
               <>
-                {slug[1] !== 'nearby' && (
-                  <Link
-                    href='/docs/api/places/nearby'
-                    className='p-4 bg-card rounded-lg border border-border hover:shadow-md transition-all'
-                  >
-                    <h4 className='font-medium mb-2'>Nearby Places API</h4>
-                    <p className='text-sm text-muted-foreground'>
-                      Search for places near a specific location
-                    </p>
-                  </Link>
-                )}
                 {slug[1] !== 'details' && (
                   <Link
                     href='/docs/api/places/details'

@@ -1,9 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Detail } from '@/types/details';
+import { useUserData, useUpdateRatings } from '../../context/user-context';
 
 interface PlaceDetailsProps {
   placeId: string | null;
@@ -21,7 +24,38 @@ const fetchPlaceDetails = async (placeId: string): Promise<Detail> => {
   return data.data;
 };
 
-export default function PlaceDetails({ placeId }: PlaceDetailsProps) {
+// Function to submit a rating
+const submitRating = async ({
+  userId,
+  placeId,
+  rating,
+}: {
+  userId: string;
+  placeId: string;
+  rating: number;
+}) => {
+  const response = await fetch('/api/places/rating', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId, place_id: placeId, rating }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error submitting rating: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export function PlaceDetails({ placeId }: PlaceDetailsProps) {
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
+  const userData = useUserData();
+  const userRating =
+    userData?.ratings?.find((r) => r.placeId === placeId)?.rating || null;
+  const { updateRating } = useUpdateRatings();
+
   const {
     data: placeDetails,
     isLoading,
@@ -35,6 +69,44 @@ export default function PlaceDetails({ placeId }: PlaceDetailsProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1, // Only retry once on failure
   });
+
+  // Mutation for submitting ratings
+  const { mutate: submitUserRating, isPending: isSubmittingRating } =
+    useMutation({
+      mutationFn: submitRating,
+      onSuccess: (data) => {
+        // Show toast notification based on the action
+        if (data.action === 'added') {
+          toast.success(`Rating added: ${data.rating.rating} stars`);
+        } else if (data.action === 'updated') {
+          toast.success(`Rating updated to ${data.rating.rating} stars`);
+        } else if (data.action === 'removed') {
+          toast.success('Rating removed');
+        }
+      },
+      onError: (error) => {
+        toast.error(
+          `Failed to submit rating: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        );
+      },
+    });
+
+  // Function to handle star click
+  const handleStarClick = (rating: number) => {
+    if (!placeId || !userData) return;
+
+    // Optimistically update the user context
+    updateRating(placeId, rating);
+
+    // Submit the rating to the server
+    submitUserRating({
+      userId: userData.id,
+      placeId,
+      rating,
+    });
+  };
 
   if (!placeId) {
     return (
@@ -120,6 +192,51 @@ export default function PlaceDetails({ placeId }: PlaceDetailsProps) {
     return stars;
   };
 
+  // Helper function to render interactive stars
+  const renderInteractiveStars = () => {
+    const stars = [];
+
+    for (let i = 1; i <= 5; i++) {
+      const isSelected =
+        (hoveredStar !== null && i <= hoveredStar) ||
+        (hoveredStar === null && userRating !== null && i <= userRating);
+
+      stars.push(
+        <button
+          key={`star-${i}`}
+          className={`text-2xl focus:outline-none transition-colors ${
+            isSelected
+              ? 'text-yellow-400'
+              : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'
+          }`}
+          onClick={() => handleStarClick(i)}
+          onMouseEnter={() => setHoveredStar(i)}
+          onMouseLeave={() => setHoveredStar(null)}
+          aria-label={`Rate ${i} stars`}
+          disabled={isSubmittingRating}
+        >
+          ★
+        </button>
+      );
+    }
+
+    return (
+      <div className='flex items-center'>
+        <div className='flex'>{stars}</div>
+        {isSubmittingRating && (
+          <span className='ml-2 text-sm text-cyan-500 animate-pulse'>
+            Submitting...
+          </span>
+        )}
+        {userRating && !isSubmittingRating && (
+          <span className='ml-2 text-sm text-gray-500 dark:text-gray-400'>
+            Your rating: {userRating}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   // Helper function to render price level
   const renderPriceLevel = (priceLevel: number | null) => {
     if (priceLevel === null) return 'N/A';
@@ -130,9 +247,12 @@ export default function PlaceDetails({ placeId }: PlaceDetailsProps) {
 
   return (
     <div className='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6'>
-      <h3 className='text-2xl font-semibold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500'>
-        {placeDetails.displayName || placeDetails.name}
-      </h3>
+      <div className='flex justify-between items-center mb-6'>
+        <h3 className='text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500'>
+          {placeDetails.displayName || placeDetails.name}
+        </h3>
+        <div className='flex space-x-1'>{renderInteractiveStars()}</div>
+      </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
         <div>

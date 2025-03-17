@@ -3,7 +3,8 @@ import {
   isValidLocation,
   isValidLatitude,
   isValidLongitude,
-  createLocationBuffer,
+  createLocationBias,
+  getValidLocation,
 } from './geo';
 
 describe('Geo Utilities', () => {
@@ -43,6 +44,30 @@ describe('Geo Utilities', () => {
     it('should return true for location with at least one valid numeric coordinate', () => {
       expect(isValidLocation('40.7128,special')).toBe(true);
       expect(isValidLocation('custom,-74.0060')).toBe(true);
+    });
+  });
+
+  describe('getValidLocation', () => {
+    it('should return null for invalid location', () => {
+      expect(getValidLocation('')).toBeNull();
+      expect(getValidLocation('invalid')).toBeNull();
+      expect(getValidLocation('40.7128')).toBeNull();
+    });
+
+    it('should return a GeoPoint for valid location', () => {
+      const result = getValidLocation('40.7128,-74.0060');
+      expect(result).not.toBeNull();
+      expect(result).toEqual({
+        latitude: 40.7128,
+        longitude: -74.006,
+      });
+    });
+
+    it('should handle locations with one valid coordinate', () => {
+      const result = getValidLocation('40.7128,invalid');
+      expect(result).not.toBeNull();
+      expect(result?.latitude).toBe(40.7128);
+      expect(isNaN(result?.longitude as number)).toBe(true);
     });
   });
 
@@ -112,79 +137,108 @@ describe('Geo Utilities', () => {
     });
   });
 
-  describe('createLocationBuffer', () => {
+  describe('createLocationBias', () => {
     it('should return null for invalid location', () => {
-      expect(createLocationBuffer('')).toBeNull();
-      expect(createLocationBuffer('invalid')).toBeNull();
-      expect(createLocationBuffer('40.7128')).toBeNull();
-      expect(createLocationBuffer(',45.123')).toBeNull();
-      expect(createLocationBuffer('40.7128,')).toBeNull();
+      expect(
+        createLocationBias({ location: '', radiusMeters: 1000 })
+      ).toBeNull();
+      expect(
+        createLocationBias({ location: 'invalid', radiusMeters: 1000 })
+      ).toBeNull();
+      expect(
+        createLocationBias({ location: '40.7128', radiusMeters: 1000 })
+      ).toBeNull();
+      expect(
+        createLocationBias({ location: ',45.123', radiusMeters: 1000 })
+      ).toBeNull();
+      expect(
+        createLocationBias({ location: '40.7128,', radiusMeters: 1000 })
+      ).toBeNull();
     });
 
     it('should return null for location with non-numeric coordinates', () => {
-      expect(createLocationBuffer('abc,def')).toBeNull();
+      expect(
+        createLocationBias({ location: 'abc,def', radiusMeters: 1000 })
+      ).toBeNull();
     });
 
-    it('should create a buffer around a valid location with default buffer size', () => {
-      const result = createLocationBuffer('40.7128,-74.0060');
+    it('should create a location bias with the specified radius', () => {
+      const result = createLocationBias({
+        location: '40.7128,-74.0060',
+        radiusMeters: 1000,
+      });
 
       expect(result).not.toBeNull();
       if (result) {
-        // Check that the buffer is roughly 10 miles in each direction
-        expect(result.low.latitude).toBeLessThan(40.7128);
-        expect(result.high.latitude).toBeGreaterThan(40.7128);
-        expect(result.low.longitude).toBeLessThan(-74.006);
-        expect(result.high.longitude).toBeGreaterThan(-74.006);
-
-        // Check that the original point is inside the buffer
-        expect(40.7128).toBeGreaterThan(result.low.latitude);
-        expect(40.7128).toBeLessThan(result.high.latitude);
-        expect(-74.006).toBeGreaterThan(result.low.longitude);
-        expect(-74.006).toBeLessThan(result.high.longitude);
+        expect(result.circle.center.latitude).toBe(40.7128);
+        expect(result.circle.center.longitude).toBe(-74.006);
+        expect(result.circle.radius).toBe(1000);
       }
     });
 
-    it('should create a buffer with custom buffer size', () => {
-      const smallBuffer = createLocationBuffer('40.7128,-74.0060', 5);
-      const largeBuffer = createLocationBuffer('40.7128,-74.0060', 20);
+    it('should create location biases with different radii', () => {
+      const smallBias = createLocationBias({
+        location: '40.7128,-74.0060',
+        radiusMeters: 500,
+      });
 
-      expect(smallBuffer).not.toBeNull();
-      expect(largeBuffer).not.toBeNull();
+      const largeBias = createLocationBias({
+        location: '40.7128,-74.0060',
+        radiusMeters: 5000,
+      });
 
-      if (smallBuffer && largeBuffer) {
-        // The large buffer should be bigger than the small buffer
-        expect(largeBuffer.low.latitude).toBeLessThan(smallBuffer.low.latitude);
-        expect(largeBuffer.high.latitude).toBeGreaterThan(
-          smallBuffer.high.latitude
+      expect(smallBias).not.toBeNull();
+      expect(largeBias).not.toBeNull();
+
+      if (smallBias && largeBias) {
+        // The centers should be the same
+        expect(smallBias.circle.center).toEqual(largeBias.circle.center);
+
+        // The large bias should have a larger radius
+        expect(largeBias.circle.radius).toBeGreaterThan(
+          smallBias.circle.radius
         );
-        expect(largeBuffer.low.longitude).toBeLessThan(
-          smallBuffer.low.longitude
-        );
-        expect(largeBuffer.high.longitude).toBeGreaterThan(
-          smallBuffer.high.longitude
-        );
+        expect(smallBias.circle.radius).toBe(500);
+        expect(largeBias.circle.radius).toBe(5000);
       }
     });
 
     it('should handle edge cases near poles and date line', () => {
       // Near North Pole
-      const northPole = createLocationBuffer('89,-120', 200);
+      const northPole = createLocationBias({
+        location: '89,-120',
+        radiusMeters: 10000,
+      });
+
       expect(northPole).not.toBeNull();
       if (northPole) {
-        expect(northPole.high.latitude).toBeLessThanOrEqual(90);
+        expect(northPole.circle.center.latitude).toBe(89);
+        expect(northPole.circle.center.longitude).toBe(-120);
       }
 
       // Near South Pole
-      const southPole = createLocationBuffer('-89,60', 200);
+      const southPole = createLocationBias({
+        location: '-89,60',
+        radiusMeters: 10000,
+      });
+
       expect(southPole).not.toBeNull();
       if (southPole) {
-        expect(southPole.low.latitude).toBeGreaterThanOrEqual(-90);
+        expect(southPole.circle.center.latitude).toBe(-89);
+        expect(southPole.circle.center.longitude).toBe(60);
       }
 
       // Near Date Line
-      const dateLine = createLocationBuffer('40,179', 200);
+      const dateLine = createLocationBias({
+        location: '40,179',
+        radiusMeters: 10000,
+      });
+
       expect(dateLine).not.toBeNull();
-      // We don't need to check specific values here, just that it doesn't throw
+      if (dateLine) {
+        expect(dateLine.circle.center.latitude).toBe(40);
+        expect(dateLine.circle.center.longitude).toBe(179);
+      }
     });
   });
 });

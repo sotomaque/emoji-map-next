@@ -13,4 +13,7 @@ export type CachedResponse<T> = {
 
   /** The number of items in the response */
   count: number;
+
+  /** Token for fetching the next page of results (if available) */
+  nextPageToken?: string;
 };

@@ -12,7 +12,7 @@ interface FavoritesTableProps {
   onViewPlace: (placeId: string) => void;
 }
 
-export default function FavoritesTable({
+export function FavoritesTable({
   favorites,
   onViewPlace,
 }: FavoritesTableProps) {
@@ -27,7 +27,7 @@ export default function FavoritesTable({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: placeId }),
+        body: JSON.stringify({ id: placeId, userId: userData.id }),
       });
 
       if (!response.ok) {
