@@ -7,6 +7,22 @@ import { redis } from '@/lib/redis';
 import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
 
+// TODO for tomoro
+// BETTER EMOJI MATCHING
+// IE MCDONALDS matches coffee instead of burger
+// DAVES HOT CHICKEN matches restaurant instead of chicken
+// SAME WITH CHICK FILA
+const FIELDS = [
+  'places.name',
+  'places.id',
+  'places.types',
+  'places.location',
+  'places.currentOpeningHours.openNow',
+  'places.priceLevel',
+  'places.rating',
+  'places.displayName.text',
+].join(',');
+
 // TODO:
 // in the default case where no keys are provided
 // instead of taking all of our categories primary types and making a bunch of requests
@@ -184,6 +200,11 @@ const GooglePlaceSchema = z.object({
     .optional(),
   priceLevel: priceLevelEnum.optional().default('PRICE_LEVEL_UNSPECIFIED'),
   rating: z.number().optional(),
+  displayName: z
+    .object({
+      text: z.string(),
+    })
+    .optional(),
 });
 
 const GooglePlacesResponseSchema = z.object({
@@ -638,16 +659,7 @@ async function fetchPlacesForKey(
       categoryName: category.name,
     });
 
-    const fields = [
-      'places.name',
-      'places.id',
-      'places.types',
-      'places.location',
-      'places.currentOpeningHours.openNow',
-      'places.priceLevel',
-      'places.rating',
-    ].join(',');
-    const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${fields}&key=${GOOGLE_API_KEY}`;
+    const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${FIELDS}&key=${GOOGLE_API_KEY}`;
 
     log.debug('Search URL', { searchUrl });
 
@@ -815,16 +827,7 @@ async function fetchPlacesForMultipleKeys(
       }
     );
 
-    const fields = [
-      'places.name',
-      'places.id',
-      'places.types',
-      'places.location',
-      'places.currentOpeningHours.openNow',
-      'places.priceLevel',
-      'places.rating',
-    ].join(',');
-    const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${fields}&key=${GOOGLE_API_KEY}`;
+    const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${FIELDS}&key=${GOOGLE_API_KEY}`;
 
     try {
       // Use fetchWithRetry instead of direct fetch

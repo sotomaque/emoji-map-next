@@ -38,7 +38,7 @@ export async function POST(request: NextRequest): Promise<
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const placeId = params?.place_id || params?.id;
+  const placeId = params?.place_id || params?.placeId || params?.id;
 
   if (!placeId) {
     log.error('Place ID is required');
