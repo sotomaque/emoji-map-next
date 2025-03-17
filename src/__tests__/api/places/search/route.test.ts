@@ -639,4 +639,312 @@ describe('Places Search API', () => {
       minimumRating: 4.5,
     });
   });
+
+  // New tests to prevent regression of the maxResultCount bug
+  it('should request more results from Google when filtering by price level', async () => {
+    // Mock API response with multiple places
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Test Place 1',
+              id: 'place-id-1',
+              types: ['restaurant'],
+              location: { latitude: 37.775, longitude: -122.419 },
+              priceLevel: 'PRICE_LEVEL_EXPENSIVE',
+              currentOpeningHours: { openNow: true },
+            },
+            {
+              name: 'Test Place 2',
+              id: 'place-id-2',
+              types: ['restaurant'],
+              location: { latitude: 37.776, longitude: -122.418 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+            },
+            {
+              name: 'Test Place 3',
+              id: 'place-id-3',
+              types: ['restaurant'],
+              location: { latitude: 37.777, longitude: -122.417 },
+              priceLevel: 'PRICE_LEVEL_INEXPENSIVE',
+              currentOpeningHours: { openNow: true },
+            },
+          ],
+        }),
+      }
+    );
+
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        keys: [1],
+        priceLevels: [3], // Only PRICE_LEVEL_EXPENSIVE (3)
+        maxResultCount: 1, // Limit to 1 result
+      }),
+    });
+
+    await POST(request);
+
+    // Should request maximum results from Google (20) when filtering
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"maxResultCount":20'),
+      })
+    );
+
+    // Should only include places with matching price level and respect maxResultCount
+    expect(NextResponse.json).toHaveBeenCalledWith({
+      cacheHit: false,
+      count: 1,
+      results: [
+        expect.objectContaining({
+          id: 'place-id-1', // Only the expensive place
+          emoji: expect.any(String),
+          location: expect.any(Object),
+        }),
+      ],
+    });
+  });
+
+  it('should request more results from Google when filtering by openNow', async () => {
+    // Mock API response with multiple places
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Test Place 1',
+              id: 'place-id-1',
+              types: ['restaurant'],
+              location: { latitude: 37.775, longitude: -122.419 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+            },
+            {
+              name: 'Test Place 2',
+              id: 'place-id-2',
+              types: ['restaurant'],
+              location: { latitude: 37.776, longitude: -122.418 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: false },
+            },
+            {
+              name: 'Test Place 3',
+              id: 'place-id-3',
+              types: ['restaurant'],
+              location: { latitude: 37.777, longitude: -122.417 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+            },
+          ],
+        }),
+      }
+    );
+
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        keys: [1],
+        openNow: true,
+        maxResultCount: 1, // Limit to 1 result
+      }),
+    });
+
+    await POST(request);
+
+    // Should request maximum results from Google (20) when filtering
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"maxResultCount":20'),
+      })
+    );
+
+    // Should only include places that are open and respect maxResultCount
+    expect(NextResponse.json).toHaveBeenCalledWith({
+      cacheHit: false,
+      count: 1,
+      results: [
+        expect.objectContaining({
+          id: 'place-id-1', // Only the first open place
+          emoji: expect.any(String),
+          location: expect.any(Object),
+        }),
+      ],
+    });
+  });
+
+  it('should request more results from Google when filtering by minimumRating', async () => {
+    // Mock API response with multiple places with ratings
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Test Place 1',
+              id: 'place-id-1',
+              types: ['restaurant'],
+              location: { latitude: 37.775, longitude: -122.419 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+              rating: 4.8,
+            },
+            {
+              name: 'Test Place 2',
+              id: 'place-id-2',
+              types: ['restaurant'],
+              location: { latitude: 37.776, longitude: -122.418 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+              rating: 3.5,
+            },
+            {
+              name: 'Test Place 3',
+              id: 'place-id-3',
+              types: ['restaurant'],
+              location: { latitude: 37.777, longitude: -122.417 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+              rating: 4.6,
+            },
+          ],
+        }),
+      }
+    );
+
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        keys: [1],
+        minimumRating: 4.5,
+        maxResultCount: 1, // Limit to 1 result
+      }),
+    });
+
+    await POST(request);
+
+    // Should request maximum results from Google (20) when filtering
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"maxResultCount":20'),
+      })
+    );
+
+    // Should only include places with rating >= 4.5 and respect maxResultCount
+    expect(NextResponse.json).toHaveBeenCalledWith({
+      cacheHit: false,
+      count: 1,
+      results: [
+        expect.objectContaining({
+          id: 'place-id-1', // Only the first place with high rating
+          emoji: expect.any(String),
+          location: expect.any(Object),
+        }),
+      ],
+    });
+  });
+
+  it('should apply multiple filters correctly with maxResultCount', async () => {
+    // Mock API response with multiple places with various attributes
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      {
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Test Place 1',
+              id: 'place-id-1',
+              types: ['restaurant'],
+              location: { latitude: 37.775, longitude: -122.419 },
+              priceLevel: 'PRICE_LEVEL_EXPENSIVE',
+              currentOpeningHours: { openNow: true },
+              rating: 4.8,
+            },
+            {
+              name: 'Test Place 2',
+              id: 'place-id-2',
+              types: ['restaurant'],
+              location: { latitude: 37.776, longitude: -122.418 },
+              priceLevel: 'PRICE_LEVEL_EXPENSIVE',
+              currentOpeningHours: { openNow: false },
+              rating: 4.9,
+            },
+            {
+              name: 'Test Place 3',
+              id: 'place-id-3',
+              types: ['restaurant'],
+              location: { latitude: 37.777, longitude: -122.417 },
+              priceLevel: 'PRICE_LEVEL_MODERATE',
+              currentOpeningHours: { openNow: true },
+              rating: 4.7,
+            },
+            {
+              name: 'Test Place 4',
+              id: 'place-id-4',
+              types: ['restaurant'],
+              location: { latitude: 37.778, longitude: -122.416 },
+              priceLevel: 'PRICE_LEVEL_EXPENSIVE',
+              currentOpeningHours: { openNow: true },
+              rating: 4.6,
+            },
+          ],
+        }),
+      }
+    );
+
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        keys: [1],
+        priceLevels: [3], // Only PRICE_LEVEL_EXPENSIVE (3)
+        openNow: true,
+        minimumRating: 4.5,
+        maxResultCount: 1, // Limit to 1 result
+      }),
+    });
+
+    await POST(request);
+
+    // Should request maximum results from Google (20) when filtering
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"maxResultCount":20'),
+      })
+    );
+
+    // Should only include places that match all filters and respect maxResultCount
+    expect(NextResponse.json).toHaveBeenCalledWith({
+      cacheHit: false,
+      count: 1,
+      results: [
+        expect.objectContaining({
+          id: 'place-id-1', // Only the first place matching all criteria
+          emoji: expect.any(String),
+          location: expect.any(Object),
+        }),
+      ],
+    });
+
+    // Verify that only one result is returned even though two places match all filters
+    const jsonCall = (NextResponse.json as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(jsonCall.results.length).toBe(1);
+    expect(
+      jsonCall.results.some(
+        (place: { id: string }) => place.id === 'place-id-4'
+      )
+    ).toBe(false);
+  });
 });

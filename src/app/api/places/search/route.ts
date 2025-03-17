@@ -245,14 +245,12 @@ function transformPlace(
  * @param cacheKey The cache key to check
  * @param key The category key
  * @param shouldBypassCache Whether to bypass the cache
- * @param maxResultCount Optional maxResultCount to limit the cached results
  * @returns An object containing the cached places (if any) and whether it was a cache hit
  */
 async function checkCache(
   cacheKey: string,
   key: number,
-  shouldBypassCache: boolean,
-  maxResultCount?: number
+  shouldBypassCache: boolean
 ): Promise<{ cachedPlaces: GooglePlaceResult[] | null; isCacheHit: boolean }> {
   if (shouldBypassCache) {
     return { cachedPlaces: null, isCacheHit: false };
@@ -263,13 +261,8 @@ async function checkCache(
     if (cachedPlaces && cachedPlaces.length > 0) {
       log.success(`[CACHE HIT] for key ${key}`, { cacheKey });
 
-      // Limit cached results if maxResultCount is provided
-      const limitedCachedPlaces =
-        maxResultCount && maxResultCount > 0
-          ? cachedPlaces.slice(0, maxResultCount)
-          : cachedPlaces;
-
-      return { cachedPlaces: limitedCachedPlaces, isCacheHit: true };
+      // Don't limit cached results here - we'll filter first and then limit
+      return { cachedPlaces: cachedPlaces, isCacheHit: true };
     }
     log.debug(`[CACHE MISS] for key ${key}`, { cacheKey });
     return { cachedPlaces: null, isCacheHit: false };
@@ -603,8 +596,7 @@ async function fetchPlacesForKey(
   const { cachedPlaces, isCacheHit } = await checkCache(
     cacheKey,
     key,
-    shouldBypassCache,
-    maxResultCount
+    shouldBypassCache
   );
 
   if (cachedPlaces) {
@@ -616,7 +608,13 @@ async function fetchPlacesForKey(
         meetsMinimumRating(place, minimumRating)
     );
 
-    return { places: filteredCachedPlaces, isCacheHit };
+    // Apply maxResultCount after filtering
+    const limitedPlaces =
+      maxResultCount && maxResultCount > 0
+        ? filteredCachedPlaces.slice(0, maxResultCount)
+        : filteredCachedPlaces;
+
+    return { places: limitedPlaces, isCacheHit };
   }
 
   // Get primary types for this category
@@ -1167,12 +1165,17 @@ export async function POST(
           regionCode: 'US',
           includedTypes: [],
           excludedPrimaryTypes: [],
-          maxResultCount: maxResultCount || 20,
+          // Use the user's maxResultCount when no filters are applied,
+          // but use 20 (Google's max) when we need to filter client-side
+          maxResultCount:
+            openNow !== undefined ||
+            minimumRating !== undefined ||
+            (priceLevels !== undefined &&
+              priceLevels.length > 0 &&
+              !hasAllPriceLevels)
+              ? 20 // Use max when filters are applied
+              : maxResultCount || 20, // Use user's value or default when no filters
         };
-
-        // We don't set openNow or maxPriceLevel in the API request
-        // Instead, we'll filter the results based on these parameters in our code
-        // The Google Places API doesn't directly support these filters in the way we need
 
         baseSearchParams.locationRestriction = {
           circle: {
@@ -1632,6 +1635,15 @@ export async function POST(
           const limitedResults = maxResultCount
             ? transformedResults.slice(0, maxResultCount)
             : transformedResults;
+
+          // Log the filtering process
+          console.log(`Original results from Google: ${allResults.length}`);
+          console.log(
+            `After filtering (price/open/rating): ${transformedResults.length}`
+          );
+          console.log(
+            `After applying maxResultCount (${maxResultCount}): ${limitedResults.length}`
+          );
 
           // Update the response object to only include results, cacheHit, and count
           return NextResponse.json({
