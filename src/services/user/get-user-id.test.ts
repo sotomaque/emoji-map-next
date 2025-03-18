@@ -20,6 +20,9 @@ vi.mock('@/env', () => ({
 vi.mock('@/utils/log', () => ({
   log: {
     error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -80,8 +83,49 @@ describe('getUserId', () => {
     mockRequest = new NextRequest('https://example.com');
 
     // Act & Assert
-    await expect(getUserId(mockRequest)).rejects.toThrow('Unauthorized');
-    expect(log.error).toHaveBeenCalledWith('Unauthorized no token');
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Missing authorization header'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Unauthorized: No authorization header provided'
+    );
+    expect(createClerkClient).not.toHaveBeenCalled();
+  });
+
+  it('should throw an error when authorization header has invalid format', async () => {
+    // Arrange - Create request with invalid authorization header format
+    mockRequest = new NextRequest('https://example.com', {
+      headers: {
+        authorization: 'InvalidFormat mock-token',
+      },
+    });
+
+    // Act & Assert
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Invalid authorization header format'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Unauthorized: Invalid authorization header format'
+    );
+    expect(createClerkClient).not.toHaveBeenCalled();
+  });
+
+  it('should throw an error when token is empty', async () => {
+    // Arrange - Create request with empty token but still valid format
+    // Note: The implementation actually treats 'Bearer ' as an invalid format rather than empty token
+    mockRequest = new NextRequest('https://example.com', {
+      headers: {
+        authorization: 'Bearer ',
+      },
+    });
+
+    // Act & Assert
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Invalid authorization header format'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Unauthorized: Invalid authorization header format'
+    );
     expect(createClerkClient).not.toHaveBeenCalled();
   });
 
@@ -91,22 +135,45 @@ describe('getUserId', () => {
     mockAuthenticateRequest.mockResolvedValueOnce({ toAuth: nullUserIdAuth });
 
     // Act & Assert
-    await expect(getUserId(mockRequest)).rejects.toThrow('Unauthorized');
-    expect(log.error).toHaveBeenCalledWith('Unauthorized no userId');
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Authentication successful but no user ID found'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Unauthorized: Valid token but no userId returned'
+    );
     expect(createClerkClient).toHaveBeenCalled();
     expect(mockAuthenticateRequest).toHaveBeenCalled();
   });
 
-  it('should throw an error when authentication fails', async () => {
+  it('should throw an error when Clerk authentication fails', async () => {
     // Arrange
-    const mockError = new Error('Authentication failed');
+    const mockError = new Error('Clerk error message');
     mockAuthenticateRequest.mockRejectedValueOnce(mockError);
 
     // Act & Assert
     await expect(getUserId(mockRequest)).rejects.toThrow(
-      'Authentication failed'
+      'Unauthorized: Authentication failed - Clerk error message'
     );
-    expect(log.error).toHaveBeenCalledWith('Error fetching user:', mockError);
+    expect(log.error).toHaveBeenCalledWith(
+      'Clerk authentication error:',
+      mockError
+    );
+    expect(createClerkClient).toHaveBeenCalled();
+  });
+
+  it('should handle non-Error objects from Clerk authentication', async () => {
+    // Arrange - Simulate a non-Error object being thrown
+    const nonErrorObject = 'Just a string error';
+    mockAuthenticateRequest.mockRejectedValueOnce(nonErrorObject);
+
+    // Act & Assert
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Authentication failed - Unknown clerk error'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Clerk authentication error:',
+      nonErrorObject
+    );
     expect(createClerkClient).toHaveBeenCalled();
   });
 
@@ -116,7 +183,11 @@ describe('getUserId', () => {
     mockAuthenticateRequest.mockResolvedValueOnce({ toAuth: emptyAuthFn });
 
     // Act & Assert
-    await expect(getUserId(mockRequest)).rejects.toThrow('Unauthorized');
-    expect(log.error).toHaveBeenCalledWith('Unauthorized no userId');
+    await expect(getUserId(mockRequest)).rejects.toThrow(
+      'Unauthorized: Authentication successful but no user ID found'
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      'Unauthorized: Valid token but no userId returned'
+    );
   });
 });

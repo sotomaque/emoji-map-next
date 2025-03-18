@@ -11,6 +11,7 @@ type UserResponse = {
     favorites?: Favorite[];
     ratings?: Rating[];
   };
+  status: number;
 };
 
 // GET /api/user
@@ -22,30 +23,79 @@ export async function GET(
   request: NextRequest
 ): Promise<NextResponse<UserResponse | ErrorResponse>> {
   try {
-    const userId = await getUserId(request);
+    log.info('User API called, validating auth token...');
+    let userId;
 
-    // check if user exists in our database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        favorites: true,
-        ratings: true,
-      },
-    });
-
-    if (!dbUser) {
-      log.error('User not found in database');
+    try {
+      userId = await getUserId(request);
+      log.info(`Auth successful, userId: ${userId}`);
+    } catch (authError) {
+      log.error('Authentication failed in /api/user:', authError);
       return NextResponse.json(
-        { error: 'User not found in database' },
-        { status: 404 }
+        {
+          error: 'Authentication failed',
+          message:
+            authError instanceof Error
+              ? authError.message
+              : 'Unknown auth error',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json({ user: dbUser, status: 200 });
+    // check if user exists in our database
+    log.info(`Looking for user ${userId} in database...`);
+
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          favorites: true,
+          ratings: true,
+        },
+      });
+
+      if (!dbUser) {
+        log.error(`User ${userId} not found in database`);
+        return NextResponse.json(
+          {
+            error: 'User not found in database',
+            userId: userId,
+            timestamp: new Date().toISOString(),
+          },
+          { status: 404 }
+        );
+      }
+
+      log.info(`User ${userId} found, returning data`);
+      // Make sure we're returning the exact structure expected by the Zod schema
+      return NextResponse.json({
+        user: dbUser,
+        status: 200,
+      });
+    } catch (dbError) {
+      log.error('Database error when fetching user:', dbError);
+      return NextResponse.json(
+        {
+          error: 'Database error',
+          message:
+            dbError instanceof Error
+              ? dbError.message
+              : 'Unknown database error',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error fetching user:', error);
+    log.error('Unexpected error in /api/user:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch user' },
+      {
+        error: 'Failed to fetch user',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }

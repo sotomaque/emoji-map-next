@@ -54,6 +54,16 @@ vi.mock('next/server', () => {
   };
 });
 
+// Mock the log utility
+vi.mock('@/utils/log', () => ({
+  log: {
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 describe('User API Routes', () => {
   // Fixed mock date for all tests
   const FIXED_DATE = new Date('2023-01-01T12:00:00Z');
@@ -71,20 +81,25 @@ describe('User API Routes', () => {
   });
 
   describe('GET /api/user', () => {
-    it('should return a 500 if getUserId throws an Unauthorized error', async () => {
+    it('should return a 401 if getUserId throws an Unauthorized error', async () => {
       const mockRequest = new MockNextRequest('https://example.com/api/user', {
         authorization: 'Bearer token',
       });
 
       // Mock getUserId to throw Unauthorized error
-      vi.mocked(getUserId).mockRejectedValue(new Error('Unauthorized'));
+      const errorMessage = 'Unauthorized: Missing authorization header';
+      vi.mocked(getUserId).mockRejectedValue(new Error(errorMessage));
 
       await GET(mockRequest as unknown as NextRequest);
 
       expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to fetch user' },
-        { status: 500 }
+        {
+          error: 'Authentication failed',
+          message: errorMessage,
+          timestamp: FIXED_DATE.toISOString(),
+        },
+        { status: 401 }
       );
     });
 
@@ -111,7 +126,11 @@ describe('User API Routes', () => {
         },
       });
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'User not found in database' },
+        {
+          error: 'User not found in database',
+          userId: 'user_123',
+          timestamp: FIXED_DATE.toISOString(),
+        },
         { status: 404 }
       );
     });
@@ -221,7 +240,7 @@ describe('User API Routes', () => {
       });
     });
 
-    it('should handle errors and return 500 status', async () => {
+    it('should handle database errors and return 500 status', async () => {
       // Create a mock request with authorization header
       const mockRequest = new MockNextRequest('https://example.com/api/user', {
         authorization: 'Bearer token',
@@ -231,25 +250,67 @@ describe('User API Routes', () => {
       vi.mocked(getUserId).mockResolvedValue('user_123');
 
       // Mock database error
+      const dbErrorMessage = 'Database error';
       vi.mocked(prisma.user.findUnique).mockRejectedValue(
-        new Error('Database error')
+        new Error(dbErrorMessage)
       );
-
-      // Spy on console.error
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
 
       await GET(mockRequest as unknown as NextRequest);
 
       expect(getUserId).toHaveBeenCalledWith(mockRequest);
-      expect(consoleErrorSpy).toHaveBeenCalled();
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to fetch user' },
+        {
+          error: 'Database error',
+          message: dbErrorMessage,
+          timestamp: FIXED_DATE.toISOString(),
+        },
         { status: 500 }
       );
+    });
 
-      consoleErrorSpy.mockRestore();
+    it('should handle authentication errors and return 401 status', async () => {
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to throw Unauthorized error
+      const errorMessage = 'Unauthorized: Missing authorization header';
+      vi.mocked(getUserId).mockRejectedValue(new Error(errorMessage));
+
+      await GET(mockRequest as unknown as NextRequest);
+
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Authentication failed',
+          message: errorMessage,
+          timestamp: FIXED_DATE.toISOString(),
+        },
+        { status: 401 }
+      );
+    });
+
+    it('should handle unexpected errors when getUserId throws', async () => {
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to throw an unexpected error
+      const unexpectedError = new Error('Unexpected error');
+      vi.mocked(getUserId).mockRejectedValue(unexpectedError);
+
+      await GET(mockRequest as unknown as NextRequest);
+
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Authentication failed',
+          message: 'Unexpected error',
+          timestamp: FIXED_DATE.toISOString(),
+        },
+        { status: 401 }
+      );
     });
   });
 });
