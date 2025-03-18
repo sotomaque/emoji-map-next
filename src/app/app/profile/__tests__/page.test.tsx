@@ -86,12 +86,14 @@ describe('ProfilePage', () => {
         userId: 'user_123',
         placeId: 'place_1',
         createdAt: new Date('2023-02-01'),
+        updatedAt: new Date('2023-02-01'),
       },
       {
         id: 'fav_2',
         userId: 'user_123',
         placeId: 'place_2',
         createdAt: new Date('2023-02-15'),
+        updatedAt: new Date('2023-02-15'),
       },
     ];
 

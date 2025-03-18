@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/places/rating/route';
 import { prisma } from '@/lib/db';
+import { getUserId } from '@/services/user/get-user-id';
 import type { User, Place, Rating } from '@prisma/client';
 
 // Mock dependencies
@@ -24,16 +25,30 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
+// Mock getUserId service
+vi.mock('@/services/user/get-user-id', () => ({
+  getUserId: vi.fn(),
+}));
+
 // Mock NextRequest
 class MockNextRequest {
   private body: Record<string, unknown>;
+  headers: Headers;
 
-  constructor(body: Record<string, unknown>) {
+  constructor(
+    body: Record<string, unknown>,
+    headers: Record<string, string> = {}
+  ) {
     this.body = body;
+    this.headers = new Headers(headers);
   }
 
   async json() {
     return this.body;
+  }
+
+  clone() {
+    return this;
   }
 }
 
@@ -62,6 +77,8 @@ describe('Rating API Routes', () => {
     // Use fake timers and set a fixed system time
     vi.useFakeTimers();
     vi.setSystemTime(FIXED_DATE);
+    // Default mock for getUserId to return a valid user ID
+    vi.mocked(getUserId).mockResolvedValue('user_123');
   });
 
   afterEach(() => {
@@ -70,21 +87,46 @@ describe('Rating API Routes', () => {
   });
 
   describe('POST /api/places/rating', () => {
-    it('should return 401 if userId is not provided', async () => {
-      const mockRequest = new MockNextRequest({}) as unknown as NextRequest;
+    it('should return 500 if getUserId throws an Unauthorized error', async () => {
+      const mockRequest = new MockNextRequest(
+        {},
+        {
+          authorization: 'Bearer invalid-token',
+        }
+      ) as unknown as NextRequest;
+
+      // Mock getUserId to throw Unauthorized error
+      vi.mocked(getUserId).mockRejectedValue(new Error('Unauthorized'));
 
       await POST(mockRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Failed to process rating' },
+        { status: 500 }
       );
     });
 
     it('should return 400 if placeId is not provided', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {},
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
+
+      // Mock user found
+      const mockUser: User = {
+        id: 'user_123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        username: 'testuser',
+        imageUrl: 'https://example.com/image.jpg',
+        createdAt: FIXED_DATE,
+        updatedAt: FIXED_DATE,
+      };
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser);
 
       await POST(mockRequest);
 
@@ -95,10 +137,14 @@ describe('Rating API Routes', () => {
     });
 
     it('should return 400 if rating is not provided for a new rating', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user found
       const mockUser: User = {
@@ -137,10 +183,14 @@ describe('Rating API Routes', () => {
     });
 
     it('should remove an existing rating if no new rating is provided', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user found
       const mockUser: User = {
@@ -199,11 +249,15 @@ describe('Rating API Routes', () => {
     });
 
     it('should return 404 if user is not found', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-        rating: 4,
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+          rating: 4,
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user not found
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
@@ -220,11 +274,15 @@ describe('Rating API Routes', () => {
     });
 
     it('should create a new place if it does not exist', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-        rating: 4,
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+          rating: 4,
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user found
       const mockUser: User = {
@@ -308,11 +366,15 @@ describe('Rating API Routes', () => {
     });
 
     it('should update an existing rating', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-        rating: 5,
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+          rating: 5,
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user found
       const mockUser: User = {
@@ -379,11 +441,15 @@ describe('Rating API Routes', () => {
     });
 
     it('should remove a rating if the same rating is submitted again', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-        rating: 4, // Same as existing rating
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+          rating: 4, // Same as existing rating
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock user found
       const mockUser: User = {
@@ -441,11 +507,15 @@ describe('Rating API Routes', () => {
     });
 
     it('should handle errors and return 500 status', async () => {
-      const mockRequest = new MockNextRequest({
-        userId: 'user_123',
-        place_id: 'place_123',
-        rating: 4,
-      }) as unknown as NextRequest;
+      const mockRequest = new MockNextRequest(
+        {
+          placeId: 'place_123',
+          rating: 4,
+        },
+        {
+          authorization: 'Bearer valid-token',
+        }
+      ) as unknown as NextRequest;
 
       // Mock database error
       vi.mocked(prisma.user.findUnique).mockRejectedValue(

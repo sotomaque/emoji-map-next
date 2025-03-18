@@ -18,7 +18,11 @@ import {
   RequestUrlDisplay,
   LoadingSpinner,
 } from './ui-components';
-import { useUserData, useUpdateFavorites } from '../context/user-context';
+import {
+  useUserData,
+  useUpdateFavorites,
+  useToken,
+} from '../context/user-context';
 import type { NearbyPlacesSectionProps } from './types';
 
 export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
@@ -47,8 +51,8 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   setMinimumRating,
 }) => {
   const userData = useUserData();
+  const token = useToken();
   const { addFavorite, removeFavorite } = useUpdateFavorites();
-
   // Parse the keysQuery string into an array of numbers
   const selectedKeys = keysQuery
     ? keysQuery
@@ -103,8 +107,9 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id: placeId, userId: userData.id }),
+        body: JSON.stringify({ placeId }),
       });
 
       if (!response.ok) {
@@ -121,6 +126,7 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
           userId: userData.id,
           placeId: placeId,
           createdAt: new Date(data.favorite.createdAt),
+          updatedAt: new Date(data.favorite.updatedAt),
         };
 
         // Add to user context
@@ -146,19 +152,22 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
 
     // Optimistically update the UI
     if (isFavorited) {
+      // from context, not db yet
       removeFavorite(placeId);
     } else {
       // Create a temporary favorite
+      // in context, not db yet
       const tempFavorite = {
         id: `temp_${placeId}_${Date.now()}`,
         userId: userData.id,
         placeId: placeId,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
       addFavorite(tempFavorite);
     }
 
-    // Call the mutation
+    // Call the mutation (this will update the db)
     toggleFavoriteMutation.mutate(placeId);
   };
 

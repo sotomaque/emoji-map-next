@@ -8,12 +8,14 @@ import {
   useUserData,
   useUpdateFavorites,
   useUpdateRatings,
+  useToken,
 } from './user-context';
 import type { User, Favorite, Rating } from '@prisma/client';
 
 describe('UserContext', () => {
   // Mock user data
   let mockUser: User & { favorites?: Favorite[]; ratings?: Rating[] };
+  const mockToken = 'test-auth-token';
 
   beforeEach(() => {
     // Reset mockUser before each test
@@ -32,12 +34,14 @@ describe('UserContext', () => {
           userId: 'user_123',
           placeId: 'place_1',
           createdAt: new Date('2023-02-01'),
+          updatedAt: new Date('2023-02-01'),
         },
         {
           id: 'fav_2',
           userId: 'user_123',
           placeId: 'place_2',
           createdAt: new Date('2023-02-15'),
+          updatedAt: new Date('2023-02-15'),
         },
       ],
       ratings: [
@@ -69,7 +73,7 @@ describe('UserContext', () => {
 
   it('provides user data to children', () => {
     const { getByTestId } = render(
-      <UserProvider user={mockUser}>
+      <UserProvider user={mockUser} token={mockToken}>
         <TestComponent />
       </UserProvider>
     );
@@ -95,7 +99,9 @@ describe('UserContext', () => {
 
   it('updates user data when updateUser is called', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <UserProvider user={mockUser}>{children}</UserProvider>
+      <UserProvider user={mockUser} token={mockToken}>
+        {children}
+      </UserProvider>
     );
 
     const { result } = renderHook(() => useUser(), { wrapper });
@@ -115,7 +121,9 @@ describe('UserContext', () => {
 
   it('useUserData hook returns user data', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <UserProvider user={mockUser}>{children}</UserProvider>
+      <UserProvider user={mockUser} token={mockToken}>
+        {children}
+      </UserProvider>
     );
 
     const { result } = renderHook(() => useUserData(), { wrapper });
@@ -128,7 +136,9 @@ describe('UserContext', () => {
 
   it('useUserData hook throws error when user data is not available', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <UserProvider user={null}>{children}</UserProvider>
+      <UserProvider user={null} token={mockToken}>
+        {children}
+      </UserProvider>
     );
 
     // Suppress console.error for this test
@@ -141,6 +151,40 @@ describe('UserContext', () => {
 
     // Restore console.error
     console.error = originalConsoleError;
+  });
+
+  describe('useToken', () => {
+    it('returns the token provided to UserProvider', () => {
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <UserProvider user={mockUser} token={mockToken}>
+          {children}
+        </UserProvider>
+      );
+
+      const { result } = renderHook(() => useToken(), { wrapper });
+
+      // Check that the token is returned
+      expect(result.current).toBe(mockToken);
+    });
+
+    it('throws error when token is empty', () => {
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <UserProvider user={mockUser} token=''>
+          {children}
+        </UserProvider>
+      );
+
+      // Suppress console.error for this test
+      const originalConsoleError = console.error;
+      console.error = vi.fn();
+
+      expect(() => {
+        renderHook(() => useToken(), { wrapper });
+      }).toThrow('Token is not available');
+
+      // Restore console.error
+      console.error = originalConsoleError;
+    });
   });
 
   describe('useUpdateFavorites', () => {
@@ -167,6 +211,7 @@ describe('UserContext', () => {
                 userId: 'user_123',
                 placeId: 'place_3',
                 createdAt: new Date('2023-03-01'),
+                updatedAt: new Date('2023-03-01'),
               };
               addFavorite(newFavorite);
             }}
@@ -185,7 +230,7 @@ describe('UserContext', () => {
 
     it('adds a favorite', () => {
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestFavoritesComponent />
         </UserProvider>
       );
@@ -202,7 +247,7 @@ describe('UserContext', () => {
 
     it('removes a favorite', () => {
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestFavoritesComponent />
         </UserProvider>
       );
@@ -230,6 +275,7 @@ describe('UserContext', () => {
             userId: 'user_123',
             placeId: 'place_1',
             createdAt: new Date('2023-02-01'),
+            updatedAt: new Date('2023-02-01'),
           };
           addFavorite(existingFavorite);
         });
@@ -242,7 +288,7 @@ describe('UserContext', () => {
       };
 
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestDuplicateComponent />
         </UserProvider>
       );
@@ -296,7 +342,7 @@ describe('UserContext', () => {
 
     it('adds a new rating', () => {
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestRatingsComponent />
         </UserProvider>
       );
@@ -313,7 +359,7 @@ describe('UserContext', () => {
 
     it('updates an existing rating', () => {
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestRatingsComponent />
         </UserProvider>
       );
@@ -330,7 +376,7 @@ describe('UserContext', () => {
 
     it('removes a rating when the same rating is submitted', () => {
       const { getByTestId } = render(
-        <UserProvider user={mockUser}>
+        <UserProvider user={mockUser} token={mockToken}>
           <TestRatingsComponent />
         </UserProvider>
       );
@@ -348,7 +394,9 @@ describe('UserContext', () => {
     it('does nothing when userData is null', () => {
       // Create a wrapper with null user data
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <UserProvider user={null}>{children}</UserProvider>
+        <UserProvider user={null} token={mockToken}>
+          {children}
+        </UserProvider>
       );
 
       // Suppress console.error for this test
