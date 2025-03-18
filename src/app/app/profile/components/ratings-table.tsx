@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useUserData, useUpdateRatings } from '../../context/user-context';
+import { useUpdateRatings, useToken } from '../../context/user-context';
 import type { Rating } from '@prisma/client';
 
 interface RatingsTableProps {
@@ -15,11 +15,11 @@ interface RatingsTableProps {
 
 // Function to submit a rating
 const submitRating = async ({
-  userId,
+  token,
   placeId,
   rating,
 }: {
-  userId: string;
+  token: string;
   placeId: string;
   rating: number;
 }) => {
@@ -27,8 +27,9 @@ const submitRating = async ({
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ userId, place_id: placeId, rating }),
+    body: JSON.stringify({ placeId, rating }),
   });
 
   if (!response.ok) {
@@ -121,7 +122,7 @@ export function RatingsTable({ ratings, onViewPlace }: RatingsTableProps) {
 
 function RatingStars({ placeId, rating }: { placeId: string; rating: number }) {
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
-  const userData = useUserData();
+  const token = useToken();
   const { updateRating } = useUpdateRatings();
 
   // Toggle favorite mutation
@@ -155,7 +156,7 @@ function RatingStars({ placeId, rating }: { placeId: string; rating: number }) {
 
     // Submit the rating to the server
     submitUserRating({
-      userId: userData.id,
+      token,
       placeId,
       rating,
     });
