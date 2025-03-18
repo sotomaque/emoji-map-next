@@ -6,7 +6,11 @@ import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Detail } from '@/types/details';
-import { useUserData, useUpdateRatings } from '../../context/user-context';
+import {
+  useUserData,
+  useUpdateRatings,
+  useToken,
+} from '../../context/user-context';
 
 interface PlaceDetailsProps {
   placeId: string | null;
@@ -26,11 +30,11 @@ const fetchPlaceDetails = async (placeId: string): Promise<Detail> => {
 
 // Function to submit a rating
 const submitRating = async ({
-  userId,
+  token,
   placeId,
   rating,
 }: {
-  userId: string;
+  token: string;
   placeId: string;
   rating: number;
 }) => {
@@ -38,8 +42,9 @@ const submitRating = async ({
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ userId, place_id: placeId, rating }),
+    body: JSON.stringify({ placeId, rating }),
   });
 
   if (!response.ok) {
@@ -52,6 +57,7 @@ const submitRating = async ({
 export function PlaceDetails({ placeId }: PlaceDetailsProps) {
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const userData = useUserData();
+  const token = useToken();
   const userRating =
     userData?.ratings?.find((r) => r.placeId === placeId)?.rating || null;
   const { updateRating } = useUpdateRatings();
@@ -102,7 +108,7 @@ export function PlaceDetails({ placeId }: PlaceDetailsProps) {
 
     // Submit the rating to the server
     submitUserRating({
-      userId: userData.id,
+      token,
       placeId,
       rating,
     });

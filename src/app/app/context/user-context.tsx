@@ -9,6 +9,7 @@ interface UserContextType {
   updateUser: (
     updates: Partial<User & { favorites?: Favorite[]; ratings?: Rating[] }>
   ) => void;
+  token: string;
 }
 
 // Create a context for the user data
@@ -17,9 +18,11 @@ const UserContext = createContext<UserContextType | null>(null);
 // Provider component
 export function UserProvider({
   user,
+  token,
   children,
 }: {
   user: (User & { favorites?: Favorite[]; ratings?: Rating[] }) | null;
+  token: string;
   children: React.ReactNode;
 }) {
   // Use state to store the user data so it can be updated
@@ -37,7 +40,7 @@ export function UserProvider({
   };
 
   return (
-    <UserContext.Provider value={{ userData, updateUser }}>
+    <UserContext.Provider value={{ userData, updateUser, token }}>
       {children}
     </UserContext.Provider>
   );
@@ -63,6 +66,17 @@ export function useUserData() {
   }
 
   return userData;
+}
+
+// Helper hook to directly access token
+export function useToken() {
+  const { token } = useUser();
+
+  if (!token) {
+    throw new Error('Token is not available');
+  }
+
+  return token;
 }
 
 // Helper hook to update favorites

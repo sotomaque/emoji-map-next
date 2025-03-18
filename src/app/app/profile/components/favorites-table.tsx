@@ -4,7 +4,11 @@ import { useMutation } from '@tanstack/react-query';
 import { Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useUserData, useUpdateFavorites } from '../../context/user-context';
+import {
+  useUserData,
+  useUpdateFavorites,
+  useToken,
+} from '../../context/user-context';
 import type { Favorite } from '@prisma/client';
 
 interface FavoritesTableProps {
@@ -17,6 +21,7 @@ export function FavoritesTable({
   onViewPlace,
 }: FavoritesTableProps) {
   const userData = useUserData();
+  const token = useToken();
   const { removeFavorite, addFavorite } = useUpdateFavorites();
 
   // Toggle favorite mutation
@@ -26,8 +31,9 @@ export function FavoritesTable({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id: placeId, userId: userData.id }),
+        body: JSON.stringify({ placeId }),
       });
 
       if (!response.ok) {

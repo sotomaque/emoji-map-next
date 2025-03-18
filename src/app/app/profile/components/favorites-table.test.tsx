@@ -8,6 +8,7 @@ import type { Favorite } from '@prisma/client';
 // Mock the user context hooks
 const mockRemoveFavorite = vi.fn();
 const mockAddFavorite = vi.fn();
+const MOCK_TOKEN = 'test-auth-token';
 
 vi.mock('../../context/user-context', () => ({
   useUserData: () => ({
@@ -18,12 +19,14 @@ vi.mock('../../context/user-context', () => ({
         userId: 'user_123',
         placeId: 'place_1',
         createdAt: new Date('2023-02-01'),
+        updatedAt: new Date('2023-02-01'),
       },
       {
         id: 'fav_2',
         userId: 'user_123',
         placeId: 'place_2',
         createdAt: new Date('2023-02-15'),
+        updatedAt: new Date('2023-02-15'),
       },
     ],
   }),
@@ -31,6 +34,7 @@ vi.mock('../../context/user-context', () => ({
     addFavorite: mockAddFavorite,
     removeFavorite: mockRemoveFavorite,
   }),
+  useToken: () => MOCK_TOKEN,
 }));
 
 // Define the type for toast options
@@ -113,12 +117,14 @@ describe('FavoritesTable', () => {
       userId: 'user_123',
       placeId: 'place_1',
       createdAt: new Date('2023-02-01'),
+      updatedAt: new Date('2023-02-01'),
     },
     {
       id: 'fav_2',
       userId: 'user_123',
       placeId: 'place_2',
       createdAt: new Date('2023-02-15'),
+      updatedAt: new Date('2023-02-15'),
     },
   ];
 
@@ -283,7 +289,7 @@ describe('FavoritesTable', () => {
     expect(button).toBeDisabled();
   });
 
-  it('verifies that userId is included in the API request', async () => {
+  it('verifies that authorization token is included in the API request', async () => {
     render(
       <FavoritesTable favorites={mockFavorites} onViewPlace={mockOnViewPlace} />
     );
@@ -301,13 +307,14 @@ describe('FavoritesTable', () => {
       await mutationFn('place_1');
     }
 
-    // Check that fetch was called with the correct parameters
+    // Check that fetch was called with the correct parameters including authorization header
     expect(mockFetch).toHaveBeenCalledWith('/api/places/favorite', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${MOCK_TOKEN}`,
       },
-      body: JSON.stringify({ id: 'place_1', userId: 'user_123' }),
+      body: JSON.stringify({ placeId: 'place_1' }),
     });
   });
 

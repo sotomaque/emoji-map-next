@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { StarRating } from '@/components/ui/star-rating';
@@ -408,9 +409,11 @@ export const PlaceDetailsSection: React.FC<PlaceDetailsSectionProps> = ({
                             <div className='space-y-1'>
                               {Object.entries(
                                 placeDetailsQuery.data.data.paymentOptions
-                              ).map(([key, value]) =>
-                                renderDetailField(key, value)
-                              )}
+                              ).map(([key, value]) => (
+                                <Fragment key={key}>
+                                  {renderDetailField(key, value)}
+                                </Fragment>
+                              ))}
                             </div>
                           </div>
                         )}

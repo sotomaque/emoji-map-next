@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { getUserId } from '@/services/user/get-user-id';
 import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
 import type { Favorite, Place } from '@prisma/client';
@@ -14,10 +15,11 @@ import type { Favorite, Place } from '@prisma/client';
  *
  * @param request - The Next.js request object containing the place ID in the body
  * @returns A NextResponse with:
- *   - 401 if user is not authenticated
- *   - 400 if place ID is missing
- *   - 404 if user is not found
- *   - 200 with favorite data on success
+ *  - 200: {message: string, place: Place, favorite: Favorite | null, action: 'added' | 'removed'} if successful
+ *  - 400: {error: string} if place ID missing
+ *  - 401: {error: string} if unauthorized
+ *  - 404: {error: string} if user not found
+ *  - 500: {error: string} if server error
  */
 export async function POST(request: NextRequest): Promise<
   NextResponse<
@@ -30,25 +32,9 @@ export async function POST(request: NextRequest): Promise<
     | ErrorResponse
   >
 > {
-  const params = await request.json();
-  const userId = params?.user_id || params?.userId;
-
-  if (!userId) {
-    log.error('Unauthorized no userId');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const placeId = params?.place_id || params?.placeId || params?.id;
-
-  if (!placeId) {
-    log.error('Place ID is required');
-    return NextResponse.json(
-      { error: 'Place ID is required' },
-      { status: 400 }
-    );
-  }
-
   try {
+    const userId = await getUserId(request);
+
     // Find the user by id
     const user = await prisma.user.findUnique({
       where: { id: userId as string },
@@ -57,6 +43,17 @@ export async function POST(request: NextRequest): Promise<
     if (!user) {
       log.error('User not found', { userId });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const params = await request.json();
+    const placeId = params?.placeId;
+
+    if (!placeId) {
+      log.error('Place ID is required');
+      return NextResponse.json(
+        { error: 'Place ID is required' },
+        { status: 400 }
+      );
     }
 
     // Check if this place exists in the database
@@ -97,9 +94,10 @@ export async function POST(request: NextRequest): Promise<
       });
 
       action = 'removed';
-    } else {
+    }
+    // If favorite doesn't exist, create it (toggle on)
+    else {
       log.debug('Favorite does not exist, creating it');
-      // If favorite doesn't exist, create it (toggle on)
       favorite = await prisma.favorite.create({
         data: {
           userId: user.id,

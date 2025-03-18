@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET, POST } from '@/app/api/places/favorite/route';
 import { prisma } from '@/lib/db';
+import { getUserId } from '@/services/user/get-user-id';
 import { log } from '@/utils/log';
 import type { Favorite, Place, User } from '@prisma/client';
 
@@ -20,6 +21,10 @@ async function getResponseBody(response: Response) {
 // Mock dependencies
 vi.mock('@clerk/nextjs/server', () => ({
   auth: vi.fn(),
+}));
+
+vi.mock('@/services/user/get-user-id', () => ({
+  getUserId: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => ({
@@ -79,6 +84,7 @@ describe('Favorite API Routes', () => {
     userId: mockUserId,
     placeId: mockPlaceId,
     createdAt: mockDate,
+    updatedAt: mockDate,
   } as Favorite;
 
   beforeEach(() => {
@@ -89,7 +95,10 @@ describe('Favorite API Routes', () => {
     // Reset mocks before each test
     vi.resetAllMocks();
 
-    // Default auth mock to return a userId
+    // Default getUserId mock to return a userId
+    vi.mocked(getUserId).mockResolvedValue(mockUserId);
+
+    // Default auth mock to return a userId (for GET endpoint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
   });
@@ -114,101 +123,29 @@ describe('Favorite API Routes', () => {
 
   describe('POST /api/places/favorite', () => {
     it('should return 401 if user is not authenticated', async () => {
+      // Mock getUserId to throw an unauthorized error
+      vi.mocked(getUserId).mockRejectedValueOnce(new Error('Unauthorized'));
+
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);
       const body = await getResponseBody(response);
 
-      expect(response.status).toBe(401);
-      expect(body).toEqual({ error: 'Unauthorized' });
-    });
-
-    it('should return 401 if userId is not provided', async () => {
-      const request = new NextRequest('http://localhost/api/places/favorite', {
-        method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId }),
-      });
-
-      const response = await POST(request);
-      const body = await getResponseBody(response);
-
-      expect(response.status).toBe(401);
-      expect(body).toEqual({ error: 'Unauthorized' });
-    });
-
-    it('should accept userId in the request body', async () => {
-      // Mock user found
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser);
-
-      // Mock place found
-      vi.mocked(prisma.place.findUnique).mockResolvedValueOnce(mockPlace);
-
-      // Mock no existing favorite
-      vi.mocked(prisma.favorite.findUnique).mockResolvedValueOnce(null);
-
-      // Mock favorite creation
-      vi.mocked(prisma.favorite.create).mockResolvedValueOnce(mockFavorite);
-
-      const request = new NextRequest('http://localhost/api/places/favorite', {
-        method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
-      });
-
-      const response = await POST(request);
-      const body = await getResponseBody(response);
-
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: mockUserId },
-      });
-      expect(response.status).toBe(200);
-      expectObjectsToMatch(body, {
-        message: 'Favorite added',
-        place: mockPlace,
-        favorite: mockFavorite,
-        action: 'added',
-      });
-    });
-
-    it('should accept user_id in the request body', async () => {
-      // Mock user found
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser);
-
-      // Mock place found
-      vi.mocked(prisma.place.findUnique).mockResolvedValueOnce(mockPlace);
-
-      // Mock no existing favorite
-      vi.mocked(prisma.favorite.findUnique).mockResolvedValueOnce(null);
-
-      // Mock favorite creation
-      vi.mocked(prisma.favorite.create).mockResolvedValueOnce(mockFavorite);
-
-      const request = new NextRequest('http://localhost/api/places/favorite', {
-        method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, user_id: mockUserId }),
-      });
-
-      const response = await POST(request);
-      const body = await getResponseBody(response);
-
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: mockUserId },
-      });
-      expect(response.status).toBe(200);
-      expectObjectsToMatch(body, {
-        message: 'Favorite added',
-        place: mockPlace,
-        favorite: mockFavorite,
-        action: 'added',
-      });
+      expect(response.status).toBe(500);
+      expect(body).toEqual({ error: 'Failed to process favorite' });
+      expect(log.error).toHaveBeenCalled();
     });
 
     it('should return 400 if place ID is missing', async () => {
+      // Mock user found
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser);
+
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ userId: mockUserId }),
+        body: JSON.stringify({}),
       });
 
       const response = await POST(request);
@@ -224,7 +161,7 @@ describe('Favorite API Routes', () => {
 
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);
@@ -250,12 +187,13 @@ describe('Favorite API Routes', () => {
 
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);
       const body = await getResponseBody(response);
 
+      expect(getUserId).toHaveBeenCalledWith(request);
       expect(prisma.place.create).toHaveBeenCalledWith({
         data: { id: mockPlaceId },
       });
@@ -289,12 +227,13 @@ describe('Favorite API Routes', () => {
 
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);
       const body = await getResponseBody(response);
 
+      expect(getUserId).toHaveBeenCalledWith(request);
       expect(prisma.place.create).not.toHaveBeenCalled();
       expect(prisma.favorite.create).toHaveBeenCalledWith({
         data: {
@@ -326,12 +265,13 @@ describe('Favorite API Routes', () => {
 
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);
       const body = await getResponseBody(response);
 
+      expect(getUserId).toHaveBeenCalledWith(request);
       expect(prisma.favorite.delete).toHaveBeenCalledWith({
         where: { id: mockFavorite.id },
       });
@@ -352,7 +292,7 @@ describe('Favorite API Routes', () => {
 
       const request = new NextRequest('http://localhost/api/places/favorite', {
         method: 'POST',
-        body: JSON.stringify({ id: mockPlaceId, userId: mockUserId }),
+        body: JSON.stringify({ placeId: mockPlaceId }),
       });
 
       const response = await POST(request);

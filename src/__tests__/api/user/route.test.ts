@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { currentUser, type User as ClerkUser } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GET, POST } from '@/app/api/user/route';
+import { GET } from '@/app/api/user/route';
 import { prisma } from '@/lib/db';
+import { getUserId } from '@/services/user/get-user-id';
 import type { User, Favorite, Rating } from '@prisma/client';
 
 // Mock dependencies
 vi.mock('@clerk/nextjs/server', () => ({
-  auth: vi.fn(),
-  currentUser: vi.fn(),
+  createClerkClient: vi.fn().mockReturnValue({
+    authenticateRequest: vi.fn().mockResolvedValue({
+      toAuth: vi.fn().mockReturnValue({ userId: 'user_123' }),
+    }),
+  }),
 }));
 
 vi.mock('@/lib/db', () => ({
@@ -21,12 +24,22 @@ vi.mock('@/lib/db', () => ({
   },
 }));
 
+vi.mock('@/services/user/get-user-id', () => ({
+  getUserId: vi.fn(),
+}));
+
 // Create a proper mock for NextRequest
 class MockNextRequest {
   nextUrl: URL;
+  headers: Headers;
 
-  constructor(url: string) {
+  constructor(url: string, headers: Record<string, string> = {}) {
     this.nextUrl = new URL(url);
+    this.headers = new Headers(headers);
+  }
+
+  clone() {
+    return this;
   }
 }
 
@@ -35,8 +48,8 @@ vi.mock('next/server', () => {
     NextResponse: {
       json: vi.fn((data, options) => ({ data, options })),
     },
-    NextRequest: vi.fn().mockImplementation((url) => {
-      return new MockNextRequest(url);
+    NextRequest: vi.fn().mockImplementation((url, init) => {
+      return new MockNextRequest(url, init?.headers);
     }),
   };
 });
@@ -57,139 +70,39 @@ describe('User API Routes', () => {
     vi.useRealTimers();
   });
 
-  describe('POST /api/user', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      // Mock currentUser to return null (unauthenticated)
-      vi.mocked(currentUser).mockResolvedValue(null);
-
-      await POST();
-
-      expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    });
-
-    const mockAuthenticatedClerkUser = {
-      id: 'user_123',
-      firstName: 'Test',
-      lastName: 'User',
-      username: 'testuser',
-      imageUrl: 'https://example.com/image.jpg',
-      emailAddresses: [{ emailAddress: 'test@example.com' }],
-    } as unknown as ClerkUser;
-
-    it('should return existing user if found in database', async () => {
-      vi.mocked(currentUser).mockResolvedValue(mockAuthenticatedClerkUser);
-
-      // Mock existing user in database
-      const mockDbUser: User = {
-        id: 'user_123',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        username: 'testuser',
-        imageUrl: 'https://example.com/image.jpg',
-        createdAt: FIXED_DATE,
-        updatedAt: FIXED_DATE,
-      };
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockDbUser);
-
-      await POST();
-
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'user_123' },
-      });
-      expect(NextResponse.json).toHaveBeenCalledWith({ user: mockDbUser });
-    });
-
-    it('should create a new user if not found in database', async () => {
-      vi.mocked(currentUser).mockResolvedValue(mockAuthenticatedClerkUser);
-
-      // Mock user not found in database
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
-
-      // Mock user creation
-      const mockNewUser: User = {
-        id: 'user_123',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        username: 'testuser',
-        imageUrl: 'https://example.com/image.jpg',
-        createdAt: FIXED_DATE,
-        updatedAt: FIXED_DATE,
-      };
-      vi.mocked(prisma.user.create).mockResolvedValue(mockNewUser);
-
-      await POST();
-
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'user_123' },
-      });
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: {
-          id: 'user_123',
-          email: 'test@example.com',
-          firstName: 'Test',
-          lastName: 'User',
-          username: 'testuser',
-          imageUrl: 'https://example.com/image.jpg',
-          createdAt: FIXED_DATE,
-          updatedAt: FIXED_DATE,
-        },
-      });
-      expect(NextResponse.json).toHaveBeenCalledWith({ user: mockNewUser });
-    });
-
-    it('should handle errors and return 500 status', async () => {
-      vi.mocked(currentUser).mockResolvedValue(mockAuthenticatedClerkUser);
-
-      // Mock database error
-      vi.mocked(prisma.user.findUnique).mockRejectedValue(
-        new Error('Database error')
-      );
-
-      // Spy on console.error instead of mocking it
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-
-      await POST();
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Failed to create user' },
-        { status: 500 }
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
   describe('GET /api/user', () => {
-    it('should return a 400 if no userId is provided', async () => {
-      const mockRequest = new MockNextRequest('https://example.com/api/user');
+    it('should return a 500 if getUserId throws an Unauthorized error', async () => {
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to throw Unauthorized error
+      vi.mocked(getUserId).mockRejectedValue(new Error('Unauthorized'));
 
       await GET(mockRequest as unknown as NextRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: 'Unauthorized' },
-        { status: 400 }
+        { error: 'Failed to fetch user' },
+        { status: 500 }
       );
     });
 
     it('should return 404 if user is not found in database', async () => {
-      // Create a mock request with userId
-      const mockRequest = new MockNextRequest(
-        'https://example.com/api/user?userId=user_123'
-      );
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to return a userId
+      vi.mocked(getUserId).mockResolvedValue('user_123');
 
       // Mock user not found in database
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
       await GET(mockRequest as unknown as NextRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user_123' },
         include: {
@@ -204,10 +117,13 @@ describe('User API Routes', () => {
     });
 
     it('should return user if found in database', async () => {
-      // Create a mock request with userId
-      const mockRequest = new MockNextRequest(
-        'https://example.com/api/user?userId=user_123'
-      );
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to return a userId
+      vi.mocked(getUserId).mockResolvedValue('user_123');
 
       // Mock user found in database with favorites and ratings
       const mockDbUser = {
@@ -229,6 +145,7 @@ describe('User API Routes', () => {
 
       await GET(mockRequest as unknown as NextRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user_123' },
         include: {
@@ -243,10 +160,13 @@ describe('User API Routes', () => {
     });
 
     it('should return user with ratings if found in database', async () => {
-      // Create a mock request with userId
-      const mockRequest = new MockNextRequest(
-        'https://example.com/api/user?userId=user_123'
-      );
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to return a userId
+      vi.mocked(getUserId).mockResolvedValue('user_123');
 
       // Mock user found in database with favorites and ratings
       const mockRatings = [
@@ -287,6 +207,7 @@ describe('User API Routes', () => {
 
       await GET(mockRequest as unknown as NextRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user_123' },
         include: {
@@ -301,10 +222,13 @@ describe('User API Routes', () => {
     });
 
     it('should handle errors and return 500 status', async () => {
-      // Create a mock request with userId
-      const mockRequest = new MockNextRequest(
-        'https://example.com/api/user?userId=user_123'
-      );
+      // Create a mock request with authorization header
+      const mockRequest = new MockNextRequest('https://example.com/api/user', {
+        authorization: 'Bearer token',
+      });
+
+      // Mock getUserId to return a userId
+      vi.mocked(getUserId).mockResolvedValue('user_123');
 
       // Mock database error
       vi.mocked(prisma.user.findUnique).mockRejectedValue(
@@ -318,6 +242,7 @@ describe('User API Routes', () => {
 
       await GET(mockRequest as unknown as NextRequest);
 
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
       expect(consoleErrorSpy).toHaveBeenCalled();
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Failed to fetch user' },

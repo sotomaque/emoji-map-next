@@ -12,6 +12,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 // Mock the user context hooks
 const mockAddFavorite = vi.fn();
 const mockRemoveFavorite = vi.fn();
+const MOCK_TOKEN = 'test-auth-token';
 
 // Mock the setSelectedPriceLevels function
 const mockSetSelectedPriceLevels = vi.fn();
@@ -28,6 +29,7 @@ vi.mock('../../context/user-context', () => ({
         userId: 'user_123',
         placeId: 'place_1',
         createdAt: new Date('2023-02-01'),
+        updatedAt: new Date('2023-02-01'),
       },
     ],
   }),
@@ -35,6 +37,7 @@ vi.mock('../../context/user-context', () => ({
     addFavorite: mockAddFavorite,
     removeFavorite: mockRemoveFavorite,
   }),
+  useToken: () => MOCK_TOKEN,
 }));
 
 // Mock the toast module
@@ -269,6 +272,48 @@ describe('NearbyPlacesSection', () => {
     // Manually call toast.error to verify it's working
     toast.error('Failed to update favorite status');
     expect(errorSpy).toHaveBeenCalledWith('Failed to update favorite status');
+  });
+
+  it('verifies authorization token is included in the API request', async () => {
+    // Mock fetch globally
+    const originalFetch = global.fetch;
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    });
+    global.fetch = mockFetch;
+
+    render(
+      <NearbyPlacesSection {...(mockProps as NearbyPlacesSectionProps)} />
+    );
+
+    // Find the favorite button for the second place
+    const favoriteButtons = screen.getAllByText('[FAVORITE]');
+
+    // Click the favorite button using userEvent
+    await user.click(favoriteButtons[0]);
+
+    // Get the mutation function from the useMutation hook
+    const mutationFnObj = vi.mocked(reactQuery.useMutation).mock.calls[0][0];
+    const mutationFn = mutationFnObj?.mutationFn;
+
+    // Call the mutation function with a place ID if it exists
+    if (mutationFn) {
+      await mutationFn('place_2');
+    }
+
+    // Check that fetch was called with the correct parameters including authorization header
+    expect(mockFetch).toHaveBeenCalledWith('/api/places/favorite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${MOCK_TOKEN}`,
+      },
+      body: JSON.stringify({ placeId: 'place_2' }),
+    });
+
+    // Restore the original fetch
+    global.fetch = originalFetch;
   });
 
   it('shows price level filters', () => {
