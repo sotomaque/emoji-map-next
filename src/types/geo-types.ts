@@ -22,7 +22,7 @@ export interface GeoPoint {
  *
  * Specify the region as a rectangular Viewport or as a circle.
  * A circle is defined by center point and radius in meters. The
- * radius must be between 0.0 and 50000.0, inclusive. The default
+ * radius must be between 0.0 and 50,000.0, inclusive. The default
  * radius is 0.0. For example:
  *
  * ```json

@@ -9,6 +9,8 @@
  * @property {string} emoji - Emoji representation of the category
  * @property {string} name - Name of the category
  * @property {string[]} keywords - Related keywords for matching places to this category
+ * @property {string[]} primaryType - Primary Google Places types for this category
+ * @property {string[]} examples - Example restaurant names that should match this category (case insensitive)
  */
 export const CATEGORY_MAP = [
   {
@@ -17,6 +19,13 @@ export const CATEGORY_MAP = [
     name: 'pizza',
     keywords: ['italian', 'pepperoni', 'cheese', 'pasta', 'calzone'],
     primaryType: ['pizza_restaurant', 'italian_restaurant'],
+    examples: [
+      'Pizza Hut',
+      "Domino's",
+      "Papa John's",
+      'Little Caesars',
+      'Pizza Express',
+    ],
   },
   {
     key: 2,
@@ -43,12 +52,22 @@ export const CATEGORY_MAP = [
     key: 5,
     emoji: '🍔',
     name: 'burger',
-    keywords: ['fries', 'diner', 'cheeseburger', 'shake', 'grill'],
+    keywords: ['fries', 'diner', 'cheeseburger', 'shake', 'grill', 'burger'],
     primaryType: [
+      'fast_food_restaurant', // Fast Food Restaurant
       'hamburger_restaurant',
       'american_restaurant',
       'diner',
-      'fast_food_restaurant',
+    ],
+    examples: [
+      "McDonald's",
+      'Burger King',
+      'Five Guys',
+      'In-N-Out',
+      'Shake Shack',
+      "Wendy's",
+      "Carl's Jr",
+      'Jack in the Box',
     ],
   },
   {
@@ -57,6 +76,16 @@ export const CATEGORY_MAP = [
     name: 'mexican',
     keywords: ['taco', 'burrito', 'salsa', 'guacamole', 'enchilada'],
     primaryType: ['mexican_restaurant'],
+    examples: [
+      'Taco Bell',
+      'Taco Loco',
+      'Taco Taco',
+      'Taco Time',
+      'Taco Loco',
+      'Priomos',
+      'Burrito Factory',
+      'The Taco Stand',
+    ],
   },
   {
     key: 7,
@@ -82,7 +111,15 @@ export const CATEGORY_MAP = [
     key: 9,
     emoji: '🍦',
     name: 'dessert',
-    keywords: ['cake', 'ice cream', 'pastry', 'sweet', 'cookie'],
+    keywords: [
+      'cake',
+      'ice cream',
+      'pastry',
+      'sweet',
+      'cookie',
+      'crepe',
+      'crepes',
+    ],
     primaryType: ['dessert_restaurant', 'ice_cream_shop'],
   },
   {
@@ -131,6 +168,16 @@ export const CATEGORY_MAP = [
     name: 'chicken',
     keywords: ['fried', 'grilled', 'wings', 'nuggets', 'roast', 'chick'],
     primaryType: ['brazilian_restaurant', 'fast_food_restaurant'],
+    examples: [
+      'KFC',
+      'Popeyes',
+      'Chick-fil-A',
+      "Dave's Hot Chicken",
+      "Raising Cane's",
+      "Church's Chicken",
+      'Wingstop',
+      'Buffalo Wild Wings',
+    ],
   },
   {
     key: 16,
@@ -184,6 +231,7 @@ export const CATEGORY_MAP = [
     name: 'bakery',
     keywords: ['bread', 'pastry', 'croissant', 'cake', 'muffin'],
     primaryType: ['bakery', 'french_restaurant'],
+    examples: ['Bakery', 'Pastry Shop', 'Croissant', 'Cake', 'Muffin'],
   },
   {
     key: 23,
@@ -219,6 +267,16 @@ export const CATEGORY_MAP = [
     name: 'barbecue',
     keywords: ['meat', 'grill', 'ribs', 'smoke', 'sauce'],
     primaryType: ['barbecue_restaurant', 'afghani_restaurant'],
+    examples: [
+      "Dick's Barbecue",
+      'Smokin Joes',
+      'BBQ King',
+      'BBQ Joint',
+      'BBQ Pit',
+      'BBQ Shack',
+      'BBQ Grill',
+      'BBQ Smokehouse',
+    ],
   },
   {
     key: 28,
@@ -226,6 +284,13 @@ export const CATEGORY_MAP = [
     name: 'bagel',
     keywords: ['bread', 'cream cheese', 'breakfast', 'deli', 'toasted'],
     primaryType: ['bagel_shop'],
+    examples: [
+      'Bagel Factory',
+      'Bagel Bites',
+      'Bagel Boss',
+      'Bagel Delight',
+      'Einstein Bros',
+    ],
   },
   {
     key: 29,
@@ -233,6 +298,7 @@ export const CATEGORY_MAP = [
     name: 'breakfast',
     keywords: ['pancakes', 'eggs', 'bacon', 'waffles', 'coffee'],
     primaryType: ['breakfast_restaurant'],
+    examples: ['iHop', 'Snooze', "Denny's", 'Waffle House'],
   },
   {
     key: 30,
@@ -240,6 +306,7 @@ export const CATEGORY_MAP = [
     name: 'brunch',
     keywords: ['eggs', 'toast', 'mimosa', 'pancakes', 'coffee'],
     primaryType: ['brunch_restaurant'],
+    examples: ['Snooze'],
   },
   {
     key: 31,
@@ -266,8 +333,15 @@ export const CATEGORY_MAP = [
     key: 34,
     emoji: '🍭',
     name: 'confectionery',
-    keywords: ['candy', 'sweets', 'lollipop', 'fudge', 'toffee'],
+    keywords: ['candy', 'sweets', 'lollipop', 'fudge', 'toffee', 'yogurt'],
     primaryType: ['confectionery'],
+    examples: [
+      'Candyland',
+      'Sweet Treats',
+      'Sugar Rush',
+      'Chocolate Heaven',
+      'Crumbl',
+    ],
   },
   {
     key: 35,
@@ -282,6 +356,7 @@ export const CATEGORY_MAP = [
     name: 'donut',
     keywords: ['doughnut', 'glaze', 'sprinkles', 'pastry', 'coffee'],
     primaryType: ['donut_shop', 'dessert_shop'],
+    examples: ['Dunkin', 'Krispy Kreme', 'Tim Hortons', 'Dairy Queen'],
   },
   {
     key: 37,
@@ -289,24 +364,63 @@ export const CATEGORY_MAP = [
     name: 'fast_food',
     keywords: ['fries', 'burger', 'chicken', 'drive-thru', 'quick'],
     primaryType: ['fast_food_restaurant'],
+    examples: ['Taco Bell', "Arby's", 'Subway', 'White Castle', 'Del Taco'],
   },
   {
     key: 38,
     emoji: '🍴',
     name: 'fine_dining',
-    keywords: ['gourmet', 'elegant', 'chef', 'tasting', 'luxury'],
+    keywords: [
+      'gourmet',
+      'elegant',
+      'chef',
+      'tasting',
+      'luxury',
+      'fine dining',
+    ],
     primaryType: ['fine_dining_restaurant'],
+    examples: [
+      'The French Laundry',
+      'Alinea',
+      'Le Bernardin',
+      'Narisawa',
+      'Osteria Francescana',
+    ],
   },
   {
     key: 39,
     emoji: '🥙',
     name: 'mediterranean',
-    keywords: ['gyro', 'hummus', 'pita', 'olives', 'feta'],
+    keywords: [
+      'gyro',
+      'hummus',
+      'pita',
+      'olives',
+      'feta',
+      'falafel',
+      'kebab',
+      'persian',
+    ],
     primaryType: [
       'mediterranean_restaurant',
       'greek_restaurant',
       'lebanese_restaurant',
       'turkish_restaurant',
+    ],
+    examples: [
+      'Gyro King',
+      'Hummus House',
+      'Pita Palace',
+      'Olive Garden',
+      'Feta Factory',
+      'Falafel King',
+      'CAVA',
+      'Halal Bros',
+      'Kabab & Grill',
+      "Zaxby's",
+      'Pita Pit',
+      'Pita Jungle',
+      'Pita Mediterranean',
     ],
   },
   {
@@ -315,13 +429,23 @@ export const CATEGORY_MAP = [
     name: 'asian_rice',
     keywords: ['rice', 'stir-fry', 'curry', 'sushi', 'bowl'],
     primaryType: ['indonesian_restaurant', 'chinese_restaurant'],
+    examples: ['Panda Express'],
   },
   {
     key: 41,
     emoji: '🥤',
     name: 'juice',
-    keywords: ['smoothie', 'fruit', 'healthy', 'drink', 'refresh'],
-    primaryType: ['juice_shop'],
+    keywords: [
+      'smoothie',
+      'fruit',
+      'healthy',
+      'drink',
+      'refresh',
+      'tea',
+      'tea house',
+    ],
+    primaryType: ['juice_shop', 'tea_house'],
+    examples: ['Jamba Juice', 'Smoothie King', 'Tapioca Express'],
   },
   {
     key: 42,

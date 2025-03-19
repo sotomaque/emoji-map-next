@@ -118,7 +118,7 @@ export function isValidLongitude(longitude: string): boolean {
  * returned, including results outside the specified area.
  *
  * A circle is defined by center point and radius in meters. The
- * radius must be between 0.0 and 50000.0, inclusive. The default
+ * radius must be between 0.0 and 50,000.0, inclusive. The default
  * radius is 0.0. For example:
  *
  * "locationBias": {
@@ -148,6 +148,9 @@ export function isValidLongitude(longitude: string): boolean {
  *   }
  * }
  */
+
+const GOOGLE_MAX_RADIUS_METERS = 50000;
+
 export function createLocationBias({
   location,
   radiusMeters,
@@ -176,7 +179,7 @@ export function createLocationBias({
         latitude: lat,
         longitude: lng,
       },
-      radius: radiusMeters,
+      radius: Math.min(radiusMeters, GOOGLE_MAX_RADIUS_METERS),
     },
   };
 }

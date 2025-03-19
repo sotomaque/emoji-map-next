@@ -32,8 +32,44 @@ vi.mock('@/env', () => ({
 
 vi.mock('@/constants/category-map', () => ({
   CATEGORY_MAP: [
-    { key: 1, name: 'Food', emoji: '🍽️', primaryType: ['restaurant', 'food'] },
-    { key: 2, name: 'Cafe', emoji: '☕', primaryType: ['cafe'] },
+    {
+      key: 1,
+      name: 'Food',
+      emoji: '🍽️',
+      primaryType: ['restaurant', 'food'],
+      keywords: ['restaurant', 'food'],
+    },
+    {
+      key: 2,
+      name: 'Cafe',
+      emoji: '☕',
+      primaryType: ['cafe'],
+      keywords: ['cafe', 'coffee'],
+    },
+    {
+      key: 3,
+      name: 'Burger',
+      emoji: '🍔',
+      primaryType: ['burger_restaurant'],
+      keywords: ['burger', 'hamburger'],
+      examples: ["McDonald's", 'Burger King'],
+    },
+    {
+      key: 6,
+      name: 'Mexican',
+      emoji: '🌮',
+      primaryType: ['mexican_restaurant'],
+      keywords: ['burrito', 'taco'],
+      examples: ['Burrito Factory'],
+    },
+    {
+      key: 8,
+      name: 'Japanese',
+      emoji: '🍱',
+      primaryType: ['japanese_restaurant'],
+      keywords: ['sushi'],
+      examples: ['Sushi Express', 'sushi house'],
+    },
   ],
 }));
 
@@ -946,5 +982,255 @@ describe('Places Search API', () => {
         (place: { id: string }) => place.id === 'place-id-4'
       )
     ).toBe(false);
+  });
+
+  // Add new test cases for emoji matching logic
+  describe('Emoji Matching Logic', () => {
+    it('should match exact example names with correct emoji', async () => {
+      // Mock fetch to return McDonald's data
+      (
+        global.fetch as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: "McDonald's",
+              id: 'place-id-1',
+              types: ['restaurant', 'burger_restaurant', 'food'],
+              location: {
+                latitude: 37.775,
+                longitude: -122.419,
+              },
+              displayName: {
+                text: "McDonald's",
+              },
+            },
+          ],
+        }),
+      });
+
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+        }),
+      });
+
+      await POST(request);
+
+      // Should match McDonald's with burger emoji
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              emoji: '🍔',
+              id: 'place-id-1',
+            }),
+          ],
+        })
+      );
+    });
+
+    it('should match based on exact word matches from keywords', async () => {
+      // Mock fetch to return Burrito Factory data
+      (
+        global.fetch as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Burrito Factory',
+              id: 'place-id-1',
+              types: ['restaurant', 'mexican_restaurant', 'food'],
+              location: {
+                latitude: 37.775,
+                longitude: -122.419,
+              },
+              displayName: {
+                text: 'Burrito Factory',
+              },
+            },
+          ],
+        }),
+      });
+
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+        }),
+      });
+
+      await POST(request);
+
+      // Should match Burrito Factory with taco emoji due to "burrito" keyword
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              emoji: '🌮',
+              id: 'place-id-1',
+            }),
+          ],
+        })
+      );
+    });
+
+    it('should handle case-insensitive matching', async () => {
+      // Mock fetch to return sushi places data
+      (
+        global.fetch as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'SUSHI EXPRESS',
+              id: 'place-id-1',
+              types: ['restaurant', 'japanese_restaurant', 'food'],
+              location: {
+                latitude: 37.775,
+                longitude: -122.419,
+              },
+              displayName: {
+                text: 'SUSHI EXPRESS',
+              },
+            },
+            {
+              name: 'sushi house',
+              id: 'place-id-2',
+              types: ['restaurant', 'japanese_restaurant', 'food'],
+              location: {
+                latitude: 37.776,
+                longitude: -122.418,
+              },
+              displayName: {
+                text: 'sushi house',
+              },
+            },
+          ],
+        }),
+      });
+
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+        }),
+      });
+
+      await POST(request);
+
+      // Both should match with sushi emoji regardless of case
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          results: expect.arrayContaining([
+            expect.objectContaining({
+              emoji: '🍱',
+              id: 'place-id-1',
+            }),
+            expect.objectContaining({
+              emoji: '🍱',
+              id: 'place-id-2',
+            }),
+          ]),
+        })
+      );
+    });
+
+    it('should match based on primary types when no name match', async () => {
+      // Mock fetch to return cafe data
+      (
+        global.fetch as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Local Eatery',
+              id: 'place-id-1',
+              types: ['cafe', 'food'],
+              location: {
+                latitude: 37.775,
+                longitude: -122.419,
+              },
+              displayName: {
+                text: 'Local Eatery',
+              },
+            },
+          ],
+        }),
+      });
+
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+          keys: [2], // Cafe category
+        }),
+      });
+
+      await POST(request);
+
+      // Should match with cafe emoji based on primary type
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              emoji: '☕',
+              id: 'place-id-1',
+            }),
+          ],
+        })
+      );
+    });
+
+    it('should use default emoji when no matches found', async () => {
+      // Mock fetch to return generic place data
+      (
+        global.fetch as unknown as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              name: 'Generic Place',
+              id: 'place-id-1',
+              types: ['point_of_interest'],
+              location: {
+                latitude: 37.775,
+                longitude: -122.419,
+              },
+              displayName: {
+                text: 'Generic Place',
+              },
+            },
+          ],
+        }),
+      });
+
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+        }),
+      });
+
+      await POST(request);
+
+      // Should use default emoji when no matches
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          results: [
+            expect.objectContaining({
+              emoji: '🍽️',
+              id: 'place-id-1',
+            }),
+          ],
+        })
+      );
+    });
   });
 });
