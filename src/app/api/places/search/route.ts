@@ -94,14 +94,16 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 }
 
 /**
- * Finds the best matching emoji for a place based on its types
+ * Finds the best matching emoji for a place based on its types and name
  * @param placeTypes Array of place types from Google Places API
  * @param selectedKeys Array of category keys that were selected for the search
+ * @param placeName Optional place name to match against examples
  * @returns The best matching emoji
  */
 function findBestMatchingEmoji(
   placeTypes: string[],
-  selectedKeys: number[] = []
+  selectedKeys: number[] = [],
+  placeName?: string
 ): string {
   // Default emoji if no match is found
   const DEFAULT_EMOJI = '🍽️';
@@ -111,42 +113,185 @@ function findBestMatchingEmoji(
     return DEFAULT_EMOJI;
   }
 
+  log.debug('Finding emoji for place', {
+    placeTypes,
+    selectedKeys,
+    placeName,
+  });
+
   // Filter CATEGORY_MAP to only include selected categories if any were selected
   const categoriesToConsider =
     selectedKeys.length > 0
       ? CATEGORY_MAP.filter((cat) => selectedKeys.includes(cat.key))
       : CATEGORY_MAP;
 
-  // Find categories that have matching primary types with the place
-  const matchingCategories = categoriesToConsider.filter((category) => {
-    if (!category.primaryType) return false;
+  // Normalize the place name for matching
+  const normalizedPlaceName = placeName
+    ?.toLowerCase()
+    .trim()
+    .replace(/[']/g, '')
+    .replace(/\s+/g, ' ');
 
-    // Check if any of the place types match any of the category's primary types
-    return category.primaryType.some((type) => placeTypes.includes(type));
-  });
+  // Split the normalized place name into words for exact word matching
+  const placeNameWords = normalizedPlaceName?.split(' ') || [];
 
-  // If no matching categories, return default emoji
-  if (matchingCategories.length === 0) {
-    return DEFAULT_EMOJI;
+  // Normalize place types for matching
+  const normalizedPlaceTypes = placeTypes.map((type) => type.toLowerCase());
+
+  // First, try to match by example name if available (highest priority)
+  if (normalizedPlaceName) {
+    for (const category of categoriesToConsider) {
+      if (!category.examples) continue;
+
+      // Check for exact matches in examples first
+      for (const example of category.examples) {
+        const normalizedExample = example
+          .toLowerCase()
+          .trim()
+          .replace(/[']/g, '')
+          .replace(/\s+/g, ' ');
+
+        if (normalizedExample === normalizedPlaceName) {
+          log.debug('Found exact example match', {
+            category: category.name,
+            emoji: category.emoji,
+            example,
+          });
+          return category.emoji;
+        }
+      }
+    }
   }
 
-  // Count the number of matching types for each category
-  const categoryMatches = matchingCategories.map((category) => {
-    const matchCount =
-      category.primaryType?.filter((type) => placeTypes.includes(type))
-        .length || 0;
-
-    return {
-      category,
-      matchCount,
+  // If no exact example match, calculate scores for each category
+  interface CategoryScore {
+    category: (typeof CATEGORY_MAP)[0];
+    score: number;
+    matches: {
+      keywords: string[];
+      exactWordMatches: string[];
+      primaryTypes: string[];
+      nameMatches: string[];
     };
+  }
+
+  const categoryScores: CategoryScore[] = categoriesToConsider.map(
+    (category) => {
+      let score = 0;
+      const matches = {
+        keywords: [] as string[],
+        exactWordMatches: [] as string[],
+        primaryTypes: [] as string[],
+        nameMatches: [] as string[],
+      };
+
+      // Check primary type matches (medium priority)
+      if (category.primaryType) {
+        const primaryTypeMatches = category.primaryType.filter((type) =>
+          normalizedPlaceTypes.includes(type.toLowerCase())
+        );
+        // Give a high base score for any primary type match
+        if (primaryTypeMatches.length > 0) {
+          score += 5; // Base score for having any primary type match
+          score += primaryTypeMatches.length * 2; // Additional points for each match
+        }
+        matches.primaryTypes = primaryTypeMatches;
+      }
+
+      // Check keyword matches (medium priority)
+      if (category.keywords) {
+        // First check for exact word matches in the place name (highest priority for keywords)
+        const exactWordMatches = category.keywords.filter((keyword) => {
+          const normalizedKeyword = keyword.toLowerCase();
+          return placeNameWords.includes(normalizedKeyword);
+        });
+        score += exactWordMatches.length * 4; // Weight of 4 for exact word matches
+        matches.exactWordMatches = exactWordMatches;
+
+        // Then check for general keyword matches in types and name
+        const keywordMatches = category.keywords.filter((keyword) => {
+          const normalizedKeyword = keyword.toLowerCase();
+          return (
+            normalizedPlaceTypes.includes(normalizedKeyword) ||
+            (normalizedPlaceName &&
+              normalizedPlaceName.includes(normalizedKeyword) &&
+              !exactWordMatches.includes(keyword))
+          ); // Don't double count exact matches
+        });
+        score += keywordMatches.length * 2; // Weight of 2 for general keyword matches
+        matches.keywords = keywordMatches;
+      }
+
+      // Check partial name matches with examples (high priority)
+      if (category.examples && normalizedPlaceName) {
+        const nameMatches = category.examples.filter((example) => {
+          const normalizedExample = example
+            .toLowerCase()
+            .trim()
+            .replace(/[']/g, '')
+            .replace(/\s+/g, ' ');
+          return (
+            normalizedPlaceName.includes(normalizedExample) ||
+            normalizedExample.includes(normalizedPlaceName)
+          );
+        });
+        score += nameMatches.length * 3; // Weight of 3 for partial name matches
+        matches.nameMatches = nameMatches;
+      }
+
+      // Penalize generic categories (like 'Food') when they don't have specific matches
+      if (
+        category.name.toLowerCase() === 'food' &&
+        matches.primaryTypes.length > 0 &&
+        matches.exactWordMatches.length === 0 &&
+        matches.nameMatches.length === 0
+      ) {
+        score -= 2; // Reduce score for generic food category when only matching by type
+      }
+
+      return { category, score, matches };
+    }
+  );
+
+  // Sort by score (descending)
+  categoryScores.sort((a, b) => {
+    // If scores are equal, prioritize categories with primary type matches
+    if (b.score === a.score) {
+      return (
+        (b.matches.primaryTypes.length || 0) -
+        (a.matches.primaryTypes.length || 0)
+      );
+    }
+    return b.score - a.score;
   });
 
-  // Sort by match count (descending)
-  categoryMatches.sort((a, b) => b.matchCount - a.matchCount);
+  // Log the scoring results for debugging
+  log.debug('Category scores', {
+    scores: categoryScores.map(({ category, score, matches }) => ({
+      category: category.name,
+      emoji: category.emoji,
+      score,
+      matches,
+    })),
+  });
 
-  // Return the emoji of the category with the most matches
-  return categoryMatches[0].category.emoji;
+  // If we have any matches, return the highest scoring emoji
+  if (categoryScores.length > 0 && categoryScores[0].score > 0) {
+    const bestMatch = categoryScores[0];
+    log.debug('Selected best match by score', {
+      category: bestMatch.category.name,
+      emoji: bestMatch.category.emoji,
+      score: bestMatch.score,
+      matches: bestMatch.matches,
+    });
+    return bestMatch.category.emoji;
+  }
+
+  // If no matches found, return default emoji
+  log.debug('No matching categories found, using default emoji', {
+    emoji: DEFAULT_EMOJI,
+  });
+  return DEFAULT_EMOJI;
 }
 
 // Define types for Google Places API request
@@ -250,10 +395,30 @@ function transformPlace(
   place: GooglePlaceResult,
   key?: number
 ): TransformedPlace {
+  // Log the raw place data for debugging
+  log.debug('Raw place data', {
+    id: place.id,
+    name: place.displayName?.text,
+    types: place.types,
+  });
+
+  const emoji = findBestMatchingEmoji(
+    [...(place.types || [])],
+    key ? [key] : [],
+    place.displayName?.text
+  );
+
+  log.debug('Transformed place', {
+    name: place.displayName?.text,
+    types: place.types,
+    selectedKey: key,
+    assignedEmoji: emoji,
+  });
+
   return {
     id: place.id,
     location: place.location,
-    emoji: findBestMatchingEmoji([...(place.types || [])], key ? [key] : []),
+    emoji,
   };
 }
 
@@ -345,15 +510,8 @@ function matchesPriceLevel(
   place: GooglePlaceResult,
   priceLevels?: number[]
 ): boolean {
-  // Debug logging
-  console.log(
-    `Checking place ${place.name} with price level ${place.priceLevel} against requested levels:`,
-    priceLevels
-  );
-
   // If priceLevels is not set or empty, don't filter
   if (!priceLevels || priceLevels.length === 0) {
-    console.log('No price levels specified, not filtering');
     return true;
   }
 
@@ -365,7 +523,6 @@ function matchesPriceLevel(
     priceLevels.includes(3) &&
     priceLevels.includes(4)
   ) {
-    console.log('All price levels selected, not filtering');
     return true;
   }
 
@@ -373,17 +530,11 @@ function matchesPriceLevel(
   // This is a compromise to avoid filtering out too many places
   if (!place.priceLevel || place.priceLevel === 'PRICE_LEVEL_UNSPECIFIED') {
     const includeUnspecified = priceLevels.includes(1);
-    console.log(
-      `Place has no price level or unspecified, ${
-        includeUnspecified ? 'including' : 'excluding'
-      } (treating as level 1)`
-    );
     return includeUnspecified;
   }
 
   // Always include free places regardless of the requested price levels
   if (place.priceLevel === 'PRICE_LEVEL_FREE') {
-    console.log('Place is free, including regardless of filters');
     return true;
   }
 
@@ -403,13 +554,11 @@ function matchesPriceLevel(
       placeNumericLevel = 4;
       break;
     default:
-      console.log('Unknown price level, excluding');
       return false; // Shouldn't happen, but just in case
   }
 
   // Check if the place's price level is in the requested levels
   const matches = priceLevels.includes(placeNumericLevel);
-  console.log(`Place numeric level: ${placeNumericLevel}, matches: ${matches}`);
   return matches;
 }
 
@@ -430,17 +579,11 @@ function meetsMinimumRating(
 
   // If the place doesn't have a rating, exclude it
   if (place.rating === undefined) {
-    console.log(
-      `Place ${place.name} has no rating, excluding from minimum rating filter`
-    );
     return false;
   }
 
   // Check if the place's rating meets the minimum
   const meets = place.rating >= minimumRating;
-  console.log(
-    `Place ${place.name} has rating ${place.rating}, minimum required: ${minimumRating}, meets: ${meets}`
-  );
   return meets;
 }
 
@@ -680,6 +823,14 @@ async function fetchPlacesForKey(
       // Extract places from the validated data
       const places = validatedData.places || [];
 
+      log.debug('Raw response data', {
+        places: places.map((place) => ({
+          id: place.id,
+          name: place.displayName?.text,
+          types: place.types,
+        })),
+      });
+
       // Add places to our collection for this key
       placesForKey.push(...places);
     } catch (error) {
@@ -846,29 +997,83 @@ async function fetchPlacesForMultipleKeys(
       // Extract places from the validated data
       const places = validatedData.places || [];
 
+      log.debug('Raw response data', {
+        places: places.map((place) => ({
+          id: place.id,
+          name: place.displayName?.text,
+          types: place.types,
+        })),
+      });
+
       // For each place, determine which category key(s) it belongs to
       for (const place of places) {
         const placeTypes = place.types || [];
+        const placeName = place.displayName?.text;
 
-        // Find all keys whose primary types match any of the place's types
-        const matchingKeys: number[] = [];
+        log.debug('Processing place in combined request', {
+          name: placeName,
+          types: placeTypes,
+        });
 
-        for (const [keyStr, primaryTypes] of Object.entries(
-          keyToPrimaryTypesMap
-        )) {
-          const key = parseInt(keyStr, 10);
-          if (primaryTypes.some((type) => placeTypes.includes(type))) {
-            matchingKeys.push(key);
+        // First try to match by name
+        let matchedByName = false;
+        for (const category of CATEGORY_MAP) {
+          if (!category.examples) continue;
+
+          const normalizedPlaceName = placeName
+            ?.toLowerCase()
+            .trim()
+            .replace(/[']/g, '')
+            .replace(/\s+/g, ' ');
+          if (!normalizedPlaceName) continue;
+
+          const hasNameMatch = category.examples.some((example) => {
+            const normalizedExample = example
+              .toLowerCase()
+              .trim()
+              .replace(/[']/g, '')
+              .replace(/\s+/g, ' ');
+            return (
+              normalizedExample === normalizedPlaceName ||
+              normalizedPlaceName.includes(normalizedExample) ||
+              normalizedExample.includes(normalizedPlaceName)
+            );
+          });
+
+          if (hasNameMatch) {
+            log.debug('Found name match in combined request', {
+              placeName,
+              category: category.name,
+              emoji: category.emoji,
+            });
+            allPlaces.push({ ...place, key: category.key });
+            matchedByName = true;
+            break;
           }
         }
 
-        if (matchingKeys.length > 0) {
-          // Use the first matching key for simplicity
-          // This will be used for emoji selection
-          allPlaces.push({ ...place, key: matchingKeys[0] });
-        } else {
-          // If no matching key, still include the place without a key
-          allPlaces.push(place);
+        // If no name match, try matching by types
+        if (!matchedByName) {
+          // Find all keys whose primary types match any of the place's types
+          const matchingKeys: number[] = [];
+
+          for (const [keyStr, primaryTypes] of Object.entries(
+            keyToPrimaryTypesMap
+          )) {
+            const key = parseInt(keyStr, 10);
+            if (primaryTypes.some((type) => placeTypes.includes(type))) {
+              matchingKeys.push(key);
+            }
+          }
+
+          if (matchingKeys.length > 0) {
+            // Use the first matching key for simplicity
+            // This will be used for emoji selection
+            allPlaces.push({ ...place, key: matchingKeys[0] });
+          } else {
+            // If no matching key, still include the place without a key
+            allPlaces.push(place);
+          }
         }
       }
     } catch (error) {
@@ -1117,15 +1322,6 @@ export async function POST(
         if (minimumRating !== undefined) {
           log.debug('Minimum rating parameter received', { minimumRating });
         }
-
-        // Debug logging for price levels
-        console.log('Search request with price levels:', priceLevels);
-
-        // Log the total number of places before filtering
-        let totalPlacesBeforeFiltering = 0;
-        let totalPlacesAfterFiltering = 0;
-        let placesWithPriceLevelCount = 0;
-        let placesWithoutPriceLevelCount = 0;
 
         // Check if priceLevels contains all possible values [1,2,3,4]
         const hasAllPriceLevels =
@@ -1556,77 +1752,7 @@ export async function POST(
             ).values()
           );
 
-          // Count places with and without price levels
-          totalPlacesBeforeFiltering = allResults.length;
-
-          // Count places with each price level
-          const priceLevelCounts = {
-            PRICE_LEVEL_UNSPECIFIED: 0,
-            PRICE_LEVEL_FREE: 0,
-            PRICE_LEVEL_INEXPENSIVE: 0,
-            PRICE_LEVEL_MODERATE: 0,
-            PRICE_LEVEL_EXPENSIVE: 0,
-            PRICE_LEVEL_VERY_EXPENSIVE: 0,
-            undefined: 0,
-          };
-
-          allResults.forEach((place) => {
-            if (!place.priceLevel) {
-              priceLevelCounts['undefined']++;
-              placesWithoutPriceLevelCount++;
-            } else {
-              priceLevelCounts[place.priceLevel]++;
-              placesWithPriceLevelCount++;
-            }
-          });
-
-          totalPlacesAfterFiltering = uniqueResults.length;
-
-          console.log('Places before filtering:', totalPlacesBeforeFiltering);
-          console.log('Places with price level:', placesWithPriceLevelCount);
-          console.log(
-            'Places without price level:',
-            placesWithoutPriceLevelCount
-          );
-          console.log('Price level distribution:', priceLevelCounts);
-          console.log('Places after filtering:', totalPlacesAfterFiltering);
-          console.log('Requested price levels:', priceLevels);
-
           log.debug('Total unique results', { count: uniqueResults.length });
-
-          // Add rating distribution logging similar to price level distribution
-          // Count places with and without ratings
-          let placesWithRatingCount = 0;
-          let placesWithoutRatingCount = 0;
-
-          // Count places with each rating range
-          const ratingCounts = {
-            'No Rating': 0,
-            '1.0-1.9': 0,
-            '2.0-2.9': 0,
-            '3.0-3.9': 0,
-            '4.0-4.9': 0,
-            '5.0': 0,
-          };
-
-          allResults.forEach((place) => {
-            if (place.rating === undefined) {
-              ratingCounts['No Rating']++;
-              placesWithoutRatingCount++;
-            } else {
-              if (place.rating < 2) ratingCounts['1.0-1.9']++;
-              else if (place.rating < 3) ratingCounts['2.0-2.9']++;
-              else if (place.rating < 4) ratingCounts['3.0-3.9']++;
-              else if (place.rating < 5) ratingCounts['4.0-4.9']++;
-              else ratingCounts['5.0']++;
-              placesWithRatingCount++;
-            }
-          });
-
-          console.log('Places with rating:', placesWithRatingCount);
-          console.log('Places without rating:', placesWithoutRatingCount);
-          console.log('Rating distribution:', ratingCounts);
-          console.log('Minimum rating filter:', minimumRating);
 
           // Transform the results to the desired shape
           const transformedResults: TransformedPlace[] = uniqueResults.map(
@@ -1637,15 +1763,6 @@ export async function POST(
           const limitedResults = maxResultCount
             ? transformedResults.slice(0, maxResultCount)
             : transformedResults;
-
-          // Log the filtering process
-          console.log(`Original results from Google: ${allResults.length}`);
-          console.log(
-            `After filtering (price/open/rating): ${transformedResults.length}`
-          );
-          console.log(
-            `After applying maxResultCount (${maxResultCount}): ${limitedResults.length}`
-          );
 
           // Update the response object to only include results, cacheHit, and count
           return NextResponse.json({
