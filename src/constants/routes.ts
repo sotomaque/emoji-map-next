@@ -19,19 +19,14 @@ export const navItems: NavItem[] = [
     target: false,
   },
   {
-    label: 'App',
-    href: '/app',
+    label: 'Admin',
+    href: '/admin',
     target: true,
     featureFlag: 'ENABLE_APP',
   },
   {
     label: 'About',
     href: '/about',
-    target: false,
-  },
-  {
-    label: 'Docs',
-    href: '/docs',
     target: false,
   },
   {
