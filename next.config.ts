@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     // Disable image optimization in development for faster builds
     unoptimized: process.env.NODE_ENV === 'development',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   // Enable production source maps for better debugging
   productionBrowserSourceMaps: false,

@@ -17,7 +17,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-export function ModeToggle({ className }: { className?: string }) {
+export function ModeToggle({
+  className,
+  overrideIconColor,
+}: {
+  className?: string;
+  overrideIconColor?: string;
+}) {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -29,8 +35,18 @@ export function ModeToggle({ className }: { className?: string }) {
           size='icon'
           className={cn(className, 'hover:bg-primary/10')}
         >
-          <SunIcon className='h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-white' />
-          <MoonIcon className='absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-white ' />
+          <SunIcon
+            className={cn(
+              'h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0',
+              overrideIconColor
+            )}
+          />
+          <MoonIcon
+            className={cn(
+              'absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100',
+              overrideIconColor
+            )}
+          />
           <span className='sr-only'>Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
