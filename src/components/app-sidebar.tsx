@@ -147,13 +147,13 @@ const SidebarSkeleton = () => {
       {Array.from({ length: 4 }).map((_, i) => (
         <SidebarMenuItem key={i}>
           <SidebarMenuButton>
-            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+            <div className='h-4 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded'></div>
           </SidebarMenuButton>
           <SidebarMenuSub>
             {Array.from({ length: 3 }).map((_, j) => (
               <SidebarMenuSubItem key={j}>
                 <SidebarMenuSubButton>
-                  <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+                  <div className='h-3 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded'></div>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             ))}
