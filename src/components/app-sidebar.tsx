@@ -17,6 +17,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { useIsAdmin } from '@/hooks/use-is-admin/use-is-admin';
 import { ModeToggle } from './nav/mode-toggle/mode-toggle';
 
 export const ADMIN_SIDEBAR_DATA = {
@@ -134,7 +135,7 @@ function WrappedUserButton() {
     <SidebarMenuButton size='lg' asChild>
       <div className='inline-block'>
         <UserButton />
-        {/* Name */}
+        {/* Name / Email */}
         <div>{displayName}</div>
       </div>
     </SidebarMenuButton>
@@ -166,8 +167,7 @@ const SidebarSkeleton = () => {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const { user } = useUser();
-  const isAdmin = Boolean(user?.publicMetadata.admin);
+  const isAdmin = useIsAdmin();
 
   return (
     <Sidebar {...props}>

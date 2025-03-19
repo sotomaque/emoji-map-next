@@ -1,14 +1,12 @@
-'use client';
-
 import { redirect } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser();
+  const user = await currentUser();
   const isAdmin = Boolean(user?.publicMetadata.admin);
 
   if (!isAdmin) {

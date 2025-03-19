@@ -129,14 +129,19 @@ export default function AdminPage() {
                 If you require access to manage Emoji Map resources, please
                 submit a request for administrator privileges.
               </p>
-              <Button
-                onClick={handleRequestAccess}
-                className='flex items-center gap-2 mx-auto'
-                size='lg'
-              >
-                <Mail className='w-4 h-4' />
-                Request Admin Access
-              </Button>
+
+              <div className='flex justify-center align-center items-center space-x-2'>
+                <Button onClick={handleRequestAccess} size='lg'>
+                  <Mail className='w-4 h-4' />
+                  Request Admin Access
+                </Button>
+
+                <Link href='/'>
+                  <Button type='button' variant='outline'>
+                    Go Back
+                  </Button>
+                </Link>
+              </div>
             </div>
           </>
         )}
@@ -150,11 +155,20 @@ export default function AdminPage() {
             You need to sign in with an admin account to view the admin
             dashboard.
           </p>
-          <SignInButton mode='modal'>
-            <Button type='button' variant='default'>
-              Sign In
-            </Button>
-          </SignInButton>
+
+          <div className='space-x-2'>
+            <SignInButton mode='modal'>
+              <Button type='button' variant='default'>
+                Sign In
+              </Button>
+            </SignInButton>
+
+            <Link href='/'>
+              <Button type='button' variant='outline'>
+                Go Back
+              </Button>
+            </Link>
+          </div>
         </div>
       </SignedOut>
     </div>
