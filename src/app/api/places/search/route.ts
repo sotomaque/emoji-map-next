@@ -113,12 +113,6 @@ function findBestMatchingEmoji(
     return DEFAULT_EMOJI;
   }
 
-  log.debug('Finding emoji for place', {
-    placeTypes,
-    selectedKeys,
-    placeName,
-  });
-
   // Filter CATEGORY_MAP to only include selected categories if any were selected
   const categoriesToConsider =
     selectedKeys.length > 0
@@ -152,14 +146,40 @@ function findBestMatchingEmoji(
           .replace(/\s+/g, ' ');
 
         if (normalizedExample === normalizedPlaceName) {
-          log.debug('Found exact example match', {
-            category: category.name,
-            emoji: category.emoji,
-            example,
-          });
           return category.emoji;
         }
       }
+    }
+  }
+
+  // Check for direct primary type matches before scoring (new logic for specific types)
+  // This handles cases like "mediterranean_restaurant" specifically
+  for (const category of categoriesToConsider) {
+    if (!category.primaryType) continue;
+
+    // Check if we have a direct and unambiguous match with specific types
+    // For specific restaurant types like "mediterranean_restaurant", "chinese_restaurant", etc.
+    const hasSpecificMatch = category.primaryType.some((type) => {
+      // Check if this is a specific restaurant type (not generic)
+      if (
+        type !== 'restaurant' &&
+        type !== 'food' &&
+        type !== 'food_court' &&
+        type !== 'buffet_restaurant'
+      ) {
+        return normalizedPlaceTypes.includes(type.toLowerCase());
+      }
+      return false;
+    });
+
+    // If we have a specific primary type match, return this emoji immediately
+    if (hasSpecificMatch) {
+      log.debug('Found direct specific primary type match', {
+        category: category.name,
+        emoji: category.emoji,
+        primaryType: category.primaryType,
+      });
+      return category.emoji;
     }
   }
 
@@ -395,25 +415,11 @@ function transformPlace(
   place: GooglePlaceResult,
   key?: number
 ): TransformedPlace {
-  // Log the raw place data for debugging
-  log.debug('Raw place data', {
-    id: place.id,
-    name: place.displayName?.text,
-    types: place.types,
-  });
-
   const emoji = findBestMatchingEmoji(
     [...(place.types || [])],
     key ? [key] : [],
     place.displayName?.text
   );
-
-  log.debug('Transformed place', {
-    name: place.displayName?.text,
-    types: place.types,
-    selectedKey: key,
-    assignedEmoji: emoji,
-  });
 
   return {
     id: place.id,
@@ -795,16 +801,7 @@ async function fetchPlacesForKey(
       ...baseSearchParams,
       includedPrimaryTypes: chunk,
     };
-
-    log.debug(`Making request for key ${key} with types`, {
-      key,
-      types: chunk,
-      categoryName: category.name,
-    });
-
     const searchUrl = `${GOOGLE_SEARCH_BASE_URL}?fields=${FIELDS}&key=${GOOGLE_API_KEY}`;
-
-    log.debug('Search URL', { searchUrl });
 
     try {
       // Use fetchWithRetry instead of direct fetch
@@ -822,14 +819,6 @@ async function fetchPlacesForKey(
 
       // Extract places from the validated data
       const places = validatedData.places || [];
-
-      log.debug('Raw response data', {
-        places: places.map((place) => ({
-          id: place.id,
-          name: place.displayName?.text,
-          types: place.types,
-        })),
-      });
 
       // Add places to our collection for this key
       placesForKey.push(...places);

@@ -120,12 +120,60 @@ Example debug log:
 }
 ```
 
+## Common Matching Issues and Troubleshooting
+
+### Mediterranean Restaurant Example
+
+Consider a Mediterranean restaurant with this data:
+```typescript
+{
+  "displayName": { "text": "Beeside Balcony" },
+  "types": [
+    "mediterranean_restaurant",
+    "restaurant",
+    "food",
+    "point_of_interest",
+    "establishment"
+  ]
+}
+```
+
+This should match category 39 (🥙 Mediterranean) as it has the primary type "mediterranean_restaurant". 
+However, it might get the default emoji (🍽️) instead due to:
+
+1. **No word matching in name**: "Beeside Balcony" doesn't contain any Mediterranean keywords (gyro, hummus, etc.)
+2. **Competition with the generic food category**: The generic food category (key: 25) includes "restaurant" and "food" in its primaryType, which are also present in the place's types.
+
+#### Troubleshooting:
+
+To fix Mediterranean restaurant matching, options include:
+- Update the restaurant name in examples if it's a common chain
+- Add more relevant keywords to the Mediterranean category
+- Ensure the log.debug statements are enabled to view scoring breakdown
+
+### Other Common Issues
+
+1. **Incorrect primary type**: Some Google Places API types may not match our expected primaryType values
+2. **Multiple applicable categories**: Places with multiple types (e.g., "restaurant" and "bar") may match multiple categories
+3. **Generic names**: Places with generic names require stronger type matching
+
 ## Implementation
 
 The matching logic is implemented in the `findBestMatchingEmoji` function in `src/app/api/places/search/route.ts`. The function takes:
 - `placeTypes`: Array of place types from Google Places API
 - `selectedKeys`: Array of category keys to consider (optional)
 - `placeName`: The place's display name (optional)
+
+```typescript
+// Key portion of the implementation
+if (categoryScores.length > 0 && categoryScores[0].score > 0) {
+  const bestMatch = categoryScores[0];
+  return bestMatch.category.emoji;
+}
+
+// If no matches found, return default emoji
+return DEFAULT_EMOJI;
+```
 
 ## Future Improvements
 
@@ -137,4 +185,6 @@ Potential areas for enhancement:
 5. Customizable scoring weights
 6. Enhanced handling of compound words and phrases
 7. Integration with business category data from additional sources
-8. Localization support for international place names and categories 
+8. Localization support for international place names and categories
+9. Prioritize primaryType matches more strongly to ensure specific types like "mediterranean_restaurant" override generic "restaurant" types
+10. Implement custom override rules for special cases 
