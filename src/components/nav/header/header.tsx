@@ -39,7 +39,7 @@ export function Header({ showAuth = false, className }: HeaderProps) {
         {showAuth ? (
           <>
             <SignedOut>
-              <SignInButton mode='modal' >
+              <SignInButton mode='modal'>
                 <Button type='button' variant='default'>
                   Sign In
                 </Button>

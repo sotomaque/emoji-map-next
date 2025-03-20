@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { SignedIn, SignedOut, SignInButton, UserProfile } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
-import { useTheme } from "next-themes";
-import { Particles } from "@/components/particles/particles";
-import { Button } from "@/components/ui/button";
+import { SignedIn, SignedOut, SignInButton, UserProfile } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
+import { useTheme } from 'next-themes';
+import { Particles } from '@/components/particles/particles';
+import { Button } from '@/components/ui/button';
 
 export default function AccountPage() {
   const { theme } = useTheme();
   return (
-    <div className="flex flex-grow items-center justify-center p-4 relative">
+    <div className='flex flex-grow items-center justify-center p-4 relative'>
       {/* Cyberpunk background */}
       <div className='absolute inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 z-0'>
         {/* Grid overlay */}
@@ -42,26 +42,31 @@ export default function AccountPage() {
       </div>
 
       <SignedOut>
-        <div className="max-w-md w-full bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground rounded-lg shadow-lg border border-purple-200 dark:border-white/10 p-8 z-10">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Account Login</h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sign in to access your account</p>
+        <div className='max-w-md w-full bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground rounded-lg shadow-lg border border-purple-200 dark:border-white/10 p-8 z-10'>
+          <div className='text-center mb-6'>
+            <h1 className='text-2xl font-bold text-gray-800 dark:text-white'>
+              Account Login
+            </h1>
+            <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
+              Sign in to access your account
+            </p>
           </div>
-          <div className="flex justify-center items-center">
+          <div className='flex justify-center items-center'>
             <SignInButton
-              mode="modal"
+              mode='modal'
               appearance={{
-                baseTheme: theme === "dark" ? dark : undefined,
+                baseTheme: theme === 'dark' ? dark : undefined,
                 elements: {
-                  footerAction: { display: "none" },
-                  socialButtonsRoot: { display: "none" },
-                  dividerRow: { display: "none" },
+                  footerAction: { display: 'none' },
+                  socialButtonsRoot: { display: 'none' },
+                  dividerRow: { display: 'none' },
                 },
-              }} >
+              }}
+            >
               <Button
                 type='button'
-                className="px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105
-                dark:text-white"
+                className='px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105
+                dark:text-white'
               >
                 Sign In
               </Button>
@@ -71,10 +76,12 @@ export default function AccountPage() {
       </SignedOut>
 
       <SignedIn>
-        <UserProfile appearance={{
-          baseTheme: theme === "dark" ? dark : undefined
-        }} />
+        <UserProfile
+          appearance={{
+            baseTheme: theme === 'dark' ? dark : undefined,
+          }}
+        />
       </SignedIn>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useUser } from '@clerk/nextjs';
 import { Footer } from '@/components/footer/footer';
