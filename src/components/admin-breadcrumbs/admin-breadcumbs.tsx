@@ -18,7 +18,7 @@ type BreadcrumbItemType = {
   isActive: boolean;
 };
 
-export function AppBreadcrumb() {
+export function AdminBreadcrumbs() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 

@@ -32,8 +32,12 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
               target={navItem.target ? '_blank' : undefined}
               rel={navItem.target ? 'noopener noreferrer' : undefined}
               className={`transition-colors flex items-center gap-1
-              ${isActive ? 'text-white font-semibold' : 'text-white/75'}
-              ${!isActive && 'hover:text-white/90'}
+              ${
+                isActive
+                  ? 'text-slate-600 dark:text-white font-semibold'
+                  : 'text-slate-600/75 dark:text-white/75'
+              }
+              ${!isActive && 'hover:text-slate-600 dark:hover:text-white'}
              text-sm`}
             >
               {navItem.label}

@@ -1,4 +1,5 @@
 import type { NavItem } from '@/types/nav-items';
+import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from './links';
 
 /**
  * Navigation items for the application
@@ -19,14 +20,25 @@ export const navItems: NavItem[] = [
     target: false,
   },
   {
+    label: 'My Account',
+    href: '/account',
+    target: false,
+  },
+  {
     label: 'Admin',
     href: '/admin',
     target: true,
     featureFlag: 'ENABLE_APP',
+    hidden: true,
   },
   {
     label: 'About',
     href: '/about',
+    target: false,
+  },
+  {
+    label: 'Support',
+    href: '/support',
     target: false,
   },
   {
@@ -37,13 +49,13 @@ export const navItems: NavItem[] = [
   },
   {
     label: 'iOS GitHub',
-    href: 'https://github.com/sotomaque/emoji-map',
+    href: IOS_GITHUB_REPO,
     target: true,
     hidden: true,
   },
   {
     label: 'Web App GitHub',
-    href: 'https://github.com/sotomaque/emoji-map-next',
+    href: WEB_GITHUB_REPO,
     target: true,
     hidden: true,
   },

@@ -74,10 +74,11 @@ describe('Footer', () => {
   it('renders the copyright text', () => {
     render(<Footer />);
 
-    const currentYear = new Date().getFullYear();
-    expect(
-      screen.getByText(`© ${currentYear} Emoji Map. All rights reserved.`)
-    ).toBeInTheDocument();
+    expect(screen.getByText(`Made with`)).toBeInTheDocument();
+
+    expect(screen.getByText(`❤️`)).toBeInTheDocument();
+
+    expect(screen.getByText(`by Emoji Map Team`)).toBeInTheDocument();
   });
 
   it('renders visible navigation items', () => {

@@ -10,7 +10,9 @@ export function Logo() {
         height={56}
         className='mr-3 rounded-xl shadow-sm'
       />
-      <span className='text-white font-bold text-xl'>Emoji Map</span>
+      <span className='text-slate-600 dark:text-white font-bold text-xl'>
+        Emoji Map
+      </span>
     </div>
   );
 }

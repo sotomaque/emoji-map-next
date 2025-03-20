@@ -126,11 +126,15 @@ describe('DesktopNav', () => {
 
     // The About link should have the active class
     const aboutLink = screen.getByText('About').closest('a');
-    expect(aboutLink).toHaveClass('text-white font-semibold');
+    expect(aboutLink).toHaveClass(
+      'text-slate-600 dark:text-white font-semibold'
+    );
 
     // Other links should not have the active class
     const homeLink = screen.getByText('Home').closest('a');
-    expect(homeLink).not.toHaveClass('text-white font-semibold');
+    expect(homeLink).not.toHaveClass(
+      'text-slate-600 dark:text-white font-semibold'
+    );
   });
 
   it('renders external links with target="_blank" and rel attributes', () => {

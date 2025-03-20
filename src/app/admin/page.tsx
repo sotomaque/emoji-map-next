@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/nextjs';
 import {
   ArrowRight,
   Code,
@@ -9,84 +11,141 @@ import {
   Globe,
   Settings,
   Shield,
+  Lock,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { CONTACT_EMAIL } from '@/constants/contact';
 
 export default function AdminPage() {
+  const { user } = useUser();
+  const isAdmin = Boolean(user?.publicMetadata.admin);
+
+  const handleRequestAccess = () => {
+    const userId = user?.id || 'Unknown';
+    const email = user?.emailAddresses[0]?.emailAddress || 'Unknown';
+    const name =
+      user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : email;
+
+    const subject = encodeURIComponent(`Admin Access Request for ${name}`);
+    const body = encodeURIComponent(
+      `Hello,\n\nI would like to request admin access to the Emoji Map application.\n\n` +
+        `User ID: ${userId}\n` +
+        `Name: ${name}\n` +
+        `Email: ${email}\n\n` +
+        `Thank you.`
+    );
+
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
   return (
     <div className='flex flex-1 flex-col gap-6 p-4'>
       <h1 className='text-3xl font-bold'>Admin Dashboard</h1>
 
       <SignedIn>
-        <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-          {/* API Documentation Card */}
-          <DashboardCard
-            title='API Reference'
-            description='Explore and understand all available API endpoints'
-            icon={<Code className='h-5 w-5' />}
-            link='/admin/api-reference'
-          />
+        {isAdmin ? (
+          <>
+            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+              {/* API Documentation Card */}
+              <DashboardCard
+                title='API Reference'
+                description='Explore and understand all available API endpoints'
+                icon={<Code className='h-5 w-5' />}
+                link='/admin/api-reference'
+              />
 
-          {/* Services Overview Card */}
-          <DashboardCard
-            title='Services'
-            description='Monitor and manage all connected services'
-            icon={<Globe className='h-5 w-5' />}
-            link='/admin/services'
-          />
+              {/* Services Overview Card */}
+              <DashboardCard
+                title='Services'
+                description='Monitor and manage all connected services'
+                icon={<Globe className='h-5 w-5' />}
+                link='/admin/services'
+              />
 
-          {/* Repositories Card */}
-          <DashboardCard
-            title='Repositories'
-            description='Access source code and development resources'
-            icon={<Github className='h-5 w-5' />}
-            link='/admin/repositories'
-          />
+              {/* Repositories Card */}
+              <DashboardCard
+                title='Repositories'
+                description='Access source code and development resources'
+                icon={<Github className='h-5 w-5' />}
+                link='/admin/repositories'
+              />
 
-          {/* Database Management Card */}
-          <DashboardCard
-            title='Database'
-            description='Manage database connections and data'
-            icon={<Database className='h-5 w-5' />}
-            link='/admin/database'
-          />
+              {/* Database Management Card */}
+              <DashboardCard
+                title='Database'
+                description='Manage database connections and data'
+                icon={<Database className='h-5 w-5' />}
+                link='/admin/database'
+              />
 
-          {/* Documentation Card */}
-          <DashboardCard
-            title='Documentation'
-            description='View technical documentation and guides'
-            icon={<FileText className='h-5 w-5' />}
-            link='/admin/documentation'
-          />
+              {/* Documentation Card */}
+              <DashboardCard
+                title='Documentation'
+                description='View technical documentation and guides'
+                icon={<FileText className='h-5 w-5' />}
+                link='/admin/documentation'
+              />
 
-          {/* Settings Card */}
-          <DashboardCard
-            title='Settings'
-            description='Configure system and application settings'
-            icon={<Settings className='h-5 w-5' />}
-            link='/admin/settings'
-          />
-        </div>
+              {/* Settings Card */}
+              <DashboardCard
+                title='Settings'
+                description='Configure system and application settings'
+                icon={<Settings className='h-5 w-5' />}
+                link='/admin/settings'
+              />
+            </div>
 
-        <div className='mt-6 rounded-xl border p-6'>
-          <h2 className='text-xl font-semibold mb-4'>System Status</h2>
-          <div className='grid gap-4 md:grid-cols-3'>
-            <StatusItem label='API' status='healthy' />
-            <StatusItem label='Database' status='healthy' />
-            <StatusItem label='Auth Service' status='healthy' />
-            <StatusItem
-              label='Storage'
-              status='warning'
-              message='80% capacity used'
-            />
-            <StatusItem label='Search Engine' status='healthy' />
-            <StatusItem label='Background Tasks' status='healthy' />
-          </div>
-          <div className='mt-6 text-sm text-muted-foreground'>
-            Last checked: {new Date().toLocaleString()}
-          </div>
-        </div>
+            <div className='mt-6 rounded-xl border p-6'>
+              <h2 className='text-xl font-semibold mb-4'>System Status</h2>
+              <div className='grid gap-4 md:grid-cols-3'>
+                <StatusItem label='API' status='healthy' />
+                <StatusItem label='Database' status='healthy' />
+                <StatusItem label='Auth Service' status='healthy' />
+                <StatusItem
+                  label='Storage'
+                  status='warning'
+                  message='80% capacity used'
+                />
+                <StatusItem label='Search Engine' status='healthy' />
+                <StatusItem label='Background Tasks' status='healthy' />
+              </div>
+              <div className='mt-6 text-sm text-muted-foreground'>
+                Last checked: {new Date().toLocaleString()}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className='max-w-md mx-auto rounded-xl border p-8 text-center'>
+              <div className='flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900 mx-auto mb-6'>
+                <Lock className='w-8 h-8 text-amber-600 dark:text-amber-300' />
+              </div>
+              <h2 className='text-2xl font-bold mb-2'>Admin Access Required</h2>
+              <p className='text-muted-foreground mb-6'>
+                This dashboard is restricted to authorized administrators only.
+                If you require access to manage Emoji Map resources, please
+                submit a request for administrator privileges.
+              </p>
+
+              <div className='flex justify-center align-center items-center space-x-2'>
+                <Button onClick={handleRequestAccess} size='lg'>
+                  <Mail className='w-4 h-4' />
+                  Request Admin Access
+                </Button>
+
+                <Link href='/'>
+                  <Button type='button' variant='outline'>
+                    Go Back
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
       </SignedIn>
 
       <SignedOut>
@@ -97,9 +156,20 @@ export default function AdminPage() {
             You need to sign in with an admin account to view the admin
             dashboard.
           </p>
-          <SignInButton mode='modal'>
-            <Button asChild>Sign In</Button>
-          </SignInButton>
+
+          <div className='space-x-2'>
+            <SignInButton mode='modal'>
+              <Button type='button' variant='default'>
+                Sign In
+              </Button>
+            </SignInButton>
+
+            <Link href='/'>
+              <Button type='button' variant='outline'>
+                Go Back
+              </Button>
+            </Link>
+          </div>
         </div>
       </SignedOut>
     </div>

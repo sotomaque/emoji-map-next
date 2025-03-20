@@ -1,6 +1,6 @@
 'use client';
 
-import { AppBreadcrumb } from '@/components/app-breadcrumb';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs/admin-breadcumbs';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -22,7 +22,7 @@ export default function AdminLayout({
           <div className='flex items-center gap-2 px-3'>
             <SidebarTrigger />
             <Separator orientation='vertical' className='mr-2 h-4' />
-            <AppBreadcrumb />
+            <AdminBreadcrumbs />
           </div>
         </header>
         {children}
