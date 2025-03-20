@@ -1,6 +1,12 @@
 # web
 
-## 0.2.0
+## 0.2.1 (03-19-25)
+
+### Patch Changes
+
+- 9c2f191: add support page and faq section, add my account page, add more examples of override restaurants (chipotle / qdoba)
+
+## 0.2.0 (03-18-25)
 
 ### Minor Changes
 
