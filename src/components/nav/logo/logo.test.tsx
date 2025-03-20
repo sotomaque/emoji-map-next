@@ -47,6 +47,8 @@ describe('Logo', () => {
 
     const logoText = screen.getByText('Emoji Map');
     expect(logoText).toBeInTheDocument();
-    expect(logoText).toHaveClass('text-white font-bold text-xl');
+    expect(logoText).toHaveClass(
+      'text-slate-600 dark:text-white font-bold text-xl'
+    );
   });
 });

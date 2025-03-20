@@ -490,15 +490,6 @@ export default function SupportPage() {
           </Link>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className='text-center text-muted-foreground text-sm mt-16 pt-6 border-t'>
-        <p className='flex items-center justify-center gap-2'>
-          <span>Made with</span>
-          <span className='text-lg animate-pulse'>❤️</span>
-          <span>by Emoji Map Team</span>
-        </p>
-      </div>
     </div>
   );
 }

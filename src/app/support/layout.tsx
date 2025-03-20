@@ -8,9 +8,12 @@ export default function SupportLayout({
 }) {
   return (
     <>
-      <Header showAuth={false} />
+      <Header
+        className='bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 border-none'
+        showAuth={false}
+      />
       <main className='flex-1 flex flex-col'>{children}</main>
-      <Footer />
+      <Footer className='bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 border-none' />
     </>
   );
 }

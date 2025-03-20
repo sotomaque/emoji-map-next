@@ -18,10 +18,24 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
 import { useIsAdmin } from '@/hooks/use-is-admin/use-is-admin';
 import { ModeToggle } from './nav/mode-toggle/mode-toggle';
 
-export const ADMIN_SIDEBAR_DATA = {
+type SidebarItem = {
+  title: string;
+  url: string;
+  isActive: boolean;
+  target?: string;
+};
+
+export const ADMIN_SIDEBAR_DATA: {
+  navMain: {
+    title: string;
+    url: string;
+    items: SidebarItem[];
+  }[];
+} = {
   navMain: [
     {
       title: 'Getting Started',
@@ -29,13 +43,15 @@ export const ADMIN_SIDEBAR_DATA = {
       items: [
         {
           title: 'iOS App Github',
-          url: '#',
+          url: IOS_GITHUB_REPO,
           isActive: false,
+          target: '_blank',
         },
         {
           title: 'Next.js Github',
-          url: '#',
+          url: WEB_GITHUB_REPO,
           isActive: false,
+          target: '_blank',
         },
       ],
     },
@@ -203,7 +219,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             asChild
                             isActive={pathname === item.url}
                           >
-                            <Link href={item.url}>{item.title}</Link>
+                            <Link href={item.url} target={item?.target}>
+                              {item.title}
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
