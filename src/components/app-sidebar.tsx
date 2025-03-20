@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignedIn, UserButton, useUser } from '@clerk/nextjs';
 import {
@@ -17,9 +18,24 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
+import { useIsAdmin } from '@/hooks/use-is-admin/use-is-admin';
 import { ModeToggle } from './nav/mode-toggle/mode-toggle';
 
-export const ADMIN_SIDEBAR_DATA = {
+type SidebarItem = {
+  title: string;
+  url: string;
+  isActive: boolean;
+  target?: string;
+};
+
+export const ADMIN_SIDEBAR_DATA: {
+  navMain: {
+    title: string;
+    url: string;
+    items: SidebarItem[];
+  }[];
+} = {
   navMain: [
     {
       title: 'Getting Started',
@@ -27,13 +43,15 @@ export const ADMIN_SIDEBAR_DATA = {
       items: [
         {
           title: 'iOS App Github',
-          url: '#',
+          url: IOS_GITHUB_REPO,
           isActive: false,
+          target: '_blank',
         },
         {
           title: 'Next.js Github',
-          url: '#',
+          url: WEB_GITHUB_REPO,
           isActive: false,
+          target: '_blank',
         },
       ],
     },
@@ -118,6 +136,11 @@ export const ADMIN_SIDEBAR_DATA = {
           url: '#',
           isActive: false,
         },
+        {
+          title: 'AppLaunchpad',
+          url: '#',
+          isActive: false,
+        },
       ],
     },
   ],
@@ -134,15 +157,39 @@ function WrappedUserButton() {
     <SidebarMenuButton size='lg' asChild>
       <div className='inline-block'>
         <UserButton />
-        {/* Name */}
+        {/* Name / Email */}
         <div>{displayName}</div>
       </div>
     </SidebarMenuButton>
   );
 }
 
+const SidebarSkeleton = () => {
+  return (
+    <>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <SidebarMenuItem key={i}>
+          <SidebarMenuButton>
+            <div className='h-4 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded'></div>
+          </SidebarMenuButton>
+          <SidebarMenuSub>
+            {Array.from({ length: 3 }).map((_, j) => (
+              <SidebarMenuSubItem key={j}>
+                <SidebarMenuSubButton>
+                  <div className='h-3 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded'></div>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </SidebarMenuItem>
+      ))}
+    </>
+  );
+};
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const isAdmin = useIsAdmin();
 
   return (
     <Sidebar {...props}>
@@ -161,29 +208,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {ADMIN_SIDEBAR_DATA.navMain.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <a href={item.url} className='font-medium'>
-                    {item.title}
-                  </a>
-                </SidebarMenuButton>
-                {item.items?.length ? (
-                  <SidebarMenuSub>
-                    {item.items.map((item) => (
-                      <SidebarMenuSubItem key={item.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === item.url}
-                        >
-                          <a href={item.url}>{item.title}</a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                ) : null}
-              </SidebarMenuItem>
-            ))}
+            {isAdmin ? (
+              ADMIN_SIDEBAR_DATA.navMain.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url} className='font-medium'>
+                      {item.title}
+                    </Link>
+                  </SidebarMenuButton>
+                  {item.items?.length ? (
+                    <SidebarMenuSub>
+                      {item.items.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === item.url}
+                          >
+                            <Link href={item.url} target={item?.target}>
+                              {item.title}
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarMenuItem>
+              ))
+            ) : (
+              <SidebarSkeleton />
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

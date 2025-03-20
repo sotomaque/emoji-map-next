@@ -1,7 +1,6 @@
 import { fontFamily } from 'tailwindcss/defaultTheme';
 import plugin from 'tailwindcss/plugin';
 import tailwindcssAnimate from 'tailwindcss-animate';
-
 import type { Config } from 'tailwindcss';
 
 const config = {
@@ -106,6 +105,7 @@ const config = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'bounce-slow': 'bounce 3s ease-in-out infinite',
       },
     },
   },

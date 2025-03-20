@@ -85,6 +85,8 @@ export const CATEGORY_MAP = [
       'Priomos',
       'Burrito Factory',
       'The Taco Stand',
+      'Qdoba',
+      'Chipotle Mexican Grill',
     ],
   },
   {

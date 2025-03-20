@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import ThemedUserButton from '@/components/auth/themed-user-button';
+import { Button } from '@/components/ui/button';
 import { navItems } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 import { DesktopNav } from '../desktop-nav/desktop-nav';
@@ -39,9 +40,9 @@ export function Header({ showAuth = false, className }: HeaderProps) {
           <>
             <SignedOut>
               <SignInButton mode='modal'>
-                <button className='bg-zinc-950 hover:bg-zinc-900 text-cyan-400 border border-cyan-700 rounded-sm font-mono px-4 py-2 hover:text-cyan-300 hover:border-cyan-500 hover:shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-all duration-200'>
-                  [SIGN_IN]
-                </button>
+                <Button type='button' variant='default'>
+                  Sign In
+                </Button>
               </SignInButton>
             </SignedOut>
             <SignedIn>
