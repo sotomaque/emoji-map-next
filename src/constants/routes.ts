@@ -20,10 +20,16 @@ export const navItems: NavItem[] = [
     target: false,
   },
   {
+    label: 'My Account',
+    href: '/account',
+    target: false,
+  },
+  {
     label: 'Admin',
     href: '/admin',
     target: true,
     featureFlag: 'ENABLE_APP',
+    hidden: true,
   },
   {
     label: 'About',

@@ -136,6 +136,11 @@ export const ADMIN_SIDEBAR_DATA: {
           url: '#',
           isActive: false,
         },
+        {
+          title: 'AppLaunchpad',
+          url: '#',
+          isActive: false,
+        },
       ],
     },
   ],
