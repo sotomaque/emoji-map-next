@@ -39,7 +39,7 @@ function NavLink({
       rel={target ? 'noopener noreferrer' : undefined}
       className={cn(
         isActive ? 'font-bold' : 'font-light',
-        'hover:text-decoration-none hover:opacity-50 text-lg'
+        'text-black dark:text-white hover:text-decoration-none hover:opacity-50 text-lg'
       )}
       onClick={onClick}
     >
@@ -121,10 +121,10 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
           variant='ghost'
           className='w-[1.75rem] p-5 focus-visible:ring-1 focus-visible:ring-offset-1 hover:bg-[#2a3480]/10'
         >
-          <TextAlignRightIcon className='text-white' />
+          <TextAlignRightIcon className='dark:text-white text-black' />
         </Button>
       </SheetTrigger>
-      <SheetContent className='bg-[#34409b] text-white'>
+      <SheetContent className='bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 border-none text-white'>
         <SheetHeader>
           <div className='mr-6 ml-auto'>
             <Logo />
