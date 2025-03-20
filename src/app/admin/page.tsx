@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { CONTACT_EMAIL } from '@/constants/contact';
 
 export default function AdminPage() {
   const { user } = useUser();
@@ -38,7 +39,7 @@ export default function AdminPage() {
         `Thank you.`
     );
 
-    window.location.href = `mailto:sotomaque@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
   };
 
   return (

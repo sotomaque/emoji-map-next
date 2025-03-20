@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { CONTACT_EMAIL } from '@/constants/contact';
+import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -108,7 +110,7 @@ export default function About() {
           </p>
           <div className='mt-6 flex flex-col sm:flex-row gap-4'>
             <Link
-              href='https://github.com/sotomaque/emoji-map-next'
+              href={WEB_GITHUB_REPO}
               target='_blank'
               rel='noopener noreferrer'
               className='inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700'
@@ -127,7 +129,7 @@ export default function About() {
               Web App (Next.js)
             </Link>
             <Link
-              href='https://github.com/sotomaque/emoji-map'
+              href={IOS_GITHUB_REPO}
               target='_blank'
               rel='noopener noreferrer'
               className='inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700'
@@ -156,12 +158,12 @@ export default function About() {
           </p>
           <p className='mt-4'>
             <strong>Email:</strong>{' '}
-            <a
-              href='mailto:hello@emojimap.com'
+            <Link
+              href={`mailto:${CONTACT_EMAIL}`}
               className='text-blue-600 dark:text-blue-400 hover:underline'
             >
-              hello@emojimap.com
-            </a>
+              {CONTACT_EMAIL}
+            </Link>
           </p>
         </section>
       </div>

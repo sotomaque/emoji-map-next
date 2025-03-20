@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignedIn, UserButton, useUser } from '@clerk/nextjs';
 import {
@@ -190,9 +191,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ADMIN_SIDEBAR_DATA.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className='font-medium'>
+                    <Link href={item.url} className='font-medium'>
                       {item.title}
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                   {item.items?.length ? (
                     <SidebarMenuSub>
@@ -202,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             asChild
                             isActive={pathname === item.url}
                           >
-                            <a href={item.url}>{item.title}</a>
+                            <Link href={item.url}>{item.title}</Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}

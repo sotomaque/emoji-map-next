@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useGateValue } from '@statsig/react-bindings';
 import { Particles } from '@/components/particles/particles';
 import { FEATURE_FLAGS } from '@/constants/feature-flags';
+import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
 
 /**
  * Home Page Component
@@ -92,7 +93,7 @@ export default function Home() {
         <div className='flex gap-4 items-center flex-wrap justify-center mt-8'>
           <Link
             className='rounded-full border border-solid border-gray-300 dark:border-gray-700 transition-colors flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5'
-            href='https://github.com/sotomaque/emoji-map-next'
+            href={WEB_GITHUB_REPO}
             target='_blank'
             rel='noopener noreferrer'
           >
@@ -111,7 +112,7 @@ export default function Home() {
           </Link>
           <Link
             className='rounded-full border border-solid border-gray-300 dark:border-gray-700 transition-colors flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5'
-            href='https://github.com/sotomaque/emoji-map'
+            href={IOS_GITHUB_REPO}
             target='_blank'
             rel='noopener noreferrer'
           >
