@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SignedIn, SignedOut, SignInButton, useAuth } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, useAuth, useClerk } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
@@ -20,6 +20,7 @@ import {
 import { env } from '@/env';
 
 export default function AccountPage() {
+  const { signOut } = useClerk();
   const { theme } = useTheme();
   const router = useRouter();
   const { getToken } = useAuth();
@@ -46,6 +47,7 @@ export default function AccountPage() {
     },
     onSuccess: () => {
       toast.success('Account deleted successfully');
+      signOut();
       setTimeout(() => {
         router.push('/');
       }, 3000);
