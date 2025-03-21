@@ -48,7 +48,6 @@ export default function AccountPage() {
           appearance={{
             baseTheme: theme === 'dark' ? dark : undefined,
           }}
-
         />
       </SignedIn>
     </>

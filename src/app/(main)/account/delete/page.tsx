@@ -107,23 +107,24 @@ export default function AccountPage() {
       </SignedOut>
 
       <SignedIn>
-        <div className="max-w-md w-full mx-auto bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground rounded-lg shadow-lg border border-purple-200 dark:border-white/10 p-8 z-10">
-          <div className="space-y-6">
-            <div className="text-center border-b border-gray-200 dark:border-gray-800 pb-6">
-              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+        <div className='max-w-md w-full mx-auto bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground rounded-lg shadow-lg border border-purple-200 dark:border-white/10 p-8 z-10'>
+          <div className='space-y-6'>
+            <div className='text-center border-b border-gray-200 dark:border-gray-800 pb-6'>
+              <AlertTriangle className='h-12 w-12 text-destructive mx-auto mb-4' />
+              <h1 className='text-2xl font-bold text-gray-800 dark:text-white'>
                 Delete Your Account
               </h1>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.
+              <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
+                Are you sure you want to delete your account? This action cannot
+                be undone and all your data will be permanently removed.
               </p>
             </div>
 
-            <div className="flex justify-center items-center pt-4">
+            <div className='flex justify-center items-center pt-4'>
               <Button
-                variant="destructive"
+                variant='destructive'
                 onClick={handleDeleteRequest}
-                className="px-8 py-6 transition-all duration-200 transform hover:scale-105"
+                className='px-8 py-6 transition-all duration-200 transform hover:scale-105'
               >
                 Delete My Account
               </Button>
@@ -132,32 +133,35 @@ export default function AccountPage() {
         </div>
 
         <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <SheetContent className="sm:max-w-md">
+          <SheetContent className='sm:max-w-md'>
             <SheetHeader>
-              <SheetTitle className="text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" /> Confirm Account Deletion
+              <SheetTitle className='text-destructive flex items-center gap-2'>
+                <AlertTriangle className='h-5 w-5' /> Confirm Account Deletion
               </SheetTitle>
               <SheetDescription>
-                This action is irreversible. Once deleted, your account and all associated data will be permanently removed from our systems and cannot be recovered.
+                This action is irreversible. Once deleted, your account and all
+                associated data will be permanently removed from our systems and
+                cannot be recovered.
               </SheetDescription>
             </SheetHeader>
-            <div className="py-4">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Are you absolutely sure you want to proceed with account deletion?
+            <div className='py-4'>
+              <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                Are you absolutely sure you want to proceed with account
+                deletion?
               </p>
             </div>
-            <SheetFooter className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={handleCancel}>
+            <SheetFooter className='flex flex-col sm:flex-row gap-2'>
+              <Button variant='outline' onClick={handleCancel}>
                 Cancel
               </Button>
               <Button
-                variant="destructive"
+                variant='destructive'
                 onClick={handleConfirmDelete}
                 disabled={deleteAccountMutation.isPending}
               >
                 {deleteAccountMutation.isPending
-                  ? "Deleting..."
-                  : "Yes, Delete My Account"}
+                  ? 'Deleting...'
+                  : 'Yes, Delete My Account'}
               </Button>
             </SheetFooter>
           </SheetContent>
