@@ -2,18 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  useAuth,
-  useClerk,
-} from '@clerk/nextjs';
-import { dark } from '@clerk/themes';
+import { SignedIn, SignedOut, useAuth, useClerk } from '@clerk/nextjs';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import { ThemedSignInButton } from '@/components/auth/themed-signin-button';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -27,7 +20,6 @@ import { env } from '@/env';
 
 export default function AccountPage() {
   const { signOut } = useClerk();
-  const { theme } = useTheme();
   const router = useRouter();
   const { getToken } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,17 +83,7 @@ export default function AccountPage() {
             </p>
           </div>
           <div className='flex justify-center items-center'>
-            <SignInButton
-              mode='modal'
-              appearance={{
-                baseTheme: theme === 'dark' ? dark : undefined,
-                elements: {
-                  footerAction: { display: 'none' },
-                  socialButtonsRoot: { display: 'none' },
-                  dividerRow: { display: 'none' },
-                },
-              }}
-            >
+            <ThemedSignInButton>
               <Button
                 type='button'
                 className='px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105
@@ -109,7 +91,7 @@ export default function AccountPage() {
               >
                 Sign In
               </Button>
-            </SignInButton>
+            </ThemedSignInButton>
           </div>
         </div>
       </SignedOut>

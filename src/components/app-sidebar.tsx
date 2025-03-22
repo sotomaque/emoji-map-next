@@ -143,6 +143,22 @@ export const ADMIN_SIDEBAR_DATA: {
         },
       ],
     },
+    {
+      title: 'Assets',
+      url: '#',
+      items: [
+        {
+          title: 'Logo',
+          url: '#',
+          isActive: false,
+        },
+        {
+          title: 'App Store Assets',
+          url: '#',
+          isActive: false,
+        },
+      ],
+    },
   ],
 };
 
