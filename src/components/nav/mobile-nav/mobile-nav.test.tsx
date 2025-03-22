@@ -168,7 +168,6 @@ describe('MobileNav', () => {
 
     const sheetContent = screen.getByTestId('sheet-content');
     expect(sheetContent).toBeInTheDocument();
-    expect(sheetContent).toHaveClass('bg-[#34409b]');
 
     // Logo should be in the header
     expect(screen.getByTestId('logo')).toBeInTheDocument();

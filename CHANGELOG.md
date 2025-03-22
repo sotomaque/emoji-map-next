@@ -1,5 +1,15 @@
 # web
 
+## 0.3.0 (03-21-25)
+
+### Minor Changes
+
+- aeba6a4: add delete user endpoint and page
+
+### Patch Changes
+
+- 925ab53: move shared styles to layout; fix mobile light /dark mode issues; make account
+
 ## 0.2.1 (03-19-25)
 
 ### Patch Changes

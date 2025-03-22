@@ -31,7 +31,8 @@ export function Header({ showAuth = false, className }: HeaderProps) {
   return (
     <header
       className={cn(
-        `sticky top-0 w-full border-border/40 bg-[#34409b] dark:bg-[#34409b] z-50`,
+        `sticky top-0 w-full z-50`,
+        'bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 border-none',
         className
       )}
     >

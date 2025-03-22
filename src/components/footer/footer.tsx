@@ -14,7 +14,10 @@ export function Footer({ className }: { className?: string }) {
 
   return (
     <footer
-      className={cn(className, `border-t border-gray-200 dark:border-gray-800`)}
+      className={cn(
+        `bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900 dark:via-purple-900 dark:to-pink-800 border-none`,
+        className
+      )}
     >
       <div className='container mx-auto px-4 py-6'>
         <div className='flex flex-col md:flex-row justify-between items-center'>
