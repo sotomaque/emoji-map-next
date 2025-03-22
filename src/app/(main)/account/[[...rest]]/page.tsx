@@ -1,13 +1,11 @@
 'use client';
 
-import { SignedIn, SignedOut, SignInButton, UserProfile } from '@clerk/nextjs';
-import { dark } from '@clerk/themes';
-import { useTheme } from 'next-themes';
+import { SignedIn, SignedOut } from '@clerk/nextjs';
+import { ThemedSignInButton } from '@/components/auth/themed-signin-button';
+import { ThemedUserProfile } from '@/components/auth/themed-user-profile';
 import { Button } from '@/components/ui/button';
 
 export default function AccountPage() {
-  const { theme } = useTheme();
-
   return (
     <>
       <SignedOut>
@@ -21,17 +19,7 @@ export default function AccountPage() {
             </p>
           </div>
           <div className='flex justify-center items-center'>
-            <SignInButton
-              mode='modal'
-              appearance={{
-                baseTheme: theme === 'dark' ? dark : undefined,
-                elements: {
-                  footerAction: { display: 'none' },
-                  socialButtonsRoot: { display: 'none' },
-                  dividerRow: { display: 'none' },
-                },
-              }}
-            >
+            <ThemedSignInButton>
               <Button
                 type='button'
                 className='px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105
@@ -39,17 +27,13 @@ export default function AccountPage() {
               >
                 Sign In
               </Button>
-            </SignInButton>
+            </ThemedSignInButton>
           </div>
         </div>
       </SignedOut>
 
       <SignedIn>
-        <UserProfile
-          appearance={{
-            baseTheme: theme === 'dark' ? dark : undefined,
-          }}
-        />
+        <ThemedUserProfile />
       </SignedIn>
     </>
   );

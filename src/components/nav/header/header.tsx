@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut } from '@clerk/nextjs';
+import { ThemedSignInButton } from '@/components/auth/themed-signin-button';
 import ThemedUserButton from '@/components/auth/themed-user-button';
 import { Button } from '@/components/ui/button';
 import { navItems } from '@/constants/routes';
@@ -40,11 +41,11 @@ export function Header({ showAuth = false, className }: HeaderProps) {
         {showAuth ? (
           <>
             <SignedOut>
-              <SignInButton mode='modal'>
+              <ThemedSignInButton>
                 <Button type='button' variant='default'>
                   Sign In
                 </Button>
-              </SignInButton>
+              </ThemedSignInButton>
             </SignedOut>
             <SignedIn>
               <ThemedUserButton />
