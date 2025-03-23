@@ -19,7 +19,7 @@ export default function AppStoreConnectPage() {
           <div className='space-y-6'>
             <div className='flex justify-center'>
               <Image
-                src='https://developer.apple.com/assets/elements/icons/app-store-connect/app-store-connect-96x96.png'
+                src='/services/app-store-connect.png'
                 alt='App Store Connect Logo'
                 width={120}
                 height={120}

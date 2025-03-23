@@ -20,7 +20,7 @@ export default function ClerkPage() {
           <div className='space-y-6'>
             <div className='flex justify-center'>
               <Image
-                src='https://clerk.com/_next/image?url=%2Fimages%2Fclerk-logo.svg&w=96&q=75'
+                src='/services/clerk.svg'
                 alt='Clerk Logo'
                 width={120}
                 height={120}
