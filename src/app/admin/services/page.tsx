@@ -19,7 +19,7 @@ export default function ServicesPage() {
           title='Vercel'
           description='Deployments, previews and hosting'
           href='/admin/services/vercel'
-          logoUrl='https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png'
+          logoUrl='/services/vercel.png'
           darkInvert={true}
         />
         <ServiceCard
@@ -32,7 +32,7 @@ export default function ServicesPage() {
           title='Clerk'
           description='Authentication and user management'
           href='/admin/services/clerk'
-          logoUrl='https://clerk.com/_next/image?url=%2Fimages%2Fclerk-logo.svg&w=96&q=75'
+          logoUrl='/services/clerk.svg'
         />
         <ServiceCard
           title='Upstash'
@@ -50,13 +50,13 @@ export default function ServicesPage() {
           title='Google Places API'
           description='Location data and mapping services'
           href='/admin/services/google-places-api'
-          logoUrl='https://developers.google.com/static/maps/images/maps-icon.svg'
+          logoUrl='/services/google-places-api.svg'
         />
         <ServiceCard
           title='App Store Connect'
           description='iOS app distribution'
           href='/admin/services/app-store-connect'
-          logoUrl='https://developer.apple.com/assets/elements/icons/app-store-connect/app-store-connect-96x96.png'
+          logoUrl='/services/app-store-connect.png'
         />
         <ServiceCard
           title='App Launchpad'

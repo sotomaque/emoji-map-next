@@ -20,7 +20,7 @@ export default function VercelPage() {
           <div className='space-y-6'>
             <div className='flex justify-center'>
               <Image
-                src='https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png'
+                src='/services/vercel.png'
                 alt='Vercel Logo'
                 width={120}
                 height={120}

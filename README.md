@@ -58,7 +58,8 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 
 ## Tech Stack
 
-- [Next.js 15](https://nextjs.org/) - React framework
+- [Next.js 15.2.1](https://nextjs.org/) - React framework
+- [React 19.0.0](https://react.dev/) - UI library
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
 - [Google Maps API](https://developers.google.com/maps) - Maps and location services
 - [Google Places API](https://developers.google.com/maps/documentation/places/web-service) - Place data
@@ -119,7 +120,7 @@ NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
 STATSIG_SERVER_API_KEY=your_statsig_server_key
 
 # Cache Keys 
-NEARBY_CACHE_KEY_VERSION
+SEARCH_CACHE_KEY_VERSION
 DETAILS_CACHE_KEY_VERSION
 PHOTOS_CACHE_KEY_VERSION
 ```
@@ -151,6 +152,7 @@ pnpm build         # Build the application for production
 pnpm start         # Start the production server
 pnpm postinstall   # Generate Prisma client (runs automatically after install)
 pnpm prepare       # Set up Husky git hooks (runs automatically after install)
+pnpm clean         # Clean build artifacts and node_modules cache
 
 # Code Quality
 pnpm lint          # Run ESLint to check for issues
@@ -164,12 +166,18 @@ pnpm test          # Run all tests
 pnpm test:watch    # Run tests in watch mode
 pnpm test:ui       # Run tests with UI
 pnpm test:coverage # Run tests with coverage report
+pnpm test:silent   # Run tests with minimal output
 
 # Database
 pnpm db:generate   # Generate Prisma client
 pnpm db:push       # Push schema changes to the database
 pnpm db:studio     # Open Prisma Studio to manage the database
 pnpm db:seed       # Seed the database with initial data
+
+# Release Management
+pnpm changeset           # Generate a changeset
+pnpm changeset:create    # Create a changeset with guided CLI
+pnpm changeset:version   # Bump versions based on changesets
 ```
 
 ## Git Hooks
@@ -192,6 +200,37 @@ git push --no-verify
 ```
 
 For more information about the Git hooks, see the [.husky/README.md](.husky/README.md) file.
+
+## Deployment Process
+
+This project follows a structured deployment process to ensure code quality and versioning:
+
+1. **Development Workflow**:
+   - All new features and bug fixes are implemented in feature branches
+   - Pull requests are created against the `dev` branch
+   - Each PR must include appropriate changeset files documenting the changes
+   - PRs are reviewed, tested, and merged into `dev`
+
+2. **Preparing for Production**:
+   - When ready to deploy to production, the latest `dev` branch is used as a base
+   - Version bumping is done by running:
+     ```bash
+     pnpm changeset:version  # Processes changesets into version updates
+     pnpm i                  # Updates package-lock with new versions
+     ```
+   - A new PR/MR containing only these version changes is created
+   - This PR is first merged into `dev` to keep it up to date
+
+3. **Production Deployment**:
+   - After the version PR is in `dev`, it's merged up to `main`
+   - The `main` branch is automatically deployed to production
+   - Deployment is triggered by changes to the `main` branch
+
+This process ensures that:
+- All changes are properly documented with changesets
+- Version numbers are updated consistently
+- The `dev` branch always has the latest changes
+- The `main` branch only receives well-tested code
 
 ## Navigation System
 
@@ -758,17 +797,20 @@ web/
 │   │   └── providers/
 │   ├── constants/
 │   ├── hooks/
+│   ├── types/
 │   ├── services/
-│   ├── store/
 │   ├── lib/
 │   ├── utils/
 │   ├── __tests__/
-│   ├── types/
-│   └── env.ts
+│   ├── __fixtures__/
+│   ├── env.ts
+│   └── middleware.ts
 ├── prisma/
 │   └── schema.prisma
 ├── public/
 ├── .env.local
+├── vitest.config.ts
+├── vitest.setup.ts
 └── various config files
 ```
 
