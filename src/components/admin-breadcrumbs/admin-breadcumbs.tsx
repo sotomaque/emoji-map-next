@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { ADMIN_SIDEBAR_DATA } from '@/components/app-sidebar';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,20 +9,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-
-// Define types for our breadcrumb navigation
-type BreadcrumbItemType = {
-  title: string;
-  url: string;
-  isActive: boolean;
-};
+import { ADMIN_SIDEBAR_DATA } from '@/constants/admin-sitemap';
+import type { AdminSidebarItem } from '@/types/admin-sidebar-item';
 
 export function AdminBreadcrumbs() {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
   // Start with the base admin breadcrumb
-  const breadcrumbs: BreadcrumbItemType[] = [
+  const breadcrumbs: AdminSidebarItem[] = [
     {
       title: 'Admin',
       url: '/admin',

@@ -18,133 +18,9 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
+import { ADMIN_SIDEBAR_DATA } from '@/constants/admin-sitemap';
 import { useIsAdmin } from '@/hooks/use-is-admin/use-is-admin';
 import { ModeToggle } from './nav/mode-toggle/mode-toggle';
-
-type SidebarItem = {
-  title: string;
-  url: string;
-  isActive: boolean;
-  target?: string;
-};
-
-export const ADMIN_SIDEBAR_DATA: {
-  navMain: {
-    title: string;
-    url: string;
-    items: SidebarItem[];
-  }[];
-} = {
-  navMain: [
-    {
-      title: 'Getting Started',
-      url: '#',
-      items: [
-        {
-          title: 'iOS App Github',
-          url: IOS_GITHUB_REPO,
-          isActive: false,
-          target: '_blank',
-        },
-        {
-          title: 'Next.js Github',
-          url: WEB_GITHUB_REPO,
-          isActive: false,
-          target: '_blank',
-        },
-      ],
-    },
-    {
-      title: 'Running Application Locally',
-      url: '#',
-      items: [
-        {
-          title: 'ENV Variables',
-          url: '#',
-          isActive: false,
-        },
-      ],
-    },
-    {
-      title: 'API Reference',
-      url: '/admin/api-reference',
-      items: [
-        {
-          title: 'POST /api/places/search',
-          url: '/admin/api-reference/places/search',
-          isActive: false,
-        },
-        {
-          title: 'GET /api/places/details',
-          url: '/admin/api-reference/places/details',
-          isActive: false,
-        },
-        {
-          title: 'GET /api/places/photos',
-          url: '/admin/api-reference/places/photos',
-          isActive: false,
-        },
-        {
-          title: 'GET /api/user',
-          url: '/admin/api-reference/user',
-          isActive: false,
-        },
-        {
-          title: 'POST /api/user/sync',
-          url: '/admin/api-reference/user/sync',
-          isActive: false,
-        },
-        {
-          title: 'POST /api/webhooks',
-          url: '#',
-          isActive: false,
-        },
-      ],
-    },
-    {
-      title: 'Services',
-      url: '#',
-      items: [
-        {
-          title: 'Vercel',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'Upstash',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'Supabase',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'Clerk',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'Statsig',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'Google Places API',
-          url: '#',
-          isActive: false,
-        },
-        {
-          title: 'AppLaunchpad',
-          url: '#',
-          isActive: false,
-        },
-      ],
-    },
-  ],
-};
 
 function WrappedUserButton() {
   const { user } = useUser();
@@ -242,10 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <ModeToggle
-          className='border-stone-600 dark:border-stone-200 border-2'
-          overrideIconColor='text-gray-500 dark:text-white'
-        />
+        <ModeToggle />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

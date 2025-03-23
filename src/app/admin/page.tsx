@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/nextjs';
+import { SignedIn, SignedOut, useUser } from '@clerk/nextjs';
 import {
   ArrowRight,
   Code,
@@ -14,6 +14,7 @@ import {
   Lock,
   Mail,
 } from 'lucide-react';
+import { ThemedSignInButton } from '@/components/auth/themed-signin-button';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CONTACT_EMAIL } from '@/constants/contact';
@@ -158,11 +159,11 @@ export default function AdminPage() {
           </p>
 
           <div className='space-x-2'>
-            <SignInButton mode='modal'>
+            <ThemedSignInButton>
               <Button type='button' variant='default'>
                 Sign In
               </Button>
-            </SignInButton>
+            </ThemedSignInButton>
 
             <Link href='/'>
               <Button type='button' variant='outline'>
