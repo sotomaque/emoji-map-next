@@ -29,11 +29,11 @@ export const ADMIN_SIDEBAR_DATA: {
     },
     {
       title: 'Running Application Locally',
-      url: '#',
+      url: '/admin/running-application-locally',
       items: [
         {
           title: 'ENV Variables',
-          url: '#',
+          url: '/admin/running-application-locally/env-variables',
           isActive: false,
         },
       ],
@@ -70,6 +70,22 @@ export const ADMIN_SIDEBAR_DATA: {
         {
           title: 'POST /api/webhooks',
           url: '#',
+          isActive: false,
+        },
+      ],
+    },
+    {
+      title: 'User Management',
+      url: '/admin/user-management',
+      items: [
+        {
+          title: 'Clerk Users',
+          url: '/admin/user-management/clerk-users',
+          isActive: false,
+        },
+        {
+          title: 'DB Users',
+          url: '/admin/user-management/db-users',
           isActive: false,
         },
       ],
