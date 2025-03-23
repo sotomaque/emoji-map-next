@@ -154,12 +154,6 @@ export async function DELETE(request: NextRequest) {
       const client = await clerkClient();
       await client.users.deleteUser(userId);
 
-      // delete user from database
-      await prisma.user.delete({
-        where: { id: userId },
-      });
-
-      log.info(`User ${userId} deleted from database and clerk`);
       return NextResponse.json(
         {
           message: 'User deleted successfully',
