@@ -64,6 +64,18 @@ export default function ServicesPage() {
           href='/admin/services/app-launchpad'
           logoUrl='/services/app-launchpad.png'
         />
+        <ServiceCard
+          title='Zoho'
+          description='Email'
+          href='/admin/services/zoho'
+          logoUrl='/services/zoho.png'
+        />
+        <ServiceCard
+          title='Linear'
+          description='Project management'
+          href='/admin/services/linear'
+          logoUrl='/services/linear.png'
+        />
       </div>
     </div>
   );
