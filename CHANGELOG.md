@@ -1,5 +1,13 @@
 # web
 
+## 0.3.1 (03-22-25)
+
+### Patch Changes
+
+- 2f1eb41: no longer delete user directly in db after we delete clerk user; let webhook take care of it
+- 658e61f: add linear + zoho to services; change support email to zoho created email
+- e8771ce: Wrap Auth Components
+
 ## 0.3.0 (03-21-25)
 
 ### Minor Changes
