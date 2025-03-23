@@ -1,1 +1,1 @@
-export const CONTACT_EMAIL = 'sotomaque@gmail.com';
+export const CONTACT_EMAIL = 'support@emoji-map.com';

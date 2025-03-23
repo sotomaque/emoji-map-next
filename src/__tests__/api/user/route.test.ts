@@ -383,7 +383,7 @@ describe('User API Routes', () => {
       );
     });
 
-    it('should delete user from Clerk and database', async () => {
+    it('should delete user from Clerk', async () => {
       // Create a mock request with authorization header
       const mockRequest = new MockNextRequest('https://example.com/api/user', {
         authorization: 'Bearer token',
@@ -418,7 +418,6 @@ describe('User API Routes', () => {
       vi.mocked(clerkClient).mockResolvedValueOnce(mockClerkClient);
 
       vi.mocked(prisma.user.findUnique).mockResolvedValue(mockDbUser as User);
-      vi.mocked(prisma.user.delete).mockResolvedValue(mockDbUser as User);
 
       await DELETE(mockRequest as unknown as NextRequest);
 
@@ -427,9 +426,7 @@ describe('User API Routes', () => {
         where: { id: 'user_123' },
       });
       expect(mockDeleteUser).toHaveBeenCalledWith('user_123');
-      expect(prisma.user.delete).toHaveBeenCalledWith({
-        where: { id: 'user_123' },
-      });
+
       expect(NextResponse.json).toHaveBeenCalledWith(
         {
           message: 'User deleted successfully',

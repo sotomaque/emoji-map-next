@@ -24,3 +24,7 @@ export const GOOGLE_PLACES_API_CONSOLE =
 
 export const APPLAUNCHPAD_CONSOLE =
   'https://theapplaunchpad.com/dashboard/a72e3536-1dea-4239-afcd-a24b373e4a9e';
+
+export const ZOHO_CONSOLE = 'https://www.zoho.com/';
+
+export const LINEAR_CONSOLE = 'https://linear.app/emojimap';

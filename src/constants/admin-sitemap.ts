@@ -134,6 +134,16 @@ export const ADMIN_SIDEBAR_DATA: {
           url: '/admin/services/app-launchpad',
           isActive: false,
         },
+        {
+          title: 'Zoho',
+          url: '/admin/services/zoho',
+          isActive: false,
+        },
+        {
+          title: 'Linear',
+          url: '/admin/services/linear',
+          isActive: false,
+        },
       ],
     },
     {
