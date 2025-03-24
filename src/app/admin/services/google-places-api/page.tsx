@@ -19,7 +19,7 @@ export default function GooglePlacesApiPage() {
           <div className='space-y-6'>
             <div className='flex justify-center'>
               <Image
-                src='https://developers.google.com/static/maps/images/maps-icon.svg'
+                src='/services/google-places-api.svg'
                 alt='Google Places API Logo'
                 width={120}
                 height={120}
