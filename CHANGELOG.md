@@ -1,5 +1,11 @@
 # web
 
+## 0.3.2
+
+### Patch Changes
+
+- f951abb: make services use local images instead of network requests; update readme with deployment process
+
 ## 0.3.1 (03-22-25)
 
 ### Patch Changes
