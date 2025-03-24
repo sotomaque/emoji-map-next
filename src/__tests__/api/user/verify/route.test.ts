@@ -66,8 +66,6 @@ describe('POST /api/user/verify', () => {
     ).toHaveBeenCalledWith({
       userId: mockUserId,
       emailAddress: 'test@example.com',
-      primary: true,
-      verified: false,
     });
 
     expect(mockClerkClient.users.updateUser).toHaveBeenCalledWith(mockUserId, {
@@ -98,8 +96,6 @@ describe('POST /api/user/verify', () => {
     ).toHaveBeenCalledWith({
       userId: mockUserId,
       emailAddress: 'test@example.com',
-      primary: true,
-      verified: false,
     });
 
     // Name update should not be called
