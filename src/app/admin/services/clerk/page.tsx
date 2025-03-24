@@ -24,6 +24,7 @@ export default function ClerkPage() {
                 alt='Clerk Logo'
                 width={120}
                 height={120}
+                className='dark:invert'
               />
             </div>
 

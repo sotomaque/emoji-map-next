@@ -85,6 +85,12 @@ export default function ServicesPage() {
           href='/admin/services/postman'
           logoUrl='/services/postman.png'
         />
+        <ServiceCard
+          title='Slack'
+          description='Communication'
+          href='/admin/services/slack'
+          logoUrl='/services/slack.png'
+        />
       </div>
     </div>
   );

@@ -149,6 +149,11 @@ export const ADMIN_SIDEBAR_DATA: {
           url: '/admin/services/postman',
           isActive: false,
         },
+        {
+          title: 'Slack',
+          url: '/admin/services/slack',
+          isActive: false,
+        },
       ],
     },
     {
