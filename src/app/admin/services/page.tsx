@@ -33,6 +33,7 @@ export default function ServicesPage() {
           description='Authentication and user management'
           href='/admin/services/clerk'
           logoUrl='/services/clerk.svg'
+          darkInvert={true}
         />
         <ServiceCard
           title='Upstash'
@@ -45,6 +46,7 @@ export default function ServicesPage() {
           description='Feature flags'
           href='/admin/services/statsig'
           logoUrl='/services/statsig.png'
+          darkInvert={true}
         />
         <ServiceCard
           title='Google Places API'
@@ -75,6 +77,13 @@ export default function ServicesPage() {
           description='Project management'
           href='/admin/services/linear'
           logoUrl='/services/linear.png'
+          darkInvert={true}
+        />
+        <ServiceCard
+          title='Postman'
+          description='API testing'
+          href='/admin/services/postman'
+          logoUrl='/services/postman.png'
         />
       </div>
     </div>

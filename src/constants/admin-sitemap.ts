@@ -144,6 +144,11 @@ export const ADMIN_SIDEBAR_DATA: {
           url: '/admin/services/linear',
           isActive: false,
         },
+        {
+          title: 'Postman',
+          url: '/admin/services/postman',
+          isActive: false,
+        },
       ],
     },
     {

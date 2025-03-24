@@ -28,3 +28,6 @@ export const APPLAUNCHPAD_CONSOLE =
 export const ZOHO_CONSOLE = 'https://www.zoho.com/';
 
 export const LINEAR_CONSOLE = 'https://linear.app/emojimap';
+
+export const POSTMAN_COLLECTION =
+  'https://emojimap.postman.co/workspace/EmojiMap-Workspace~8c474cfa-5235-4fde-8d8f-737f59e0b226/collection/9793775-5eddbf15-3fcd-4f93-918f-a1d37088837f?action=share&creator=9793775&active-environment=9793775-72f03241-4a2a-45a3-bda1-1c0e425fc2c6';
