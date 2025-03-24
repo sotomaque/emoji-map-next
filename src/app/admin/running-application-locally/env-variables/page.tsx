@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { WEB_GITHUB_REPO } from '@/constants/links';
 
 export default function EnvVariablesPage() {
@@ -36,13 +37,14 @@ export default function EnvVariablesPage() {
                 href={`${WEB_GITHUB_REPO}/blob/main/.env.example`}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
               >
-                View .env.example
+                <Button className='w-full'>
+                  View .env.example
+                </Button>
               </Link>
-              <button className='inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'>
+              <Button variant="outline" className='w-full'>
                 Request Keybase Access
-              </button>
+              </Button>
             </div>
 
             <div className='mt-4 text-sm text-muted-foreground'>

@@ -1,5 +1,6 @@
 import type { AdminSidebarItem } from '@/types/admin-sidebar-item';
 import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from './links';
+import { SERVICES } from './services';
 
 export const ADMIN_SIDEBAR_DATA: {
   navMain: {
@@ -93,68 +94,11 @@ export const ADMIN_SIDEBAR_DATA: {
     {
       title: 'Services',
       url: '/admin/services',
-      items: [
-        {
-          title: 'Vercel',
-          url: '/admin/services/vercel',
-          isActive: false,
-        },
-        {
-          title: 'Upstash',
-          url: '/admin/services/upstash',
-          isActive: false,
-        },
-        {
-          title: 'Supabase',
-          url: '/admin/services/supabase',
-          isActive: false,
-        },
-        {
-          title: 'Clerk',
-          url: '/admin/services/clerk',
-          isActive: false,
-        },
-        {
-          title: 'Statsig',
-          url: '/admin/services/statsig',
-          isActive: false,
-        },
-        {
-          title: 'App Store Connect',
-          url: '/admin/services/app-store-connect',
-          isActive: false,
-        },
-        {
-          title: 'Google Places API',
-          url: '/admin/services/google-places-api',
-          isActive: false,
-        },
-        {
-          title: 'AppLaunchpad',
-          url: '/admin/services/app-launchpad',
-          isActive: false,
-        },
-        {
-          title: 'Zoho',
-          url: '/admin/services/zoho',
-          isActive: false,
-        },
-        {
-          title: 'Linear',
-          url: '/admin/services/linear',
-          isActive: false,
-        },
-        {
-          title: 'Postman',
-          url: '/admin/services/postman',
-          isActive: false,
-        },
-        {
-          title: 'Slack',
-          url: '/admin/services/slack',
-          isActive: false,
-        },
-      ],
+      items: SERVICES.map((service) => ({
+        title: service.title,
+        url: service.href,
+        isActive: false,
+      })),
     },
     {
       title: 'Assets',

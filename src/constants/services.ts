@@ -1,0 +1,78 @@
+export const SERVICES = [
+  {
+    title: 'App Launchpad',
+    description: 'App Store screenshots',
+    href: '/admin/services/app-launchpad',
+    logoUrl: '/services/app-launchpad.png',
+  },
+  {
+    title: 'App Store Connect',
+    description: 'iOS app distribution',
+    href: '/admin/services/app-store-connect',
+    logoUrl: '/services/app-store-connect.png',
+  },
+  {
+    title: 'Clerk',
+    description: 'Authentication and user management',
+    href: '/admin/services/clerk',
+    logoUrl: '/services/clerk.svg',
+    darkInvert: true,
+  },
+  {
+    title: 'Google Places API',
+    description: 'Location data and mapping services',
+    href: '/admin/services/google-places-api',
+    logoUrl: '/services/google-places-api.svg',
+  },
+  {
+    title: 'Linear',
+    description: 'Project management',
+    href: '/admin/services/linear',
+    logoUrl: '/services/linear.png',
+    darkInvert: true,
+  },
+  {
+    title: 'Postman',
+    description: 'API testing and documentation',
+    href: '/admin/services/postman',
+    logoUrl: '/services/postman.png',
+  },
+  {
+    title: 'Slack',
+    description: 'Team communication',
+    href: '/admin/services/slack',
+    logoUrl: '/services/slack.png',
+  },
+  {
+    title: 'Statsig',
+    description: 'Feature flags',
+    href: '/admin/services/statsig',
+    logoUrl: '/services/statsig.png',
+    darkInvert: true,
+  },
+  {
+    title: 'Supabase',
+    description: 'Database and backend services',
+    href: '/admin/services/supabase',
+    logoUrl: '/services/supabase.png',
+  },
+  {
+    title: 'Upstash',
+    description: 'Serverless Redis',
+    href: '/admin/services/upstash',
+    logoUrl: '/services/upstash.png',
+  },
+  {
+    title: 'Vercel',
+    description: 'Deployments, previews and hosting',
+    href: '/admin/services/vercel',
+    logoUrl: '/services/vercel.png',
+    darkInvert: true,
+  },
+  {
+    title: 'Zoho',
+    description: 'Email',
+    href: '/admin/services/zoho',
+    logoUrl: '/services/zoho.png',
+  },
+];

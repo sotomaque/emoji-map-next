@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { SLACK_INVITE_LINK, SLACK_WORKSPACE } from '@/constants/links';
+import { cn } from '@/lib/utils';
 
 export default function SlackPage() {
   return (
@@ -37,18 +39,25 @@ export default function SlackPage() {
                 href={SLACK_INVITE_LINK}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='inline-flex h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white ring-offset-background transition-colors hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
               >
-                Join Slack
+                <Button
+                  className={cn(
+                    'w-full bg-black text-white hover:bg-black/90',
+                    'dark:bg-white dark:text-black dark:hover:bg-white/90'
+                  )}
+                >
+                  Join Slack
+                </Button>
               </Link>
-              <Link
-                href={SLACK_WORKSPACE}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
-              >
-                View Slack Workspace
-              </Link>
+              <Button variant="outline" asChild className='w-full'>
+                <Link
+                  href={SLACK_WORKSPACE}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  View Slack Workspace
+                </Link>
+              </Button>
             </div>
           </div>
         </div>

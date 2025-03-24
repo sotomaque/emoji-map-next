@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { POSTMAN_COLLECTION } from '@/constants/links';
+import { cn } from '@/lib/utils';
 
 export default function PostmanPage() {
   return (
@@ -37,9 +39,15 @@ export default function PostmanPage() {
                 href={POSTMAN_COLLECTION}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='inline-flex h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white ring-offset-background transition-colors hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
               >
-                View Collection
+                <Button
+                  className={cn(
+                    'w-full bg-black text-white hover:bg-black/90',
+                    'dark:bg-white dark:text-black dark:hover:bg-white/90'
+                  )}
+                >
+                  View Collection
+                </Button>
               </Link>
             </div>
           </div>
