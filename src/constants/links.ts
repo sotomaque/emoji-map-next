@@ -35,4 +35,4 @@ export const POSTMAN_COLLECTION =
 export const SLACK_INVITE_LINK =
   'https://join.slack.com/t/emojimapworkspace/shared_invite/zt-32d4cm3ar-cn8RsLnT_d7Cm_KnZeNy1g';
 
-export const SLACK_WORKSPACE = 'https://emojimapworkspace.slack.com.';
+export const SLACK_WORKSPACE = 'https://emojimapworkspace.slack.com';
