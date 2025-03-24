@@ -54,7 +54,7 @@ export default function VercelPage() {
                 </Button>
               </Link>
 
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Access
               </Button>
             </div>

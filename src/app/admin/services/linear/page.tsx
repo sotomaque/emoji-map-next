@@ -50,7 +50,7 @@ export default function LinearPage() {
                   Go to Console
                 </Button>
               </Link>
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Access
               </Button>
             </div>

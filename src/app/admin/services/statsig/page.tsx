@@ -40,11 +40,9 @@ export default function StatsigPage() {
                 target='_blank'
                 rel='noopener noreferrer'
               >
-                <Button className='w-full'>
-                  Go to Console
-                </Button>
+                <Button className='w-full'>Go to Console</Button>
               </Link>
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Access
               </Button>
             </div>

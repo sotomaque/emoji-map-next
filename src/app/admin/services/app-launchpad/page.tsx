@@ -41,11 +41,9 @@ export default function AppLaunchpadPage() {
                 target='_blank'
                 rel='noopener noreferrer'
               >
-                <Button className='w-full'>
-                  Go to Dashboard
-                </Button>
+                <Button className='w-full'>Go to Dashboard</Button>
               </Link>
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Access
               </Button>
             </div>

@@ -38,11 +38,9 @@ export default function EnvVariablesPage() {
                 target='_blank'
                 rel='noopener noreferrer'
               >
-                <Button className='w-full'>
-                  View .env.example
-                </Button>
+                <Button className='w-full'>View .env.example</Button>
               </Link>
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Keybase Access
               </Button>
             </div>

@@ -49,7 +49,7 @@ export default function SlackPage() {
                   Join Slack
                 </Button>
               </Link>
-              <Button variant="outline" asChild className='w-full'>
+              <Button variant='outline' asChild className='w-full'>
                 <Link
                   href={SLACK_WORKSPACE}
                   target='_blank'

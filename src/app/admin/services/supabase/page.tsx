@@ -45,7 +45,7 @@ export default function SupabasePage() {
                   Go to Dashboard
                 </Button>
               </Link>
-              <Button variant="outline" className='w-full'>
+              <Button variant='outline' className='w-full'>
                 Request Access
               </Button>
             </div>
