@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { SLACK_INVITE_LINK } from '@/constants/links';
+import { SLACK_INVITE_LINK, SLACK_WORKSPACE } from '@/constants/links';
 
 export default function SlackPage() {
   return (
@@ -40,6 +40,14 @@ export default function SlackPage() {
                 className='inline-flex h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white ring-offset-background transition-colors hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
               >
                 Join Slack
+              </Link>
+              <Link
+                href={SLACK_WORKSPACE}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full'
+              >
+                View Slack Workspace
               </Link>
             </div>
           </div>
