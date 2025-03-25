@@ -1,6 +1,5 @@
 import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
-import Head from 'next/head';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Analytics } from '@vercel/analytics/react';
 import { Providers } from '@/components/providers/providers';
@@ -33,10 +32,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <Head>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="apple-itunes-app" content="app-id=6742885534" />
-      </Head>
+      <head>
+        <link rel='icon' href='/favicon.ico' />
+        <meta name='apple-itunes-app' content='app-id=6742885534' />
+      </head>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased overscroll-none flex flex-col',
