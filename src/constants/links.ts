@@ -36,3 +36,7 @@ export const SLACK_INVITE_LINK =
   'https://join.slack.com/t/emojimapworkspace/shared_invite/zt-32d4cm3ar-cn8RsLnT_d7Cm_KnZeNy1g';
 
 export const SLACK_WORKSPACE = 'https://emojimapworkspace.slack.com';
+
+export const APPLE_APPSTORE_ID = '6742885534';
+
+export const APPLE_DEEPLINK = `https://apps.apple.com/app/id${APPLE_APPSTORE_ID}`;
