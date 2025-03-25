@@ -244,18 +244,15 @@ export function UserDataTable({
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Username</TableHead>
+                  <TableHead>User ID</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead>Favorites</TableHead>
-                  <TableHead>Ratings</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={4}
                       className='text-center py-8 text-muted-foreground'
                     >
                       No users found
@@ -265,8 +262,8 @@ export function UserDataTable({
                   filteredUsers.map((user) => (
                     <TableRow
                       key={user.id}
-                      onClick={() => handleRowClick(user)}
                       className='cursor-pointer hover:bg-muted/60'
+                      onClick={() => handleRowClick(user)}
                     >
                       <TableCell className='font-medium'>
                         {user.firstName && user.lastName
@@ -274,19 +271,12 @@ export function UserDataTable({
                           : user.firstName || user.lastName || '-'}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.username || '-'}</TableCell>
+                      <TableCell>
+                        <code className='rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold'>
+                          {user.id}
+                        </code>
+                      </TableCell>
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
-                      <TableCell>{formatDate(user.updatedAt)}</TableCell>
-                      <TableCell>
-                        <span className='rounded-md bg-primary/10 px-2 py-1 text-xs font-medium'>
-                          {user.favoritesCount}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className='rounded-md bg-primary/10 px-2 py-1 text-xs font-medium'>
-                          {user.ratingsCount}
-                        </span>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}

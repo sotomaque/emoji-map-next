@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Analytics } from '@vercel/analytics/react';
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { APPLE_APPSTORE_ID } from '@/constants/links';
 import { env } from '../env';
 import { cn } from '../lib/utils';
 import type { Metadata } from 'next';
@@ -32,7 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <link rel='icon' href='/favicon.ico' />
+      <head>
+        <link rel='icon' href='/favicon.ico' />
+        <meta name='apple-itunes-app' content={`app-id=${APPLE_APPSTORE_ID}`} />
+      </head>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased overscroll-none flex flex-col',

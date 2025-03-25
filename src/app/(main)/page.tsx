@@ -2,8 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useGateValue } from '@statsig/react-bindings';
-import { FEATURE_FLAGS } from '@/constants/feature-flags';
 import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
 
 /**
@@ -19,8 +17,6 @@ import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
  * @returns {JSX.Element} The rendered Home page
  */
 export default function Home() {
-  const IS_APP_ENABLED = useGateValue(FEATURE_FLAGS.ENABLE_APP);
-
   return (
     <div className='max-w-md w-full mx-auto bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground rounded-lg shadow-lg border border-purple-200 dark:border-white/10 p-6 z-10'>
       <div className='flex flex-col items-center gap-4 text-center'>
@@ -42,18 +38,6 @@ export default function Home() {
           Smooth Brain? Smooth Map.
         </p>
       </div>
-
-      {/* Main App Button */}
-      {IS_APP_ENABLED && (
-        <div className='flex justify-center w-full mt-6'>
-          <Link
-            href='/admin'
-            className='inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105'
-          >
-            Launch Admin App
-          </Link>
-        </div>
-      )}
 
       {/* Links */}
       <div className='flex gap-4 items-center flex-wrap justify-center mt-8'>
