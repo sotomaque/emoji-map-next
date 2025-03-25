@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useMutation } from '@tanstack/react-query';
+import { MoreHorizontal, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,6 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Pagination,
@@ -37,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ClerkUserDetailsDialog } from './clerk-user-details-dialog';
 import type { User } from '@clerk/nextjs/server';
 
 interface ClerkUserDataTableProps {
@@ -59,6 +67,45 @@ export function ClerkUserDataTable({
   onPaginationChange,
 }: ClerkUserDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Mutation for toggling admin status
+  const toggleAdminMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(
+        '/api/admin/clerk-users/toggle-admin-status',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to toggle admin status');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, userId) => {
+      const user = users.find((u) => u.id === userId);
+      const name = user?.firstName
+        ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+        : user?.username || user?.emailAddresses[0]?.emailAddress;
+      toast.success(
+        `Admin status ${
+          user?.publicMetadata?.admin ? 'removed from' : 'granted to'
+        } ${name}`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error('Error: ' + error.message);
+    },
+  });
 
   // Filter users based on search term
   const filteredUsers = searchTerm
@@ -89,6 +136,12 @@ export function ClerkUserDataTable({
   const handleLimitChange = (value: string) => {
     const newLimit = parseInt(value, 10);
     onPaginationChange(newLimit, 0); // Reset to first page when changing limit
+  };
+
+  // Handle row click to open details dialog
+  const handleRowClick = (user: User) => {
+    setSelectedUser(user);
+    setDialogOpen(true);
   };
 
   // Generate page numbers for pagination
@@ -210,18 +263,6 @@ export function ClerkUserDataTable({
     return user.emailAddresses[0].emailAddress;
   };
 
-  // Get initials for avatar fallback
-  const getInitials = (user: User) => {
-    let initials = '';
-    if (user.firstName) initials += user.firstName[0].toUpperCase();
-    if (user.lastName) initials += user.lastName[0].toUpperCase();
-    if (!initials && user.username) initials = user.username[0].toUpperCase();
-    if (!initials && user.emailAddresses.length > 0) {
-      initials = user.emailAddresses[0].emailAddress[0].toUpperCase();
-    }
-    return initials || '?';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -253,19 +294,18 @@ export function ClerkUserDataTable({
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Username</TableHead>
+                <TableHead>User ID</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead>Last Sign In</TableHead>
+                <TableHead className='w-[50px]'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={5}
                     className='text-center py-8 text-muted-foreground'
                   >
                     No users found
@@ -273,32 +313,57 @@ export function ClerkUserDataTable({
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className='flex items-center gap-3'>
-                        <Avatar>
-                          <AvatarImage
-                            src={user.imageUrl || undefined}
-                            alt={`${user.firstName || ''} ${
-                              user.lastName || ''
-                            }`}
-                          />
-                          <AvatarFallback>{getInitials(user)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className='font-medium'>
-                            {user.firstName && user.lastName
-                              ? `${user.firstName} ${user.lastName}`
-                              : user.firstName || user.lastName || '-'}
-                          </p>
-                        </div>
-                      </div>
+                  <TableRow
+                    key={user.id}
+                    className='cursor-pointer hover:bg-muted/60'
+                  >
+                    <TableCell onClick={() => handleRowClick(user)}>
+                      <p className='font-medium'>
+                        {user.firstName && user.lastName
+                          ? `${user.firstName} ${user.lastName}`
+                          : user.firstName || user.lastName || '-'}
+                      </p>
                     </TableCell>
-                    <TableCell>{getPrimaryEmail(user)}</TableCell>
-                    <TableCell>{user.username || '-'}</TableCell>
-                    <TableCell>{formatDate(user.createdAt)}</TableCell>
-                    <TableCell>{formatDate(user.updatedAt)}</TableCell>
-                    <TableCell>{formatDate(user.lastSignInAt || 0)}</TableCell>
+                    <TableCell onClick={() => handleRowClick(user)}>
+                      {getPrimaryEmail(user)}
+                    </TableCell>
+                    <TableCell onClick={() => handleRowClick(user)}>
+                      <code className='rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold'>
+                        {user.id}
+                      </code>
+                    </TableCell>
+                    <TableCell onClick={() => handleRowClick(user)}>
+                      {formatDate(user.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant='ghost' className='h-8 w-8 p-0'>
+                            <span className='sr-only'>Open menu</span>
+                            <MoreHorizontal className='h-4 w-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              toggleAdminMutation.mutate(user.id);
+                            }}
+                            disabled={toggleAdminMutation.isPending}
+                          >
+                            {toggleAdminMutation.isPending ? (
+                              <div className='flex items-center gap-2'>
+                                <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent'></div>
+                                <span>Processing...</span>
+                              </div>
+                            ) : Boolean(user.publicMetadata?.admin) ? (
+                              'Remove Admin'
+                            ) : (
+                              'Make Admin'
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -349,6 +414,12 @@ export function ClerkUserDataTable({
           </Pagination>
         </div>
       </CardContent>
+
+      <ClerkUserDetailsDialog
+        user={selectedUser}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </Card>
   );
 }
