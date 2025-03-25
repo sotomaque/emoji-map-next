@@ -1,5 +1,13 @@
 # web
 
+## 0.3.3 (03-24-25)
+
+### Patch Changes
+
+- 1852d60: add slack and postman collections to services; crop images of logos
+- a93a0b2: add merchant landing page + waitlist; add download cta on landing
+- 0d5f156: protect routes via middleware; add ability to make users admin/ revoke admins status; add ios meta tag to link to app store
+
 ## 0.3.2
 
 ### Patch Changes
