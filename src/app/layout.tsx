@@ -35,10 +35,7 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <head>
         <link rel='icon' href='/favicon.ico' />
-        <meta
-          name='apple-itunes-app'
-          content={`app-id=${APPLE_APPSTORE_ID}`}
-        />
+        <meta name='apple-itunes-app' content={`app-id=${APPLE_APPSTORE_ID}`} />
       </head>
       <body
         className={cn(
