@@ -2,7 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
+import { AppleIcon } from 'lucide-react';
+import {
+  APPLE_DEEPLINK,
+  IOS_GITHUB_REPO,
+  WEB_GITHUB_REPO,
+} from '@/constants/links';
 
 /**
  * Home Page Component
@@ -37,6 +42,17 @@ export default function Home() {
         <p className='text-xl text-gray-600 dark:text-gray-400 max-w-md'>
           Smooth Brain? Smooth Map.
         </p>
+      </div>
+
+      {/* CTA */}
+      <div className='flex justify-center w-full mt-6'>
+        <Link
+          href={APPLE_DEEPLINK}
+          className='inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105'
+        >
+          <AppleIcon className='w-5 h-5 mr-2' />
+          Download iOS App
+        </Link>
       </div>
 
       {/* Links */}
