@@ -1,19 +1,30 @@
+import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { env } from './env';
 
 // Create a route matcher for public routes
 const isPublic = createRouteMatcher([
   '/',
   '/api/webhooks/clerk(.*)',
   '/api/places(.*)',
-  '/api/docs(.*)',
   '/sign-in(.*)',
   '/sign-up(.*)',
 ]);
 
+const isAdmin = createRouteMatcher(['/admin(.*)']);
+
 // Simple middleware configuration that allows public access to specified routes
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isPublic(req)) {
     return;
+  }
+
+  const { orgId, orgRole } = await auth();
+
+  if (isAdmin(req)) {
+    if (orgId !== env.CLERK_ORG_ID || orgRole !== 'org:admin') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
   }
 });
 

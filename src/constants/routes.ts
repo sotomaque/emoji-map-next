@@ -32,6 +32,11 @@ export const navItems: NavItem[] = [
     hidden: true,
   },
   {
+    label: 'Merchant',
+    href: '/merchant',
+    target: false,
+  },
+  {
     label: 'About',
     href: '/about',
     target: false,
