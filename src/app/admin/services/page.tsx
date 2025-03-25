@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { SERVICES } from '@/constants/services';
 
 export default function ServicesPage() {
   return (
@@ -15,67 +16,9 @@ export default function ServicesPage() {
 
       {/* Services Grid */}
       <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6'>
-        <ServiceCard
-          title='Vercel'
-          description='Deployments, previews and hosting'
-          href='/admin/services/vercel'
-          logoUrl='/services/vercel.png'
-          darkInvert={true}
-        />
-        <ServiceCard
-          title='Supabase'
-          description='Database and backend services'
-          href='/admin/services/supabase'
-          logoUrl='/services/supabase.png'
-        />
-        <ServiceCard
-          title='Clerk'
-          description='Authentication and user management'
-          href='/admin/services/clerk'
-          logoUrl='/services/clerk.svg'
-        />
-        <ServiceCard
-          title='Upstash'
-          description='Serverless Redis'
-          href='/admin/services/upstash'
-          logoUrl='/services/upstash.png'
-        />
-        <ServiceCard
-          title='Statsig'
-          description='Feature flags'
-          href='/admin/services/statsig'
-          logoUrl='/services/statsig.png'
-        />
-        <ServiceCard
-          title='Google Places API'
-          description='Location data and mapping services'
-          href='/admin/services/google-places-api'
-          logoUrl='/services/google-places-api.svg'
-        />
-        <ServiceCard
-          title='App Store Connect'
-          description='iOS app distribution'
-          href='/admin/services/app-store-connect'
-          logoUrl='/services/app-store-connect.png'
-        />
-        <ServiceCard
-          title='App Launchpad'
-          description='App Store screenshots'
-          href='/admin/services/app-launchpad'
-          logoUrl='/services/app-launchpad.png'
-        />
-        <ServiceCard
-          title='Zoho'
-          description='Email'
-          href='/admin/services/zoho'
-          logoUrl='/services/zoho.png'
-        />
-        <ServiceCard
-          title='Linear'
-          description='Project management'
-          href='/admin/services/linear'
-          logoUrl='/services/linear.png'
-        />
+        {SERVICES.map((service) => (
+          <ServiceCard key={service.title} {...service} />
+        ))}
       </div>
     </div>
   );

@@ -26,6 +26,7 @@ export const env = createEnv({
     // CLERK
     CLERK_SECRET_KEY: z.string().min(1),
     CLERK_SIGNING_SECRET: z.string().min(1),
+    CLERK_ORG_ID: z.string().min(1),
 
     // SUPABASE
     POSTGRES_URL: z.string().min(1),
@@ -91,6 +92,7 @@ export const env = createEnv({
     CLERK_SIGNING_SECRET: process.env.CLERK_SIGNING_SECRET,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    CLERK_ORG_ID: process.env.CLERK_ORG_ID,
 
     // SUPABASE
     POSTGRES_URL: process.env.POSTGRES_URL,
