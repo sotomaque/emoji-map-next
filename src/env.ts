@@ -58,9 +58,6 @@ export const env = createEnv({
     APP_STORE_CONNECT_KEY_ID: z.string().min(1),
     APP_STORE_CONNECT_PRIVATE_KEY: z.string().min(1),
     APP_STORE_CONNECT_VENDOR_NUMBER: z.string().min(1),
-
-    // RESEND
-    RESEND_API_KEY: z.string().min(1),
   },
 
   /**
@@ -141,9 +138,6 @@ export const env = createEnv({
     APP_STORE_CONNECT_PRIVATE_KEY: process.env.APP_STORE_CONNECT_PRIVATE_KEY,
     APP_STORE_CONNECT_VENDOR_NUMBER:
       process.env.APP_STORE_CONNECT_VENDOR_NUMBER,
-
-    // RESEND
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
   },
 
   /**

@@ -118,44 +118,39 @@ describe('MobileNav', () => {
           target: false,
           hidden: true,
         },
-        {
-          label: 'Admin Child',
-          href: '/admin',
-          target: false,
-        },
       ],
     },
     {
-      label: 'Admin',
-      href: '/admin',
-      target: false,
+      label: 'App',
+      href: '/app',
+      target: true,
+      featureFlag: 'ENABLE_APP',
     },
   ];
+
+  // Mock implementation of shouldShowNavItem
+  const mockShouldShowNavItem = (item: NavItem) => {
+    if (item.hidden) return false;
+    if (item.featureFlag === 'ENABLE_APP') return false;
+    return true;
+  };
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Setup default mock implementation for non-admin user
+    // Setup default mock implementation
     (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-      shouldShowNavItem: (item: NavItem) => {
-        if (item.hidden) return false;
-        if (item.href === '/admin') return false;
-        return true;
-      },
+      shouldShowNavItem: mockShouldShowNavItem,
       filterNavItems: (items: NavItem[]) =>
-        items.filter((item) => {
-          if (item.hidden) return false;
-          if (item.href === '/admin') return false;
+        items.filter(mockShouldShowNavItem).map((item) => {
           if (item.children) {
             return {
               ...item,
-              children: item.children.filter(
-                (child) => !child.hidden && child.href !== '/admin'
-              ),
+              children: item.children.filter(mockShouldShowNavItem),
             };
           }
-          return true;
+          return item;
         }),
     });
   });
@@ -168,7 +163,7 @@ describe('MobileNav', () => {
     expect(screen.getByTestId('menu-icon')).toBeInTheDocument();
   });
 
-  it('renders the sheet content with navigation items for non-admin users', () => {
+  it('renders the sheet content with navigation items', () => {
     render(<MobileNav navItems={mockNavItems} />);
 
     const sheetContent = screen.getByTestId('sheet-content');
@@ -177,7 +172,7 @@ describe('MobileNav', () => {
     // Logo should be in the header
     expect(screen.getByTestId('logo')).toBeInTheDocument();
 
-    // Navigation items should be rendered (except hidden and admin ones)
+    // Navigation items should be rendered (except hidden ones)
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('About')).toBeInTheDocument();
     expect(screen.getByText('External')).toBeInTheDocument();
@@ -186,50 +181,12 @@ describe('MobileNav', () => {
     // Hidden items should not be rendered
     expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
 
-    // Admin items should not be rendered for non-admin users
-    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
-    expect(screen.queryByText('Admin Child')).not.toBeInTheDocument();
+    // Feature flagged items should not be rendered
+    expect(screen.queryByText('App')).not.toBeInTheDocument();
 
     // Child items should be rendered correctly
     expect(screen.getByText('Child 1')).toBeInTheDocument();
     expect(screen.getByText('Child 2')).toBeInTheDocument();
-    expect(screen.queryByText('Hidden Child')).not.toBeInTheDocument();
-  });
-
-  it('renders admin navigation items for admin users', () => {
-    // Mock the useNavItems hook to return admin user implementation
-    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-      shouldShowNavItem: (item: NavItem) => {
-        if (item.hidden) return false;
-        return true; // Admin can see all non-hidden items
-      },
-      filterNavItems: (items: NavItem[]) =>
-        items.filter((item) => {
-          if (item.hidden) return false;
-          if (item.children) {
-            return {
-              ...item,
-              children: item.children.filter((child) => !child.hidden),
-            };
-          }
-          return true;
-        }),
-    });
-
-    render(<MobileNav navItems={mockNavItems} />);
-
-    // All non-hidden items should be rendered for admin users
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('About')).toBeInTheDocument();
-    expect(screen.getByText('External')).toBeInTheDocument();
-    expect(screen.getByText('With Children')).toBeInTheDocument();
-    expect(screen.getByText('Admin')).toBeInTheDocument();
-
-    // Admin child items should be rendered
-    expect(screen.getByText('Admin Child')).toBeInTheDocument();
-
-    // Hidden items should still not be rendered
-    expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
     expect(screen.queryByText('Hidden Child')).not.toBeInTheDocument();
   });
 
@@ -250,5 +207,32 @@ describe('MobileNav', () => {
     // Other links should not have the active class
     const homeLink = links.find((link) => link.textContent === 'Home');
     expect(homeLink).not.toHaveClass('font-bold');
+  });
+
+  it('shows feature flagged items when enabled', () => {
+    // Mock the useNavItems hook to enable the App feature flag
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: (item: NavItem) => {
+        if (item.hidden) return false;
+        return true; // All feature flags enabled
+      },
+      filterNavItems: (items: NavItem[]) =>
+        items
+          .filter((item) => !item.hidden)
+          .map((item) => {
+            if (item.children) {
+              return {
+                ...item,
+                children: item.children.filter((child) => !child.hidden),
+              };
+            }
+            return item;
+          }),
+    });
+
+    render(<MobileNav navItems={mockNavItems} />);
+
+    // App should now be rendered
+    expect(screen.getByText('App')).toBeInTheDocument();
   });
 });

@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { CONTACT_EMAIL } from '@/constants/contact';
 import { FAQS } from '@/constants/faqs';
 import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from '@/constants/links';
 
@@ -85,22 +86,30 @@ export default function SupportPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/support', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
+      // Format the message body with line breaks and user information
+      const messageBody = `
+        Name: ${values.name}
+        Email: ${values.email}
 
-      if (!response.ok) {
-        throw new Error('Failed to send support request');
-      }
+        Message:
+        ${values.message}
 
-      toast.success('Support request sent successfully!');
+        ---
+        Sent from Emoji Map Support Form
+      `.trim();
+
+      // Encode subject and body for mailto URL
+      const encodedSubject = encodeURIComponent(values.subject);
+      const encodedBody = encodeURIComponent(messageBody);
+
+      // Create mailto URL and open it
+      const mailtoUrl = `mailto:${CONTACT_EMAIL}?subject=${encodedSubject}&body=${encodedBody}`;
+      window.location.href = mailtoUrl;
+
+      toast.success('Opening your mail client...');
       form.reset();
     } catch (error) {
-      toast.error('Failed to send support request. Please try again later.');
+      toast.error('Failed to open mail client. Please try again later.');
       console.error('Error submitting form:', error);
     } finally {
       setIsSubmitting(false);
@@ -386,7 +395,7 @@ export default function SupportPage() {
                       ) : (
                         <>
                           <Mail className='mr-2 h-4 w-4 group-hover:animate-bounce' />
-                          Send Support Request
+                          Open Mail Client
                         </>
                       )}
                     </Button>
@@ -403,8 +412,8 @@ export default function SupportPage() {
 
                   <p className='text-sm text-muted-foreground mt-4 flex items-center gap-1'>
                     <span>
-                      We&apos;ll receive your support request and get back to
-                      you as soon as possible.
+                      This will open your default email client with the form
+                      information.
                     </span>
                     <span className='text-lg'>📤</span>
                   </p>

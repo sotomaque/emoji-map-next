@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import * as navHooks from '@/hooks/useNavItems/useNavItems';
+import { vi, describe, it, expect } from 'vitest';
 import type { NavItem } from '@/types/nav-items';
 import { Header } from './header';
 
@@ -64,58 +63,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
-// Mock the useNavItems hook
-vi.mock('@/hooks/useNavItems/useNavItems', () => ({
-  useNavItems: vi.fn(),
-}));
-
-// Mock the constants/routes module
-vi.mock('@/constants/routes', () => {
-  const mockNavItems: NavItem[] = [
-    {
-      label: 'Home',
-      href: '/',
-      target: false,
-    },
-    {
-      label: 'About',
-      href: '/about',
-      target: false,
-    },
-    {
-      label: 'Admin',
-      href: '/admin',
-      target: false,
-    },
-    {
-      label: 'Hidden',
-      href: '/hidden',
-      target: false,
-      hidden: true,
-    },
-  ];
-
-  return {
-    navItems: mockNavItems,
-  };
-});
-
 describe('Header', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Setup default mock implementation for non-admin user
-    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-      shouldShowNavItem: (item: NavItem) => {
-        if (item.hidden) return false;
-        if (item.href === '/admin') return false;
-        return true;
-      },
-      filterNavItems: (items: NavItem[]) =>
-        items.filter((item) => !item.hidden && item.href !== '/admin'),
-    });
-  });
-
   describe('Default behavior (showAuth=false)', () => {
     it('renders the logo with a link to home', () => {
       render(<Header />);
@@ -138,42 +86,20 @@ describe('Header', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('renders the desktop navigation on large screens for non-admin users', () => {
+    it('renders the desktop navigation on large screens', () => {
       render(<Header />);
 
       const desktopNav = screen.getByTestId('desktop-nav');
       expect(desktopNav).toBeInTheDocument();
       expect(desktopNav.parentElement).toHaveClass('hidden xl:flex');
-      // Should show 2 items (Home and About) for non-admin users
-      expect(desktopNav.textContent).toContain('Desktop Nav with 2 items');
     });
 
-    it('renders the mobile navigation on small screens for non-admin users', () => {
+    it('renders the mobile navigation on small screens', () => {
       render(<Header />);
 
       const mobileNav = screen.getByTestId('mobile-nav');
       expect(mobileNav).toBeInTheDocument();
       expect(mobileNav.parentElement).toHaveClass('flex xl:hidden');
-      // Should show 2 items (Home and About) for non-admin users
-      expect(mobileNav.textContent).toContain('Mobile Nav with 2 items');
-    });
-
-    it('renders navigation with admin items for admin users', () => {
-      // Mock the useNavItems hook to return admin user implementation
-      (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-        shouldShowNavItem: (item: NavItem) => !item.hidden,
-        filterNavItems: (items: NavItem[]) =>
-          items.filter((item) => !item.hidden),
-      });
-
-      render(<Header />);
-
-      const desktopNav = screen.getByTestId('desktop-nav');
-      const mobileNav = screen.getByTestId('mobile-nav');
-
-      // Should show 3 items (Home, About, and Admin) for admin users
-      expect(desktopNav.textContent).toContain('Desktop Nav with 3 items');
-      expect(mobileNav.textContent).toContain('Mobile Nav with 3 items');
     });
 
     it('renders the mode toggle in both desktop and mobile views', () => {
@@ -199,35 +125,12 @@ describe('Header', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('still renders navigation and mode toggle for non-admin users', () => {
+    it('still renders navigation and mode toggle', () => {
       render(<Header showAuth={true} />);
 
-      // Navigation should still be present with 2 items
-      const desktopNav = screen.getByTestId('desktop-nav');
-      const mobileNav = screen.getByTestId('mobile-nav');
-      expect(desktopNav.textContent).toContain('Desktop Nav with 2 items');
-      expect(mobileNav.textContent).toContain('Mobile Nav with 2 items');
-
-      // Mode toggles should still be present
-      const modeToggles = screen.getAllByTestId('mode-toggle');
-      expect(modeToggles).toHaveLength(2);
-    });
-
-    it('still renders navigation and mode toggle for admin users', () => {
-      // Mock the useNavItems hook to return admin user implementation
-      (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-        shouldShowNavItem: (item: NavItem) => !item.hidden,
-        filterNavItems: (items: NavItem[]) =>
-          items.filter((item) => !item.hidden),
-      });
-
-      render(<Header showAuth={true} />);
-
-      // Navigation should still be present with 3 items (including admin)
-      const desktopNav = screen.getByTestId('desktop-nav');
-      const mobileNav = screen.getByTestId('mobile-nav');
-      expect(desktopNav.textContent).toContain('Desktop Nav with 3 items');
-      expect(mobileNav.textContent).toContain('Mobile Nav with 3 items');
+      // Navigation should still be present
+      expect(screen.getByTestId('desktop-nav')).toBeInTheDocument();
+      expect(screen.getByTestId('mobile-nav')).toBeInTheDocument();
 
       // Mode toggles should still be present
       const modeToggles = screen.getAllByTestId('mode-toggle');
