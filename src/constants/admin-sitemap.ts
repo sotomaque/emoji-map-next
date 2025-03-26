@@ -12,7 +12,7 @@ export const ADMIN_SIDEBAR_DATA: {
   navMain: [
     {
       title: 'Getting Started',
-      url: '#',
+      url: '/admin/getting-started',
       items: [
         {
           title: 'iOS App Github',
@@ -117,12 +117,12 @@ export const ADMIN_SIDEBAR_DATA: {
       items: [
         {
           title: 'Logo',
-          url: '#',
+          url: '/admin/assets/logo',
           isActive: false,
         },
         {
           title: 'App Store Assets',
-          url: '#',
+          url: '/admin/assets/app-store-screenshots',
           isActive: false,
         },
       ],

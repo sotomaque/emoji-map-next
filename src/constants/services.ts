@@ -13,6 +13,7 @@ import {
   VERCEL_CONSOLE,
   GMAIL_CONSOLE,
   RESEND_CONSOLE,
+  KEYBASE_CONSOLE,
 } from './links';
 
 export const SERVICES = [
@@ -74,6 +75,18 @@ export const SERVICES = [
       {
         title: 'Go to Console',
         href: GOOGLE_PLACES_API_CONSOLE,
+      },
+    ],
+  },
+  {
+    title: 'Keybase',
+    description: 'Secure file sharing',
+    href: '/admin/services/keybase',
+    logoUrl: '/services/keybase.png',
+    links: [
+      {
+        title: 'Join Team',
+        href: KEYBASE_CONSOLE,
       },
     ],
   },

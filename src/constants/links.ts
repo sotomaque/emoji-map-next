@@ -42,3 +42,5 @@ export const APPLE_APPSTORE_ID = '6742885534';
 export const APPLE_DEEPLINK = `https://apps.apple.com/app/id${APPLE_APPSTORE_ID}`;
 
 export const RESEND_CONSOLE = 'https://resend.com/emails';
+
+export const KEYBASE_CONSOLE = 'https://keybase.io/team/emojimap';
