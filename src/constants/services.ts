@@ -11,7 +11,9 @@ import {
   SUPABASE_CONSOLE,
   UPSTASH_CONSOLE,
   VERCEL_CONSOLE,
-  ZOHO_CONSOLE,
+  GMAIL_CONSOLE,
+  RESEND_CONSOLE,
+  KEYBASE_CONSOLE,
 } from './links';
 
 export const SERVICES = [
@@ -53,6 +55,18 @@ export const SERVICES = [
     ],
   },
   {
+    title: 'Gmail',
+    description: 'Email',
+    href: '/admin/services/gmail',
+    logoUrl: '/services/gmail.png',
+    links: [
+      {
+        title: 'Go to Console',
+        href: GMAIL_CONSOLE,
+      },
+    ],
+  },
+  {
     title: 'Google Places API',
     description: 'Location data and mapping services',
     href: '/admin/services/google-places-api',
@@ -61,6 +75,18 @@ export const SERVICES = [
       {
         title: 'Go to Console',
         href: GOOGLE_PLACES_API_CONSOLE,
+      },
+    ],
+  },
+  {
+    title: 'Keybase',
+    description: 'Secure file sharing',
+    href: '/admin/services/keybase',
+    logoUrl: '/services/keybase.png',
+    links: [
+      {
+        title: 'Join Team',
+        href: KEYBASE_CONSOLE,
       },
     ],
   },
@@ -86,6 +112,19 @@ export const SERVICES = [
       {
         title: 'View Collection',
         href: POSTMAN_COLLECTION,
+      },
+    ],
+  },
+  {
+    title: 'Resend',
+    description: 'Sending emails',
+    href: '/admin/services/resend',
+    logoUrl: '/services/resend.png',
+    darkInvert: true,
+    links: [
+      {
+        title: 'Go to Console',
+        href: RESEND_CONSOLE,
       },
     ],
   },
@@ -152,18 +191,6 @@ export const SERVICES = [
       {
         title: 'Go to Console',
         href: VERCEL_CONSOLE,
-      },
-    ],
-  },
-  {
-    title: 'Zoho',
-    description: 'Email',
-    href: '/admin/services/zoho',
-    logoUrl: '/services/zoho.png',
-    links: [
-      {
-        title: 'Go to Console',
-        href: ZOHO_CONSOLE,
       },
     ],
   },
