@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { CONTACT_EMAIL } from '@/constants/contact';
 import { env } from '@/env';
 
+const resend = new Resend(env.RESEND_API_KEY);
+
 export async function POST(request: NextRequest) {
   try {
     const { name, email, subject, message } = await request.json();
@@ -20,10 +22,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    const resend = new Resend(env.RESEND_API_KEY);
-
     await resend.emails.send({
-      from: `${name} <${email}>`,
+      from: `${name} <support@support.emoji-map.com>`,
       to: [CONTACT_EMAIL],
       subject: `Support Request: ${subject}`,
       html: `
