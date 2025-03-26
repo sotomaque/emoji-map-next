@@ -77,9 +77,13 @@ export default function LogoPage() {
         {/* Usage Guidelines */}
         <div className='mt-8'>
           <Card className='p-6'>
-            <h2 className='text-xl font-semibold tracking-tight'>Usage Guidelines</h2>
+            <h2 className='text-xl font-semibold tracking-tight'>
+              Usage Guidelines
+            </h2>
             <ul className='mt-4 space-y-2 text-sm text-muted-foreground'>
-              <li>• Use the transparent background version for dark backgrounds</li>
+              <li>
+                • Use the transparent background version for dark backgrounds
+              </li>
               <li>• Maintain aspect ratio when resizing</li>
               <li>• Keep minimum padding around the logo</li>
               <li>• Do not modify or distort the logo</li>

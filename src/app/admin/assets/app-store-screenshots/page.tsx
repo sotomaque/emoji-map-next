@@ -41,7 +41,9 @@ export default function AppStoreScreenshotsPage() {
       <div className='flex flex-col gap-8'>
         {/* Header Section */}
         <div className='space-y-2'>
-          <h1 className='text-4xl font-bold tracking-tight'>App Store Screenshots</h1>
+          <h1 className='text-4xl font-bold tracking-tight'>
+            App Store Screenshots
+          </h1>
           <p className='text-lg text-muted-foreground'>
             Official App Store screenshots generated with App Launchpad
           </p>
@@ -51,10 +53,13 @@ export default function AppStoreScreenshotsPage() {
         <Card className='p-6'>
           <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
             <div className='space-y-1'>
-              <h2 className='text-xl font-semibold'>Generated with App Launchpad</h2>
+              <h2 className='text-xl font-semibold'>
+                Generated with App Launchpad
+              </h2>
               <p className='text-sm text-muted-foreground'>
-                These screenshots were professionally created using App Launchpad.
-                Visit the console to generate new screenshots or make updates.
+                These screenshots were professionally created using App
+                Launchpad. Visit the console to generate new screenshots or make
+                updates.
               </p>
             </div>
             <Button asChild variant='outline' className='shrink-0'>
@@ -74,7 +79,10 @@ export default function AppStoreScreenshotsPage() {
         {/* Screenshots Grid */}
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {screenshots.map((screenshot) => (
-            <Card key={screenshot.name} className='flex flex-col overflow-hidden'>
+            <Card
+              key={screenshot.name}
+              className='flex flex-col overflow-hidden'
+            >
               <div className='relative aspect-[9/16] w-full bg-gradient-to-br from-muted/50 to-muted'>
                 <Image
                   src={screenshot.path}
@@ -86,7 +94,9 @@ export default function AppStoreScreenshotsPage() {
               </div>
               <div className='flex flex-1 flex-col gap-2 p-6'>
                 <div className='space-y-1'>
-                  <h3 className='font-semibold tracking-tight'>{screenshot.name}</h3>
+                  <h3 className='font-semibold tracking-tight'>
+                    {screenshot.name}
+                  </h3>
                   <p className='text-sm text-muted-foreground'>
                     {screenshot.description}
                   </p>
@@ -98,12 +108,20 @@ export default function AppStoreScreenshotsPage() {
 
         {/* Guidelines */}
         <Card className='p-6'>
-          <h2 className='text-xl font-semibold tracking-tight'>Screenshot Guidelines</h2>
+          <h2 className='text-xl font-semibold tracking-tight'>
+            Screenshot Guidelines
+          </h2>
           <ul className='mt-4 space-y-2 text-sm text-muted-foreground'>
-            <li>• Screenshots should be high resolution and optimized for different devices</li>
+            <li>
+              • Screenshots should be high resolution and optimized for
+              different devices
+            </li>
             <li>• Each screenshot should highlight a key feature or benefit</li>
             <li>• Text overlays should be clear and readable</li>
-            <li>• Use App Launchpad to maintain consistent styling across all screenshots</li>
+            <li>
+              • Use App Launchpad to maintain consistent styling across all
+              screenshots
+            </li>
             <li>• Update screenshots when significant UI changes are made</li>
           </ul>
         </Card>
@@ -116,9 +134,7 @@ export default function AppStoreScreenshotsPage() {
             </Link>
           </Button>
           <Button asChild variant='outline'>
-            <Link href='/admin/app-store-trends'>
-              View App Store Trends
-            </Link>
+            <Link href='/admin/app-store-trends'>View App Store Trends</Link>
           </Button>
         </div>
       </div>

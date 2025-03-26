@@ -93,4 +93,3 @@ function DashboardCard({ title, description, icon, link }: DashboardCardProps) {
     </Card>
   );
 }
-

@@ -54,9 +54,7 @@ export default function GettingStartedPage() {
                   pnpm install
                 </code>
                 <p>3. Start the development server</p>
-                <code className='block rounded-md bg-muted p-4'>
-                  pnpm dev
-                </code>
+                <code className='block rounded-md bg-muted p-4'>pnpm dev</code>
               </div>
             </Card>
 
@@ -80,7 +78,9 @@ export default function GettingStartedPage() {
 
         {/* Additional Resources */}
         <div className='mt-8'>
-          <h2 className='mb-4 text-2xl font-semibold tracking-tight'>Additional Resources</h2>
+          <h2 className='mb-4 text-2xl font-semibold tracking-tight'>
+            Additional Resources
+          </h2>
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             <Link href='/admin/running-application-locally' className='block'>
               <Card className='h-full p-6 transition-all hover:shadow-md'>
@@ -120,7 +120,12 @@ interface RepositoryCardProps {
   techStack: string[];
 }
 
-function RepositoryCard({ title, description, repoUrl, techStack }: RepositoryCardProps) {
+function RepositoryCard({
+  title,
+  description,
+  repoUrl,
+  techStack,
+}: RepositoryCardProps) {
   return (
     <Card className='flex flex-col p-6'>
       <div className='flex items-start justify-between gap-4'>
