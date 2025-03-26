@@ -124,6 +124,14 @@ STATSIG_SERVER_API_KEY=your_statsig_server_key
 SEARCH_CACHE_KEY_VERSION
 DETAILS_CACHE_KEY_VERSION
 PHOTOS_CACHE_KEY_VERSION
+
+# APP STORE CONNECT
+APP_STORE_CONNECT_BASE_URL=https://api.appstoreconnect.apple.com
+APP_STORE_CONNECT_APP_SKU=your_app_store_connect_app_sku
+APP_STORE_CONNECT_ISSUER_ID=your_app_store_connect_issuer_id
+APP_STORE_CONNECT_KEY_ID=your_app_store_connect_key_id
+APP_STORE_CONNECT_PRIVATE_KEY=your_app_store_connect_private_key
+APP_STORE_CONNECT_VENDOR_NUMBER=your_app_store_connect_vendor_number
 ```
 
 ### Type-Safe Environment Variables
@@ -208,30 +216,9 @@ This project follows a structured deployment process to ensure code quality and 
 
 1. **Development Workflow**:
    - All new features and bug fixes are implemented in feature branches
-   - Pull requests are created against the `dev` branch
+   - Pull requests are created against the `main` branch
    - Each PR must include appropriate changeset files documenting the changes
-   - PRs are reviewed, tested, and merged into `dev`
-
-2. **Preparing for Production**:
-   - When ready to deploy to production, the latest `dev` branch is used as a base
-   - Version bumping is done by running:
-     ```bash
-     pnpm changeset:version  # Processes changesets into version updates
-     pnpm i                  # Updates package-lock with new versions
-     ```
-   - A new PR/MR containing only these version changes is created
-   - This PR is first merged into `dev` to keep it up to date
-
-3. **Production Deployment**:
-   - After the version PR is in `dev`, it's merged up to `main`
-   - The `main` branch is automatically deployed to production
-   - Deployment is triggered by changes to the `main` branch
-
-This process ensures that:
-- All changes are properly documented with changesets
-- Version numbers are updated consistently
-- The `dev` branch always has the latest changes
-- The `main` branch only receives well-tested code
+   - PRs are reviewed, tested, and merged into `main`
 
 ## Navigation System
 

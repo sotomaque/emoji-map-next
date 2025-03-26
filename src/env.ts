@@ -47,6 +47,17 @@ export const env = createEnv({
     SEARCH_CACHE_KEY_VERSION: z.string().min(1),
     DETAILS_CACHE_KEY_VERSION: z.string().min(1),
     PHOTOS_CACHE_KEY_VERSION: z.string().min(1),
+
+    // APP STORE CONNECT
+    APP_STORE_CONNECT_BASE_URL: z
+      .string()
+      .url()
+      .default('https://api.appstoreconnect.apple.com'),
+    APP_STORE_CONNECT_APP_SKU: z.string().min(1),
+    APP_STORE_CONNECT_ISSUER_ID: z.string().min(1),
+    APP_STORE_CONNECT_KEY_ID: z.string().min(1),
+    APP_STORE_CONNECT_PRIVATE_KEY: z.string().min(1),
+    APP_STORE_CONNECT_VENDOR_NUMBER: z.string().min(1),
   },
 
   /**
@@ -118,6 +129,15 @@ export const env = createEnv({
     SEARCH_CACHE_KEY_VERSION: process.env.SEARCH_CACHE_KEY_VERSION,
     DETAILS_CACHE_KEY_VERSION: process.env.DETAILS_CACHE_KEY_VERSION,
     PHOTOS_CACHE_KEY_VERSION: process.env.PHOTOS_CACHE_KEY_VERSION,
+
+    // APP STORE CONNECT
+    APP_STORE_CONNECT_BASE_URL: process.env.APP_STORE_CONNECT_BASE_URL,
+    APP_STORE_CONNECT_APP_SKU: process.env.APP_STORE_CONNECT_APP_SKU,
+    APP_STORE_CONNECT_ISSUER_ID: process.env.APP_STORE_CONNECT_ISSUER_ID,
+    APP_STORE_CONNECT_KEY_ID: process.env.APP_STORE_CONNECT_KEY_ID,
+    APP_STORE_CONNECT_PRIVATE_KEY: process.env.APP_STORE_CONNECT_PRIVATE_KEY,
+    APP_STORE_CONNECT_VENDOR_NUMBER:
+      process.env.APP_STORE_CONNECT_VENDOR_NUMBER,
   },
 
   /**

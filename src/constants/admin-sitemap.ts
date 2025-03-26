@@ -40,6 +40,17 @@ export const ADMIN_SIDEBAR_DATA: {
       ],
     },
     {
+      title: 'App Store Trends',
+      url: '/admin/app-store-trends',
+      items: [
+        {
+          title: 'Reports',
+          url: '/admin/app-store-trends/reports',
+          isActive: false,
+        },
+      ],
+    },
+    {
       title: 'API Reference',
       url: '/admin/api-reference',
       items: [
