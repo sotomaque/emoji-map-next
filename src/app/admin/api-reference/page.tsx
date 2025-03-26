@@ -109,7 +109,7 @@ export default function ApiReferencesPage() {
         />
       </div>
 
-      <div className='mt-8 rounded-xl border p-6 bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground shadow-lg border-purple-200 dark:border-white/10 z-10'>
+      <div className='mt-8 rounded-xl border p-6'>
         <h2 className='text-xl font-semibold mb-4'>API Authentication</h2>
         <p className='mb-2'>
           Most API endpoints require authentication. Use one of the following
@@ -153,7 +153,7 @@ interface ApiSectionProps {
 
 function ApiSection({ title, description, endpoints, link }: ApiSectionProps) {
   return (
-    <div className='rounded-xl border overflow-hidden bg-white/90 dark:bg-card/80 backdrop-blur-md text-card-foreground shadow-lg border-purple-200 dark:border-white/10 p-6 z-10'>
+    <div className='rounded-xl border overflow-hidden'>
       <div className='bg-muted/50 p-4'>
         <h2 className='text-xl font-semibold'>{title}</h2>
         <p className='text-sm text-muted-foreground'>{description}</p>

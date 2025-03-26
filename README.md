@@ -132,9 +132,6 @@ APP_STORE_CONNECT_ISSUER_ID=your_app_store_connect_issuer_id
 APP_STORE_CONNECT_KEY_ID=your_app_store_connect_key_id
 APP_STORE_CONNECT_PRIVATE_KEY=your_app_store_connect_private_key
 APP_STORE_CONNECT_VENDOR_NUMBER=your_app_store_connect_vendor_number
-
-# RESEND
-RESEND_API_KEY=your_resend_api_key
 ```
 
 ### Type-Safe Environment Variables

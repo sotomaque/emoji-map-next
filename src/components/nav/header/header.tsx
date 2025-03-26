@@ -4,7 +4,6 @@ import { ThemedSignInButton } from '@/components/auth/themed-signin-button';
 import ThemedUserButton from '@/components/auth/themed-user-button';
 import { Button } from '@/components/ui/button';
 import { navItems } from '@/constants/routes';
-import { useNavItems } from '@/hooks/useNavItems/useNavItems';
 import { cn } from '@/lib/utils';
 import { DesktopNav } from '../desktop-nav/desktop-nav';
 import { Logo } from '../logo/logo';
@@ -30,9 +29,6 @@ interface HeaderProps {
  * @returns {JSX.Element} Header component
  */
 export function Header({ showAuth = false, className }: HeaderProps) {
-  const { filterNavItems } = useNavItems();
-  const filteredNavItems = filterNavItems(navItems);
-
   return (
     <header
       className={cn(
@@ -61,12 +57,12 @@ export function Header({ showAuth = false, className }: HeaderProps) {
           </Link>
         )}
         <div className='hidden xl:flex gap-7 items-center justify-between'>
-          <DesktopNav navItems={filteredNavItems} />
+          <DesktopNav navItems={navItems} />
           <ModeToggle />
         </div>
         <div className='flex items-center xl:hidden'>
           <ModeToggle />
-          <MobileNav navItems={filteredNavItems} />
+          <MobileNav navItems={navItems} />
         </div>
       </div>
     </header>

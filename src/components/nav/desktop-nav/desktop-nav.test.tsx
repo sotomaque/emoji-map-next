@@ -64,49 +64,44 @@ describe('DesktopNav', () => {
           target: false,
           hidden: true,
         },
-        {
-          label: 'Admin Child',
-          href: '/admin',
-          target: false,
-        },
       ],
     },
     {
-      label: 'Admin',
-      href: '/admin',
-      target: false,
+      label: 'App',
+      href: '/app',
+      target: true,
+      featureFlag: 'ENABLE_APP',
     },
   ];
+
+  // Mock implementation of shouldShowNavItem
+  const mockShouldShowNavItem = (item: NavItem) => {
+    if (item.hidden) return false;
+    if (item.featureFlag === 'ENABLE_APP') return false;
+    return true;
+  };
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Setup default mock implementation for non-admin user
+    // Setup default mock implementation
     (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-      shouldShowNavItem: (item: NavItem) => {
-        if (item.hidden) return false;
-        if (item.href === '/admin') return false;
-        return true;
-      },
+      shouldShowNavItem: mockShouldShowNavItem,
       filterNavItems: (items: NavItem[]) =>
-        items.filter((item) => {
-          if (item.hidden) return false;
-          if (item.href === '/admin') return false;
+        items.filter(mockShouldShowNavItem).map((item) => {
           if (item.children) {
             return {
               ...item,
-              children: item.children.filter(
-                (child) => !child.hidden && child.href !== '/admin'
-              ),
+              children: item.children.filter(mockShouldShowNavItem),
             };
           }
-          return true;
+          return item;
         }),
     });
   });
 
-  it('renders visible navigation items for non-admin users', () => {
+  it('renders visible navigation items', () => {
     render(<DesktopNav navItems={mockNavItems} />);
 
     // Visible items should be rendered
@@ -118,46 +113,8 @@ describe('DesktopNav', () => {
     // Hidden items should not be rendered
     expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
 
-    // Admin items should not be rendered for non-admin users
-    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
-    expect(screen.queryByText('Admin Child')).not.toBeInTheDocument();
-  });
-
-  it('renders admin navigation items for admin users', () => {
-    // Mock the useNavItems hook to return admin user implementation
-    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
-      shouldShowNavItem: (item: NavItem) => {
-        if (item.hidden) return false;
-        return true; // Admin can see all non-hidden items
-      },
-      filterNavItems: (items: NavItem[]) =>
-        items.filter((item) => {
-          if (item.hidden) return false;
-          if (item.children) {
-            return {
-              ...item,
-              children: item.children.filter((child) => !child.hidden),
-            };
-          }
-          return true;
-        }),
-    });
-
-    render(<DesktopNav navItems={mockNavItems} />);
-
-    // All non-hidden items should be rendered for admin users
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('About')).toBeInTheDocument();
-    expect(screen.getByText('External')).toBeInTheDocument();
-    expect(screen.getByText('With Children')).toBeInTheDocument();
-    expect(screen.getByText('Admin')).toBeInTheDocument();
-
-    // Admin child items should be rendered
-    expect(screen.getByText('Admin Child')).toBeInTheDocument();
-
-    // Hidden items should still not be rendered
-    expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
-    expect(screen.queryByText('Hidden Child')).not.toBeInTheDocument();
+    // Feature flagged items should not be rendered
+    expect(screen.queryByText('App')).not.toBeInTheDocument();
   });
 
   it('applies active styles to the current path', () => {
@@ -205,5 +162,32 @@ describe('DesktopNav', () => {
 
     // Hidden child should not be rendered
     expect(screen.queryByText('Hidden Child')).not.toBeInTheDocument();
+  });
+
+  it('shows feature flagged items when enabled', () => {
+    // Mock the useNavItems hook to enable the App feature flag
+    (navHooks.useNavItems as ReturnType<typeof vi.fn>).mockReturnValue({
+      shouldShowNavItem: (item: NavItem) => {
+        if (item.hidden) return false;
+        return true; // All feature flags enabled
+      },
+      filterNavItems: (items: NavItem[]) =>
+        items
+          .filter((item) => !item.hidden)
+          .map((item) => {
+            if (item.children) {
+              return {
+                ...item,
+                children: item.children.filter((child) => !child.hidden),
+              };
+            }
+            return item;
+          }),
+    });
+
+    render(<DesktopNav navItems={mockNavItems} />);
+
+    // App should now be rendered
+    expect(screen.getByText('App')).toBeInTheDocument();
   });
 });

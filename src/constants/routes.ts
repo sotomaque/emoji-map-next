@@ -28,7 +28,8 @@ export const navItems: NavItem[] = [
     label: 'Admin',
     href: '/admin',
     target: true,
-    hidden: false,
+    featureFlag: 'ENABLE_APP',
+    hidden: true,
   },
   {
     label: 'Merchant',
