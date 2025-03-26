@@ -25,7 +25,7 @@ export const GOOGLE_PLACES_API_CONSOLE =
 export const APPLAUNCHPAD_CONSOLE =
   'https://theapplaunchpad.com/dashboard/a72e3536-1dea-4239-afcd-a24b373e4a9e';
 
-export const ZOHO_CONSOLE = 'https://www.zoho.com/';
+export const GMAIL_CONSOLE = 'https://www.gmail.com/';
 
 export const LINEAR_CONSOLE = 'https://linear.app/emojimap';
 
@@ -40,3 +40,5 @@ export const SLACK_WORKSPACE = 'https://emojimapworkspace.slack.com';
 export const APPLE_APPSTORE_ID = '6742885534';
 
 export const APPLE_DEEPLINK = `https://apps.apple.com/app/id${APPLE_APPSTORE_ID}`;
+
+export const RESEND_CONSOLE = 'https://resend.com/emails';
