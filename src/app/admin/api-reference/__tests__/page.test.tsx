@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import ApiReferencesPage from '../page';
 
 describe('ApiReferencesPage', () => {
-  it('renders the page title correctly', () => {
+  it('renders the page title and description correctly', () => {
     render(<ApiReferencesPage />);
     expect(screen.getByText('API References')).toBeInTheDocument();
     expect(
@@ -11,58 +11,134 @@ describe('ApiReferencesPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all API section components', () => {
+  it('renders all API section components with correct titles and descriptions', () => {
     render(<ApiReferencesPage />);
 
-    // Check that all section titles are rendered
-    expect(screen.getByText('User API')).toBeInTheDocument();
-    expect(screen.getByText('Places API')).toBeInTheDocument();
-    expect(screen.getByText('Admin API')).toBeInTheDocument();
-    expect(screen.getByText('Webhooks API')).toBeInTheDocument();
-    expect(screen.getByText('Health API')).toBeInTheDocument();
-    expect(screen.getByText('Debug API')).toBeInTheDocument();
-    expect(screen.getByText('Test Logger API')).toBeInTheDocument();
+    // Check section titles and descriptions
+    const sections = [
+      {
+        title: 'User API',
+        description: 'Endpoints for user management and authentication',
+      },
+      {
+        title: 'Places API',
+        description: 'Search, manage and interact with places',
+      },
+      {
+        title: 'Merchant API',
+        description: 'Endpoints for merchant management and operations',
+      },
+      {
+        title: 'Inngest API',
+        description: 'Background job and event processing',
+      },
+      {
+        title: 'Admin API',
+        description: 'Endpoints used for this admin dashboard',
+      },
+      {
+        title: 'Support API',
+        description: 'Customer support and help desk functionality',
+      },
+      {
+        title: 'Webhooks API',
+        description: 'Handle external service webhooks',
+      },
+      {
+        title: 'Health API',
+        description: 'System health and monitoring',
+      },
+      {
+        title: 'Debug API',
+        description: 'Debugging tools and utilities',
+      },
+      {
+        title: 'Test Logger API',
+        description: 'Testing and logging functionality',
+      },
+    ];
+
+    sections.forEach(({ title, description }) => {
+      expect(screen.getByText(title)).toBeInTheDocument();
+      expect(screen.getByText(description)).toBeInTheDocument();
+    });
   });
 
-  it('renders API section descriptions correctly', () => {
+  it('renders HTTP method badges with correct styling', () => {
     render(<ApiReferencesPage />);
 
-    expect(
-      screen.getByText('Endpoints for user management and authentication')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Search, manage and interact with places')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Administrative endpoints for system management')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Handle external service webhooks')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('System health and monitoring')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Debugging tools and utilities')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Testing and logging functionality')
-    ).toBeInTheDocument();
+    // Test GET badge
+    const getMethodBadges = screen.getAllByText('GET');
+    expect(getMethodBadges[0]).toHaveClass(
+      'bg-emerald-100',
+      'text-emerald-700'
+    );
+
+    // Test POST badge
+    const postMethodBadges = screen.getAllByText('POST');
+    expect(postMethodBadges[0]).toHaveClass('bg-amber-100', 'text-amber-700');
+
+    // Test DELETE badge
+    const deleteMethodBadges = screen.getAllByText('DELETE');
+    expect(deleteMethodBadges[0]).toHaveClass('bg-red-100', 'text-red-700');
   });
 
-  it('renders endpoints for each API section', () => {
+  it('renders endpoints with correct methods and descriptions', () => {
     render(<ApiReferencesPage />);
 
-    // Check some endpoint examples from different sections
-    expect(screen.getByText('GET /api/user')).toBeInTheDocument();
-    expect(screen.getByText('POST /api/user')).toBeInTheDocument();
+    // Test User API endpoints
+    expect(screen.getByText('/api/user')).toBeInTheDocument();
+    expect(
+      screen.getByText('Get user profile information')
+    ).toBeInTheDocument();
+    expect(screen.getByText('/api/user/sync')).toBeInTheDocument();
+    expect(screen.getByText('Sync user data')).toBeInTheDocument();
+
+    // Test Places API endpoints
     expect(screen.getByText('/api/places/search')).toBeInTheDocument();
+    expect(screen.getByText('Search for places')).toBeInTheDocument();
     expect(screen.getByText('/api/places/details')).toBeInTheDocument();
-    expect(screen.getByText('/api/admin')).toBeInTheDocument();
-    expect(screen.getByText('GET /api/health')).toBeInTheDocument();
+    expect(screen.getByText('Get place details')).toBeInTheDocument();
+
+    // Test Admin API endpoints
+    expect(
+      screen.getByText('/api/admin/app-store-connect')
+    ).toBeInTheDocument();
+    expect(screen.getByText('/api/admin/clerk-users')).toBeInTheDocument();
+    expect(screen.getByText('/api/admin/db-users')).toBeInTheDocument();
   });
 
-  it('renders the API authentication section', () => {
+  it('renders links to detailed documentation with correct hrefs', () => {
+    render(<ApiReferencesPage />);
+
+    const sections = [
+      'user',
+      'places',
+      'merchant',
+      'inngest',
+      'admin',
+      'support',
+      'webhooks',
+      'health',
+      'debug',
+      'test-logger',
+    ];
+
+    const links = screen.getAllByRole('link', {
+      name: 'View detailed documentation →',
+    });
+
+    expect(links).toHaveLength(sections.length);
+
+    links.forEach((link, index) => {
+      expect(link).toHaveAttribute(
+        'href',
+        `/admin/api-reference/${sections[index]}`
+      );
+    });
+  });
+
+  it('renders the API authentication section with all methods', () => {
     render(<ApiReferencesPage />);
 
     expect(screen.getByText('API Authentication')).toBeInTheDocument();
@@ -74,32 +150,29 @@ describe('ApiReferencesPage', () => {
     expect(
       screen.getByText(/Session-based authentication/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/API key authentication/)).toBeInTheDocument();
-    expect(screen.getByText(/OAuth2 token/)).toBeInTheDocument();
+    expect(screen.getByText(/x-api-key/)).toBeInTheDocument();
+    expect(screen.getByText(/Authorization: Bearer/)).toBeInTheDocument();
 
     // Check help section
     expect(screen.getByText('Need help with our API?')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Contact the development team for API integration support or feature requests./
+      )
+    ).toBeInTheDocument();
   });
 
-  it('renders links to detailed documentation for each section', () => {
+  it('renders endpoints in a monospace font with correct styling', () => {
     render(<ApiReferencesPage />);
 
-    const links = screen.getAllByText('View detailed documentation →');
-    expect(links).toHaveLength(7); // One for each API section
-
-    // Verify a few specific hrefs
-    const userApiLink = screen.getByText('View detailed documentation →', {
-      selector: 'a[href="/admin/api-reference/user"]',
-    });
-    const placesApiLink = screen.getByText('View detailed documentation →', {
-      selector: 'a[href="/admin/api-reference/places"]',
-    });
-    const adminApiLink = screen.getByText('View detailed documentation →', {
-      selector: 'a[href="/admin/api-reference/admin"]',
+    const endpoints = screen.getAllByText((content, element) => {
+      return (
+        element?.tagName.toLowerCase() === 'span' && content.startsWith('/api/')
+      );
     });
 
-    expect(userApiLink).toBeInTheDocument();
-    expect(placesApiLink).toBeInTheDocument();
-    expect(adminApiLink).toBeInTheDocument();
+    endpoints.forEach((endpoint) => {
+      expect(endpoint).toHaveClass('font-mono', 'text-xs');
+    });
   });
 });

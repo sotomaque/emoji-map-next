@@ -82,7 +82,7 @@ export default function GettingStartedPage() {
             Additional Resources
           </h2>
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-            <Link href='/admin/running-application-locally' className='block'>
+            <Link href='/admin/running-application' className='block'>
               <Card className='h-full p-6 transition-all hover:shadow-md'>
                 <h3 className='font-medium'>Local Development Guide</h3>
                 <p className='mt-2 text-sm text-muted-foreground'>

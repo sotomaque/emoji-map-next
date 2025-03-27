@@ -16,14 +16,15 @@ export default function ApiReferencesPage() {
           description='Endpoints for user management and authentication'
           endpoints={[
             {
-              name: 'GET /api/user',
+              name: '/api/user',
               description: 'Get user profile information',
+              methods: ['GET', 'DELETE'],
             },
             {
-              name: 'POST /api/user',
-              description: 'Create or update user profile',
+              name: '/api/user/sync',
+              description: 'Sync user data',
+              methods: ['POST'],
             },
-            { name: 'GET /api/user/sync', description: 'Sync user data' },
           ]}
           link='/admin/api-reference/user'
         />
@@ -33,17 +34,30 @@ export default function ApiReferencesPage() {
           title='Places API'
           description='Search, manage and interact with places'
           endpoints={[
-            { name: '/api/places/search', description: 'Search for places' },
-            { name: '/api/places/details', description: 'Get place details' },
+            {
+              name: '/api/places/search',
+              description: 'Search for places',
+              methods: ['GET'],
+            },
+            {
+              name: '/api/places/details',
+              description: 'Get place details',
+              methods: ['GET'],
+            },
             {
               name: '/api/places/favorite',
               description: 'Manage favorite places',
+              methods: ['GET', 'POST'],
             },
-            { name: '/api/places/rating', description: 'Rate places' },
-            { name: '/api/places/photos', description: 'Place photos' },
             {
-              name: '/api/places/open-ai',
-              description: 'AI-powered place features',
+              name: '/api/places/rating',
+              description: 'Rate places',
+              methods: ['POST'],
+            },
+            {
+              name: '/api/places/photos',
+              description: 'Place photos',
+              methods: ['GET'],
             },
           ]}
           link='/admin/api-reference/places'
@@ -57,10 +71,12 @@ export default function ApiReferencesPage() {
             {
               name: '/api/merchant',
               description: 'Merchant profile and settings',
+              methods: ['GET'],
             },
             {
-              name: '/api/merchant/verify',
-              description: 'Verify merchant credentials',
+              name: '/api/merchant/associate',
+              description: 'Associate a merchant with a place',
+              methods: ['POST'],
             },
           ]}
           link='/admin/api-reference/merchant'
@@ -74,10 +90,7 @@ export default function ApiReferencesPage() {
             {
               name: '/api/inngest',
               description: 'Handle background jobs and events',
-            },
-            {
-              name: '/api/inngest/send',
-              description: 'Send events to Inngest',
+              methods: ['GET', 'POST', 'PUT'],
             },
           ]}
           link='/admin/api-reference/inngest'
@@ -86,9 +99,38 @@ export default function ApiReferencesPage() {
         {/* Admin API */}
         <ApiSection
           title='Admin API'
-          description='Administrative endpoints for system management'
+          description='Endpoints used for this admin dashboard'
           endpoints={[
-            { name: '/api/admin', description: 'Admin controls and settings' },
+            {
+              name: '/api/admin/app-store-connect',
+              description: 'Get App Store Connect Downloads and Trends',
+              methods: ['GET'],
+            },
+            {
+              name: '/api/admin/clerk-users',
+              description: 'Get Clerk user accounts and authentication',
+              methods: ['GET'],
+            },
+            {
+              name: '/api/admin/clerk-users/toggle-admin-status',
+              description: 'Toggle admin status for a user',
+              methods: ['POST'],
+            },
+            {
+              name: '/api/admin/db-users',
+              description: 'Get database user records and metadata',
+              methods: ['GET'],
+            },
+            {
+              name: '/api/admin/user-favorites',
+              description: 'Get user favorite places',
+              methods: ['GET'],
+            },
+            {
+              name: '/api/admin/user-ratings',
+              description: 'Get user place ratings',
+              methods: ['GET'],
+            },
           ]}
           link='/admin/api-reference/admin'
         />
@@ -100,11 +142,8 @@ export default function ApiReferencesPage() {
           endpoints={[
             {
               name: '/api/support',
-              description: 'Handle support requests and tickets',
-            },
-            {
-              name: '/api/support/contact',
               description: 'Contact form submissions',
+              methods: ['POST'],
             },
           ]}
           link='/admin/api-reference/support'
@@ -115,7 +154,11 @@ export default function ApiReferencesPage() {
           title='Webhooks API'
           description='Handle external service webhooks'
           endpoints={[
-            { name: '/api/webhooks', description: 'Process webhook events' },
+            {
+              name: '/api/webhooks',
+              description: 'Process webhook events',
+              methods: ['POST'],
+            },
           ]}
           link='/admin/api-reference/webhooks'
         />
@@ -126,8 +169,9 @@ export default function ApiReferencesPage() {
           description='System health and monitoring'
           endpoints={[
             {
-              name: 'GET /api/health',
+              name: '/api/health',
               description: 'Check system health status',
+              methods: ['GET'],
             },
           ]}
           link='/admin/api-reference/health'
@@ -141,6 +185,7 @@ export default function ApiReferencesPage() {
             {
               name: '/api/debug/categories',
               description: 'Debug category information',
+              methods: ['GET'],
             },
           ]}
           link='/admin/api-reference/debug'
@@ -154,6 +199,7 @@ export default function ApiReferencesPage() {
             {
               name: '/api/test-logger',
               description: 'Log test events and data',
+              methods: ['POST'],
             },
           ]}
           link='/admin/api-reference/test-logger'
@@ -193,6 +239,7 @@ export default function ApiReferencesPage() {
 interface ApiEndpoint {
   name: string;
   description: string;
+  methods: ('GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH')[];
 }
 
 interface ApiSectionProps {
@@ -200,6 +247,25 @@ interface ApiSectionProps {
   description: string;
   endpoints: ApiEndpoint[];
   link: string;
+}
+
+function MethodBadge({ method }: { method: string }) {
+  const colors = {
+    GET: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    POST: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    PUT: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    PATCH:
+      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    DELETE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  }[method];
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${colors} mr-2`}
+    >
+      {method}
+    </span>
+  );
 }
 
 function ApiSection({ title, description, endpoints, link }: ApiSectionProps) {
@@ -210,13 +276,21 @@ function ApiSection({ title, description, endpoints, link }: ApiSectionProps) {
         <p className='text-sm text-muted-foreground'>{description}</p>
       </div>
       <div className='p-4'>
-        <ul className='space-y-2'>
+        <ul className='space-y-4'>
           {endpoints.map((endpoint) => (
             <li key={endpoint.name} className='text-sm'>
-              <span className='font-mono text-xs bg-muted px-1.5 py-0.5 rounded'>
-                {endpoint.name}
-              </span>
-              <span className='ml-2 text-muted-foreground'>
+              <div className='flex flex-wrap items-center gap-2 mb-1.5'>
+                {endpoint.methods.map((method) => (
+                  <MethodBadge
+                    key={`${endpoint.name}-${method}`}
+                    method={method}
+                  />
+                ))}
+                <span className='font-mono text-xs bg-muted px-1.5 py-0.5 rounded'>
+                  {endpoint.name}
+                </span>
+              </div>
+              <span className='block text-muted-foreground pl-1'>
                 {endpoint.description}
               </span>
             </li>
@@ -224,7 +298,7 @@ function ApiSection({ title, description, endpoints, link }: ApiSectionProps) {
         </ul>
         <Link
           href={link}
-          className='mt-4 inline-block text-sm font-medium text-primary hover:underline'
+          className='mt-6 inline-block text-sm font-medium text-primary hover:underline'
         >
           View detailed documentation →
         </Link>

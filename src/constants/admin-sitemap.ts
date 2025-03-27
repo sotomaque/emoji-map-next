@@ -1,13 +1,9 @@
-import type { AdminSidebarItem } from '@/types/admin-sidebar-item';
+import type { AdminSidebarSection } from '@/types/admin-sidebar-item';
 import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from './links';
 import { SERVICES } from './services';
 
 export const ADMIN_SIDEBAR_DATA: {
-  navMain: {
-    title: string;
-    url: string;
-    items: AdminSidebarItem[];
-  }[];
+  navMain: AdminSidebarSection[];
 } = {
   navMain: [
     {
@@ -29,12 +25,12 @@ export const ADMIN_SIDEBAR_DATA: {
       ],
     },
     {
-      title: 'Running Application Locally',
-      url: '/admin/running-application-locally',
+      title: 'Running Application',
+      url: '/admin/running-application',
       items: [
         {
           title: 'ENV Variables',
-          url: '/admin/running-application-locally/env-variables',
+          url: '/admin/running-application/env-variables',
           isActive: false,
         },
       ],
@@ -55,34 +51,79 @@ export const ADMIN_SIDEBAR_DATA: {
       url: '/admin/api-reference',
       items: [
         {
-          title: 'POST /api/places/search',
-          url: '/admin/api-reference/places/search',
-          isActive: false,
+          title: 'Places API',
+          items: [
+            {
+              title: '/api/places/search',
+              url: '/admin/api-reference/places/search',
+              isActive: false,
+            },
+            {
+              title: '/api/places/details',
+              url: '/admin/api-reference/places/details',
+              isActive: false,
+            },
+            {
+              title: '/api/places/photos',
+              url: '/admin/api-reference/places/photos',
+              isActive: false,
+            },
+          ],
         },
         {
-          title: 'GET /api/places/details',
-          url: '/admin/api-reference/places/details',
-          isActive: false,
+          title: 'User API',
+          items: [
+            {
+              title: '/api/user',
+              url: '/admin/api-reference/user',
+              isActive: false,
+            },
+            {
+              title: '/api/user/sync',
+              url: '/admin/api-reference/user/sync',
+              isActive: false,
+            },
+          ],
         },
         {
-          title: 'GET /api/places/photos',
-          url: '/admin/api-reference/places/photos',
-          isActive: false,
+          title: 'Merchant API',
+          items: [
+            {
+              title: '/api/merchant',
+              url: '/admin/api-reference/merchant',
+              isActive: false,
+            },
+            {
+              title: '/api/merchant/verify',
+              url: '/admin/api-reference/merchant/verify',
+              isActive: false,
+            },
+          ],
         },
         {
-          title: 'GET /api/user',
-          url: '/admin/api-reference/user',
-          isActive: false,
+          title: 'Webhooks',
+          items: [
+            {
+              title: '/api/webhooks',
+              url: '/admin/api-reference/webhooks',
+              isActive: false,
+            },
+          ],
         },
         {
-          title: 'POST /api/user/sync',
-          url: '/admin/api-reference/user/sync',
-          isActive: false,
-        },
-        {
-          title: 'POST /api/webhooks',
-          url: '/admin/api-reference/webhooks',
-          isActive: false,
+          title: 'Support',
+          items: [
+            {
+              title: '/api/support',
+              url: '/admin/api-reference/support',
+              isActive: false,
+            },
+            {
+              title: '/api/support/contact',
+              url: '/admin/api-reference/support/contact',
+              isActive: false,
+            },
+          ],
         },
       ],
     },

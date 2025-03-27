@@ -89,11 +89,6 @@ export async function GET(
   }
 }
 
-// DELETE /api/user
-// uses auth token approach instead of
-// const { userId } = await auth()
-// to work nicely with iOS app / clients outside
-// of Next App
 export async function DELETE(request: NextRequest) {
   try {
     log.info('User deletion API called, validating auth token...');
