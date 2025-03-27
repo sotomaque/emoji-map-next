@@ -459,8 +459,9 @@ function PhotosForm() {
                                   src={photoQuery.data.data[
                                     selectedPhotoIndex
                                   ].toString()}
-                                  alt={`Selected photo ${selectedPhotoIndex + 1
-                                    }`}
+                                  alt={`Selected photo ${
+                                    selectedPhotoIndex + 1
+                                  }`}
                                   fill
                                   unoptimized={true}
                                   className='object-contain'

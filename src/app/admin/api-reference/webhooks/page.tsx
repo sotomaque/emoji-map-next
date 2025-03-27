@@ -3,8 +3,21 @@
 import { AlertCircle, UserPlus, UserCog, UserX, Shield } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default function WebhooksPage() {
   return (
@@ -12,7 +25,8 @@ export default function WebhooksPage() {
       <div className='space-y-2'>
         <h1 className='text-2xl font-bold'>Webhooks</h1>
         <p className='text-muted-foreground'>
-          This endpoint receives and processes webhook events from Clerk for user management synchronization.
+          This endpoint receives and processes webhook events from Clerk for
+          user management synchronization.
         </p>
       </div>
 
@@ -20,7 +34,8 @@ export default function WebhooksPage() {
         <div className='flex items-center gap-2'>
           <AlertCircle className='h-4 w-4 flex-shrink-0' />
           <AlertDescription className='mt-0'>
-            Webhooks are authenticated using Svix signatures. Each request must include valid svix-id, svix-timestamp, and svix-signature headers.
+            Webhooks are authenticated using Svix signatures. Each request must
+            include valid svix-id, svix-timestamp, and svix-signature headers.
           </AlertDescription>
         </div>
       </Alert>
@@ -28,7 +43,9 @@ export default function WebhooksPage() {
       <Card>
         <CardHeader>
           <CardTitle>Endpoint Details</CardTitle>
-          <CardDescription>Technical specifications for the webhook endpoint</CardDescription>
+          <CardDescription>
+            Technical specifications for the webhook endpoint
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -125,7 +142,9 @@ export default function WebhooksPage() {
             <Shield className='h-5 w-5' />
             Security Considerations
           </CardTitle>
-          <CardDescription>Important security measures for webhook handling</CardDescription>
+          <CardDescription>
+            Important security measures for webhook handling
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
@@ -141,7 +160,9 @@ export default function WebhooksPage() {
                 <TableBody>
                   <TableRow>
                     <TableCell className='font-mono'>svix-id</TableCell>
-                    <TableCell>Unique identifier for the webhook request</TableCell>
+                    <TableCell>
+                      Unique identifier for the webhook request
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className='font-mono'>svix-timestamp</TableCell>
@@ -149,7 +170,9 @@ export default function WebhooksPage() {
                   </TableRow>
                   <TableRow>
                     <TableCell className='font-mono'>svix-signature</TableCell>
-                    <TableCell>Cryptographic signature to verify authenticity</TableCell>
+                    <TableCell>
+                      Cryptographic signature to verify authenticity
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -159,7 +182,9 @@ export default function WebhooksPage() {
               <h3 className='font-medium mb-2'>Verification Process</h3>
               <ul className='space-y-2 text-sm'>
                 <li>1. Validates all required headers are present</li>
-                <li>2. Verifies webhook signature using CLERK_SIGNING_SECRET</li>
+                <li>
+                  2. Verifies webhook signature using CLERK_SIGNING_SECRET
+                </li>
                 <li>3. Checks event type and payload structure</li>
                 <li>4. Processes event only if verification succeeds</li>
               </ul>

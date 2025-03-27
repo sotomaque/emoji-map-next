@@ -2,7 +2,13 @@
 
 import { ArrowLeftRight, Database, Smartphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function UserSyncPage() {
   return (
@@ -10,14 +16,16 @@ export default function UserSyncPage() {
       <div className='space-y-2'>
         <h1 className='text-2xl font-bold'>User Sync</h1>
         <p className='text-muted-foreground'>
-          This endpoint is used when a user logs in on the mobile app to ensure data consistency between the mobile app and the database.
+          This endpoint is used when a user logs in on the mobile app to ensure
+          data consistency between the mobile app and the database.
         </p>
       </div>
 
       <Alert>
         <AlertDescription>
-          The sync process is automatic and happens in the background when a user logs in through the mobile app.
-          No manual intervention is required.
+          The sync process is automatic and happens in the background when a
+          user logs in through the mobile app. No manual intervention is
+          required.
         </AlertDescription>
       </Alert>
 
@@ -28,7 +36,9 @@ export default function UserSyncPage() {
               <Smartphone className='h-5 w-5' />
               Mobile App Data
             </CardTitle>
-            <CardDescription>Local data stored on the mobile device</CardDescription>
+            <CardDescription>
+              Local data stored on the mobile device
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className='space-y-2 text-sm'>
@@ -72,7 +82,9 @@ export default function UserSyncPage() {
           <Card>
             <CardHeader>
               <CardTitle>Mobile → Database</CardTitle>
-              <CardDescription>Data sent from mobile app to server</CardDescription>
+              <CardDescription>
+                Data sent from mobile app to server
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className='space-y-2 text-sm'>
@@ -86,7 +98,9 @@ export default function UserSyncPage() {
           <Card>
             <CardHeader>
               <CardTitle>Database → Mobile</CardTitle>
-              <CardDescription>Data sent from server to mobile app</CardDescription>
+              <CardDescription>
+                Data sent from server to mobile app
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className='space-y-2 text-sm'>

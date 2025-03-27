@@ -366,10 +366,11 @@ function DetailsForm() {
                   size='sm'
                   onClick={() => {
                     router.push(
-                      `/admin/api-reference/places/photos?id=${placeDetailsQuery.data.data?.name?.replace(
-                        'places/',
-                        ''
-                      ) || placeId
+                      `/admin/api-reference/places/photos?id=${
+                        placeDetailsQuery.data.data?.name?.replace(
+                          'places/',
+                          ''
+                        ) || placeId
                       }`
                     );
                   }}
@@ -556,15 +557,16 @@ function DetailsForm() {
                                       {[1, 2, 3, 4, 5].map((star) => (
                                         <span
                                           key={`rating-star-${star}`}
-                                          className={`text-xl ${(placeDetailsQuery.data.data
+                                          className={`text-xl ${
+                                            (placeDetailsQuery.data.data
                                               .rating || 0) >= star
                                               ? 'text-yellow-400'
                                               : (placeDetailsQuery.data.data
-                                                .rating || 0) >=
+                                                  .rating || 0) >=
                                                 star - 0.5
-                                                ? 'text-yellow-400/70'
-                                                : 'text-gray-300'
-                                            }`}
+                                              ? 'text-yellow-400/70'
+                                              : 'text-gray-300'
+                                          }`}
                                         >
                                           ★
                                         </span>
@@ -585,7 +587,7 @@ function DetailsForm() {
                                   </span>
                                   <div className='text-right max-w-[60%]'>
                                     {placeDetailsQuery.data.data.priceLevel ===
-                                      null ? (
+                                    null ? (
                                       <span>Not specified</span>
                                     ) : (
                                       <span>
@@ -737,7 +739,7 @@ function DetailsForm() {
                             {/* Reviews section */}
                             {placeDetailsQuery.data.data.reviews &&
                               placeDetailsQuery.data.data.reviews.length >
-                              0 && (
+                                0 && (
                                 <div className='p-3 border rounded-md bg-muted/30'>
                                   <p className='text-sm font-medium mb-3'>
                                     Reviews:
@@ -754,10 +756,11 @@ function DetailsForm() {
                                               {[1, 2, 3, 4, 5].map((star) => (
                                                 <span
                                                   key={`review-star-${index}-${star}`}
-                                                  className={`text-xl ${review.rating >= star
+                                                  className={`text-xl ${
+                                                    review.rating >= star
                                                       ? 'text-yellow-400'
                                                       : 'text-gray-300'
-                                                    }`}
+                                                  }`}
                                                 >
                                                   ★
                                                 </span>
@@ -770,11 +773,11 @@ function DetailsForm() {
                                           </p>
                                           <p className='text-sm'>
                                             {typeof review.text === 'object' &&
-                                              review.text?.text
+                                            review.text?.text
                                               ? review.text.text
                                               : typeof review.text === 'string'
-                                                ? review.text
-                                                : 'No review text'}
+                                              ? review.text
+                                              : 'No review text'}
                                           </p>
                                         </div>
                                       )

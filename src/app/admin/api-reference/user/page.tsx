@@ -4,7 +4,13 @@ import { useAuth } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { env } from '@/env';
 import type { User, Favorite, Rating } from '@prisma/client';
@@ -46,8 +52,12 @@ export default function UserPage() {
         <div className='grid gap-4 md:grid-cols-3'>
           <Card>
             <CardHeader>
-              <CardTitle><Skeleton className='h-4 w-[200px]' /></CardTitle>
-              <CardDescription><Skeleton className='h-4 w-[150px]' /></CardDescription>
+              <CardTitle>
+                <Skeleton className='h-4 w-[200px]' />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className='h-4 w-[150px]' />
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Skeleton className='h-20 w-full' />
@@ -55,8 +65,12 @@ export default function UserPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle><Skeleton className='h-4 w-[200px]' /></CardTitle>
-              <CardDescription><Skeleton className='h-4 w-[150px]' /></CardDescription>
+              <CardTitle>
+                <Skeleton className='h-4 w-[200px]' />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className='h-4 w-[150px]' />
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Skeleton className='h-20 w-full' />
@@ -64,8 +78,12 @@ export default function UserPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle><Skeleton className='h-4 w-[200px]' /></CardTitle>
-              <CardDescription><Skeleton className='h-4 w-[150px]' /></CardDescription>
+              <CardTitle>
+                <Skeleton className='h-4 w-[200px]' />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className='h-4 w-[150px]' />
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Skeleton className='h-20 w-full' />
@@ -84,7 +102,9 @@ export default function UserPage() {
           <AlertCircle className='h-4 w-4' />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            {error instanceof Error ? error.message : 'Failed to load user data'}
+            {error instanceof Error
+              ? error.message
+              : 'Failed to load user data'}
           </AlertDescription>
         </Alert>
       </div>

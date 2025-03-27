@@ -56,11 +56,11 @@ export default function ApiReferencesPage() {
           endpoints={[
             {
               name: '/api/merchant',
-              description: 'Merchant profile and settings'
+              description: 'Merchant profile and settings',
             },
             {
               name: '/api/merchant/verify',
-              description: 'Verify merchant credentials'
+              description: 'Verify merchant credentials',
             },
           ]}
           link='/admin/api-reference/merchant'
@@ -73,11 +73,11 @@ export default function ApiReferencesPage() {
           endpoints={[
             {
               name: '/api/inngest',
-              description: 'Handle background jobs and events'
+              description: 'Handle background jobs and events',
             },
             {
               name: '/api/inngest/send',
-              description: 'Send events to Inngest'
+              description: 'Send events to Inngest',
             },
           ]}
           link='/admin/api-reference/inngest'
@@ -100,11 +100,11 @@ export default function ApiReferencesPage() {
           endpoints={[
             {
               name: '/api/support',
-              description: 'Handle support requests and tickets'
+              description: 'Handle support requests and tickets',
             },
             {
               name: '/api/support/contact',
-              description: 'Contact form submissions'
+              description: 'Contact form submissions',
             },
           ]}
           link='/admin/api-reference/support'
