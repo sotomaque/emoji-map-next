@@ -1,6 +1,5 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { QueryProvider } from './query-provider';
-import StatsigProvider from './statsig-provider';
 import { ThemeProvider } from './theme-provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -8,7 +7,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ClerkProvider>
       <ThemeProvider>
         <QueryProvider>
-          <StatsigProvider>{children}</StatsigProvider>
+          {children}
         </QueryProvider>
       </ThemeProvider>
     </ClerkProvider>

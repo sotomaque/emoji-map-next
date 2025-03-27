@@ -34,7 +34,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - 🔐 User authentication with Clerk
 - 🗄️ PostgreSQL database with Prisma ORM
 - 🔄 Git hooks with Husky for code quality checks
-- 🚦 Feature flags with Statsig
 
 ### Data Flow
 
@@ -75,7 +74,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Prisma](https://www.prisma.io/) - ORM for database access
 - [Clerk](https://clerk.com/) - User authentication
 - [Husky](https://typicode.github.io/husky/) - Git hooks for code quality
-- [Statsig](https://statsig.com/) - Feature flags and experimentation
 
 ## Getting Started
 
@@ -110,15 +108,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
 
 # Upstash Redis (for caching)
-KV_URL=your_upstash_redis_url
-KV_REST_API_READ_ONLY_TOKEN=your_upstash_read_only_token
 KV_REST_API_TOKEN=your_upstash_redis_token
 KV_REST_API_URL=your_upstash_redis_url
-
-# Statsig (Feature Flags)
-EXPERIMENTATION_CONFIG_ITEM_KEY=your_statsig_config_key
-NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
-STATSIG_SERVER_API_KEY=your_statsig_server_key
 
 # Cache Keys 
 SEARCH_CACHE_KEY_VERSION
@@ -516,19 +507,6 @@ flowchart TD
 
     C --> E[Render Navigation]:::component
     D --> E
-
-    %% Feature Flag System components
-    subgraph "Feature Flag System"
-        direction TB
-        F[Statsig Client]:::featureFlag --> G[useGateValue Hook]:::featureFlag
-        G --> B
-
-        %% Add feature flag examples
-        H[Feature Flags]:::featureFlag
-        H --> |Controls| I[ENABLE_APP]:::featureFlag
-        H --> |Controls| J[ENABLE_SEARCH]:::featureFlag
-        H --> |Controls| K[ENABLE_PROFILE]:::featureFlag
-    end
 
     %% Navigation components
     subgraph "Navigation Components"

@@ -7,7 +7,6 @@ import {
   POSTMAN_COLLECTION,
   SLACK_INVITE_LINK,
   SLACK_WORKSPACE,
-  STATSIG_CONSOLE,
   SUPABASE_CONSOLE,
   UPSTASH_CONSOLE,
   VERCEL_CONSOLE,
@@ -141,19 +140,6 @@ export const SERVICES = [
       {
         title: 'Go to Workspace',
         href: SLACK_WORKSPACE,
-      },
-    ],
-  },
-  {
-    title: 'Statsig',
-    description: 'Feature flags',
-    href: '/admin/services/statsig',
-    logoUrl: '/services/statsig.png',
-    darkInvert: true,
-    links: [
-      {
-        title: 'Go to Console',
-        href: STATSIG_CONSOLE,
       },
     ],
   },

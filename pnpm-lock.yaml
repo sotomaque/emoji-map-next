@@ -68,12 +68,6 @@ importers:
       '@radix-ui/react-visually-hidden':
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@statsig/react-bindings':
-        specifier: ^3.14.1
-        version: 3.14.1(react@19.0.0)
-      '@statsig/web-analytics':
-        specifier: ^3.14.1
-        version: 3.14.1
       '@t3-oss/env-nextjs':
         specifier: ^0.12.0
         version: 0.12.0(typescript@5.8.2)(zod@3.24.2)
@@ -1577,20 +1571,6 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
-
-  '@statsig/client-core@3.14.1':
-    resolution: {integrity: sha512-ARb3Ig0pZopPQuRehx3tcdhZo6+KEY32r67Qhzzx0YGdtEAuqSvTEYFGtujJRMZS1NLgYg8UP3ktfw1CYiJOHw==}
-
-  '@statsig/js-client@3.14.1':
-    resolution: {integrity: sha512-kFmo66KR8pMkQmgnSI2T5K4MM1l2PZMobUy7h8Ldg5iyUlMqQElZB6Z5eqLZyDJf5+3SNcVZGbAmIKC7bBU+7Q==}
-
-  '@statsig/react-bindings@3.14.1':
-    resolution: {integrity: sha512-XDGpqg+iCsEzx9Ysp6NllWphLrPNYSiXprbgSgFIhhan/e4vWM/FsJVaSsc1bghJcHDydu0kaq8QgYQWZADhkQ==}
-    peerDependencies:
-      react: ^16.6.3 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  '@statsig/web-analytics@3.14.1':
-    resolution: {integrity: sha512-1hxm7O/EHIY915lqC4R2o18SfGY6eS4shlNAvGaG6Bqq3IFDBqczaq2h6gcN6u6+NXDfkbc1Svs6b7R2XwfZtQ==}
 
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
@@ -5887,23 +5867,6 @@ snapshots:
   '@stablelib/base64@1.0.1': {}
 
   '@standard-schema/utils@0.3.0': {}
-
-  '@statsig/client-core@3.14.1': {}
-
-  '@statsig/js-client@3.14.1':
-    dependencies:
-      '@statsig/client-core': 3.14.1
-
-  '@statsig/react-bindings@3.14.1(react@19.0.0)':
-    dependencies:
-      '@statsig/client-core': 3.14.1
-      '@statsig/js-client': 3.14.1
-      react: 19.0.0
-
-  '@statsig/web-analytics@3.14.1':
-    dependencies:
-      '@statsig/client-core': 3.14.1
-      '@statsig/js-client': 3.14.1
 
   '@swc/counter@0.1.3': {}
 

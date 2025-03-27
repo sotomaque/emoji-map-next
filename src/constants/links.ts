@@ -1,21 +1,17 @@
-export const IOS_GITHUB_REPO = 'https://github.com/sotomaque/emoji-map';
+export const IOS_GITHUB_REPO = 'https://github.com/EmojiMap/emoji-map';
 
-export const WEB_GITHUB_REPO = 'https://github.com/sotomaque/emoji-map-next';
+export const WEB_GITHUB_REPO = 'https://github.com/EmojiMap/emoji-map-next';
 
-export const VERCEL_CONSOLE =
-  'https://vercel.com/enriques-projects-b7c71f69/emoji-map-next';
+export const VERCEL_CONSOLE = 'https://vercel.com/emoji-map/emoji-map-next';
 
 export const UPSTASH_CONSOLE =
-  'https://console.upstash.com/vercel/kv/043f9770-936a-425e-8bbe-f904d33ac70f';
+  'https://console.upstash.com/redis/1b370485-50df-4829-a4e3-cd1b2480f076?tab=data-browser&teamid=511db917-9a7f-4ac5-83c1-8b87044dc191';
 
 export const SUPABASE_CONSOLE =
-  'https://supabase.com/dashboard/project/yeefohoymttgqtrjjczg';
+  'https://supabase.com/dashboard/project/fceqntlroorvduzxnjlj';
 
 export const CLERK_CONSOLE =
   'https://dashboard.clerk.com/apps/app_2u36WQceIayyTFxCy2gFidpnDI4/instances/ins_2u36WaBDCv4rcJTYIrvK75VNv56';
-
-export const STATSIG_CONSOLE =
-  'https://console.statsig.com/3ZG9d3Ez2v3KvKCXN0a5rL/gates';
 
 export const APP_STORE_CONNECT_CONSOLE = 'https://appstoreconnect.apple.com/';
 

@@ -38,8 +38,6 @@ export const env = createEnv({
     POSTGRES_PASSWORD: z.string().min(1),
 
     // UPSTASH
-    KV_URL: z.string().min(1),
-    KV_REST_API_READ_ONLY_TOKEN: z.string().min(1),
     KV_REST_API_TOKEN: z.string().min(1),
     KV_REST_API_URL: z.string().min(1),
 
@@ -79,9 +77,6 @@ export const env = createEnv({
     // SUPABASE
     NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-
-    // STATSIG
-    NEXT_PUBLIC_STATSIG_CLIENT_KEY: z.string().min(1),
   },
 
   /**
@@ -120,13 +115,8 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 
     // UPSTASH
-    KV_URL: process.env.KV_URL,
-    KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
     KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
     KV_REST_API_URL: process.env.KV_REST_API_URL,
-
-    // STATSIG
-    NEXT_PUBLIC_STATSIG_CLIENT_KEY: process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY,
 
     // CACHE KEYS
     SEARCH_CACHE_KEY_VERSION: process.env.SEARCH_CACHE_KEY_VERSION,

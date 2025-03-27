@@ -27,18 +27,6 @@ const originalWarn = console.warn;
 const originalInfo = console.info;
 const originalDebug = console.debug;
 
-// Mock Statsig's useGateValue hook globally
-vi.mock('@statsig/react-bindings', () => ({
-  useGateValue: vi.fn().mockReturnValue(false),
-  LogLevel: {
-    Debug: 'debug',
-    Info: 'info',
-    Warn: 'warn',
-    Error: 'error',
-  },
-  StatsigProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
 // Mock environment variables globally
 vi.mock('@/env', () => ({
   env: {
@@ -67,13 +55,8 @@ vi.mock('@/env', () => ({
     POSTGRES_PASSWORD: 'test-postgres-password',
 
     // Upstash (Redis)
-    KV_URL: 'test-kv-url',
-    KV_REST_API_READ_ONLY_TOKEN: 'test-kv-read-only-token',
     KV_REST_API_TOKEN: 'test-kv-token',
     KV_REST_API_URL: 'test-kv-rest-api-url',
-
-    // Statsig
-    NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'test-statsig-client-key',
 
     // Cache keys
     NEARBY_CACHE_KEY_VERSION: 'test-nearby-cache-key-version',
