@@ -4,22 +4,9 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { getUserId } from '@/services/user/get-user-id';
 import type { ErrorResponse } from '@/types/error-response';
+import type { UserResponse } from '@/types/user';
 import { log } from '@/utils/log';
-import type { User, Favorite, Rating } from '@prisma/client';
 
-type UserResponse = {
-  user: User & {
-    favorites?: Favorite[];
-    ratings?: Rating[];
-  };
-  status: number;
-};
-
-// GET /api/user
-// uses auth token approach instead of
-// const { userId } = await auth()
-// to work nicely with iOS app / clients outside
-// of Next App
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<UserResponse | ErrorResponse>> {

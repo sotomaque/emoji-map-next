@@ -81,7 +81,7 @@ export const ADMIN_SIDEBAR_DATA: {
         },
         {
           title: 'POST /api/webhooks',
-          url: '#',
+          url: '/admin/api-reference/webhooks',
           isActive: false,
         },
       ],

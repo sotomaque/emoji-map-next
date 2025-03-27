@@ -181,14 +181,6 @@ function PhotosForm() {
 
   return (
     <div className='flex flex-col gap-8 p-4'>
-      {/* Title + Description */}
-      <div>
-        <h1 className='text-2xl font-bold'>Place Photos</h1>
-        <p className='text-sm text-muted-foreground'>
-          View photos for a specific place using its Place ID.
-        </p>
-      </div>
-
       {/* Search Form Card */}
       <Card>
         <CardHeader>
@@ -467,9 +459,8 @@ function PhotosForm() {
                                   src={photoQuery.data.data[
                                     selectedPhotoIndex
                                   ].toString()}
-                                  alt={`Selected photo ${
-                                    selectedPhotoIndex + 1
-                                  }`}
+                                  alt={`Selected photo ${selectedPhotoIndex + 1
+                                    }`}
                                   fill
                                   unoptimized={true}
                                   className='object-contain'

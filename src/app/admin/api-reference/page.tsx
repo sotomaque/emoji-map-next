@@ -49,6 +49,40 @@ export default function ApiReferencesPage() {
           link='/admin/api-reference/places'
         />
 
+        {/* Merchant API */}
+        <ApiSection
+          title='Merchant API'
+          description='Endpoints for merchant management and operations'
+          endpoints={[
+            {
+              name: '/api/merchant',
+              description: 'Merchant profile and settings'
+            },
+            {
+              name: '/api/merchant/verify',
+              description: 'Verify merchant credentials'
+            },
+          ]}
+          link='/admin/api-reference/merchant'
+        />
+
+        {/* Inngest API */}
+        <ApiSection
+          title='Inngest API'
+          description='Background job and event processing'
+          endpoints={[
+            {
+              name: '/api/inngest',
+              description: 'Handle background jobs and events'
+            },
+            {
+              name: '/api/inngest/send',
+              description: 'Send events to Inngest'
+            },
+          ]}
+          link='/admin/api-reference/inngest'
+        />
+
         {/* Admin API */}
         <ApiSection
           title='Admin API'
@@ -57,6 +91,23 @@ export default function ApiReferencesPage() {
             { name: '/api/admin', description: 'Admin controls and settings' },
           ]}
           link='/admin/api-reference/admin'
+        />
+
+        {/* Support API */}
+        <ApiSection
+          title='Support API'
+          description='Customer support and help desk functionality'
+          endpoints={[
+            {
+              name: '/api/support',
+              description: 'Handle support requests and tickets'
+            },
+            {
+              name: '/api/support/contact',
+              description: 'Contact form submissions'
+            },
+          ]}
+          link='/admin/api-reference/support'
         />
 
         {/* Webhooks API */}
