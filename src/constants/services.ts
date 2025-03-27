@@ -14,6 +14,8 @@ import {
   RESEND_CONSOLE,
   KEYBASE_CONSOLE,
   INNGEST_CONSOLE,
+  GOOGLE_PLACES_API_DOCS,
+  GOOGLE_PLACES_API_BILLING_CONSOLE,
 } from './links';
 
 interface ServiceLink {
@@ -96,6 +98,14 @@ export const SERVICES: Service[] = [
       {
         title: 'Go to Console',
         href: GOOGLE_PLACES_API_CONSOLE,
+      },
+      {
+        title: 'Go to Docs',
+        href: GOOGLE_PLACES_API_DOCS,
+      },
+      {
+        title: 'Go to Billing Console',
+        href: GOOGLE_PLACES_API_BILLING_CONSOLE,
       },
     ],
   },

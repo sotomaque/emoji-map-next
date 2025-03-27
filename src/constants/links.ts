@@ -16,7 +16,13 @@ export const CLERK_CONSOLE =
 export const APP_STORE_CONNECT_CONSOLE = 'https://appstoreconnect.apple.com/';
 
 export const GOOGLE_PLACES_API_CONSOLE =
-  'https://console.cloud.google.com/google/maps-apis/api-list?project=emoji-map-427902';
+  'https://console.cloud.google.com/google/maps-apis/api-list?invt=AbtLaA&authuser=1&project=trusty-stack-455018-b6';
+
+export const GOOGLE_PLACES_API_DOCS =
+  'https://developers.google.com/maps/documentation/places/web-service';
+
+export const GOOGLE_PLACES_API_BILLING_CONSOLE =
+  'https://console.cloud.google.com/billing/01DE2F-0ECD03-58ABA8/manage?authuser=1&invt=AbtLaA&project=trusty-stack-455018-b6&organizationId=890741334115';
 
 export const APPLAUNCHPAD_CONSOLE =
   'https://theapplaunchpad.com/dashboard/a72e3536-1dea-4239-afcd-a24b373e4a9e';
