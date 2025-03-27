@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,7 +85,8 @@ const PlaceDetailsSkeleton = () => {
   );
 };
 
-export default function PlacesDetailsPage() {
+// Create a client component for the form
+function DetailsForm() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -211,7 +212,10 @@ export default function PlacesDetailsPage() {
     }
 
     return (
-      <div className='flex justify-between items-start py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0'>
+      <div
+        className='flex justify-between items-start py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0'
+        key={label}
+      >
         <span className='font-medium'>{label}:</span>
         <span className='text-right max-w-[60%]'>{formattedValue}</span>
       </div>
@@ -255,14 +259,6 @@ export default function PlacesDetailsPage() {
 
   return (
     <div className='flex flex-col gap-8 p-4'>
-      {/* Title + Description */}
-      <div>
-        <h1 className='text-2xl font-bold'>Place Details</h1>
-        <p className='text-sm text-muted-foreground'>
-          Get detailed information about a specific place using its Place ID.
-        </p>
-      </div>
-
       {/* Search Form Card */}
       <Card>
         <CardHeader>
@@ -541,6 +537,18 @@ export default function PlacesDetailsPage() {
                                   placeDetailsQuery.data.data
                                     .primaryTypeDisplayName
                                 )}
+                                {renderDetailField(
+                                  'Address',
+                                  placeDetailsQuery.data.data.formattedAddress
+                                )}
+                                {renderDetailField(
+                                  'Latitude',
+                                  placeDetailsQuery.data.data.location.latitude
+                                )}
+                                {renderDetailField(
+                                  'Longitude',
+                                  placeDetailsQuery.data.data.location.longitude
+                                )}
 
                                 <div className='flex justify-between items-start py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0'>
                                   <span className='font-medium'>Rating:</span>
@@ -797,6 +805,25 @@ export default function PlacesDetailsPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Main page component
+export default function PlacesDetailsPage() {
+  return (
+    <div className='flex flex-col gap-8 p-4'>
+      {/* Title + Description */}
+      <div>
+        <h1 className='text-2xl font-bold'>Place Details</h1>
+        <p className='text-sm text-muted-foreground'>
+          Get detailed information about a specific place using its Place ID.
+        </p>
+      </div>
+
+      <Suspense fallback={<PlaceDetailsSkeleton />}>
+        <DetailsForm />
+      </Suspense>
     </div>
   );
 }

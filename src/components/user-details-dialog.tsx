@@ -20,59 +20,55 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { User } from '@/hooks/use-db-users';
+import type { UserWithCounts } from '@/types/admin-db-users';
+import type { FavoriteResponse } from '@/types/admin-user-favorites';
+import type { RatingResponse } from '@/types/admin-user-ratings';
 
 interface UserDetailsDialogProps {
-  user: User | null;
+  user: UserWithCounts | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Interfaces for favorites and ratings
-interface Favorite {
-  id: string;
-  placeId: string;
-  place: {
-    name: string | null;
-    description: string | null;
-  };
-  createdAt: string;
-}
-
-interface Rating {
-  id: string;
-  placeId: string;
-  place: {
-    name: string | null;
-    description: string | null;
-  };
-  rating: number;
-  createdAt: string;
-}
-
-// Fetch user favorites
 function useFetchUserFavorites(userId: string | null) {
   return useQuery({
     queryKey: ['user-favorites', userId],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) {
+        return [];
+      }
+
       const res = await fetch(`/api/admin/user-favorites?userId=${userId}`);
-      if (!res.ok) throw new Error('Failed to fetch favorites');
-      return res.json() as Promise<Favorite[]>;
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch favorites');
+      }
+
+      const data = (await res.json()) as FavoriteResponse;
+
+      return data.favorites;
     },
     enabled: !!userId,
   });
 }
 
-// Fetch user ratings
 function useFetchUserRatings(userId: string | null) {
   return useQuery({
     queryKey: ['user-ratings', userId],
     queryFn: async () => {
-      if (!userId) return [];
+      if (!userId) {
+        return [];
+      }
+
       const res = await fetch(`/api/admin/user-ratings?userId=${userId}`);
-      if (!res.ok) throw new Error('Failed to fetch ratings');
-      return res.json() as Promise<Rating[]>;
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch ratings');
+      }
+
+      const data = (await res.json()) as RatingResponse;
+
+      return data.ratings;
     },
     enabled: !!userId,
   });
@@ -131,11 +127,15 @@ export function UserDetailsDialog({
           </div>
           <div>
             <h3 className='font-medium text-sm'>Created</h3>
-            <p className='text-sm'>{formatDate(user.createdAt)}</p>
+            <p className='text-sm'>
+              {formatDate(new Date(user.createdAt).toISOString())}
+            </p>
           </div>
           <div>
             <h3 className='font-medium text-sm'>Updated</h3>
-            <p className='text-sm'>{formatDate(user.updatedAt)}</p>
+            <p className='text-sm'>
+              {formatDate(new Date(user.updatedAt).toISOString())}
+            </p>
           </div>
         </div>
 
@@ -187,7 +187,9 @@ export function UserDetailsDialog({
                                 '...'}
                             </TableCell>
                             <TableCell>
-                              {formatDate(favorite.createdAt)}
+                              {formatDate(
+                                new Date(favorite.createdAt).toISOString()
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -254,7 +256,9 @@ export function UserDetailsDialog({
                                 '...'}
                             </TableCell>
                             <TableCell>
-                              {formatDate(rating.createdAt)}
+                              {formatDate(
+                                new Date(rating.createdAt).toISOString()
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

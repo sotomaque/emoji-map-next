@@ -8,23 +8,38 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(),
 }));
 
-// Create a mocked version of ADMIN_SIDEBAR_DATA
-vi.mock('@/components/app-sidebar', () => ({
+// Mock the admin sitemap data
+vi.mock('@/constants/admin-sitemap', () => ({
   ADMIN_SIDEBAR_DATA: {
     navMain: [
       {
-        title: 'API Reference',
+        title: 'API References',
         url: '/admin/api-reference',
         items: [
           {
-            title: 'POST /api/places/search',
-            url: '/admin/api-reference/places/search',
-            isActive: false,
+            title: 'User API',
+            items: [
+              {
+                title: 'GET /api/user',
+                url: '/admin/api-reference/user',
+                description: 'Get user profile',
+              },
+              {
+                title: 'POST /api/user/sync',
+                url: '/admin/api-reference/user/sync',
+                description: 'Sync user data',
+              },
+            ],
           },
           {
-            title: 'GET /api/user',
-            url: '/admin/api-reference/user',
-            isActive: false,
+            title: 'Places API',
+            items: [
+              {
+                title: 'GET /api/places/search',
+                url: '/admin/api-reference/places/search',
+                description: 'Search places',
+              },
+            ],
           },
         ],
       },
@@ -35,7 +50,6 @@ vi.mock('@/components/app-sidebar', () => ({
           {
             title: 'Vercel',
             url: '/admin/services/vercel',
-            isActive: false,
           },
         ],
       },
@@ -49,80 +63,121 @@ describe('AdminBreadcrumbs', () => {
   });
 
   it('renders only Admin breadcrumb when on admin home page', () => {
-    // Mock the pathname to be the admin home page
     (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/admin');
 
     render(<AdminBreadcrumbs />);
 
-    // Should only show "Admin" as a page (not a clickable link)
-    const adminCrumb = screen.getByText('Admin');
-    expect(adminCrumb).toBeInTheDocument();
-    expect(adminCrumb.closest('nav')).toHaveTextContent('Admin');
+    // Should only show "Admin" as the current page
+    const adminPage = screen.getByRole('link', { current: 'page' });
+    expect(adminPage).toHaveTextContent('Admin');
+    expect(adminPage).toHaveAttribute('aria-disabled', 'true');
 
-    // Admin should be rendered with aria-current="page" to indicate it's the current page
-    const currentPageElement = screen.getByRole('link', { current: 'page' });
-    expect(currentPageElement).toHaveTextContent('Admin');
-    expect(currentPageElement).toHaveAttribute('aria-disabled', 'true');
+    // Should only have one breadcrumb item
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(1);
   });
 
   it('renders correct breadcrumbs for a section page', () => {
-    // Mock the pathname to be the API Reference page
     (usePathname as ReturnType<typeof vi.fn>).mockReturnValue(
       '/admin/api-reference'
     );
 
     render(<AdminBreadcrumbs />);
 
-    // Should show "Admin" as a link
-    const adminLink = screen.getByText('Admin', { selector: 'a' });
-    expect(adminLink).toBeInTheDocument();
+    // Should show "Admin" as a link and "API References" as the current page
+    const adminLink = screen.getByRole('link', { name: 'Admin' });
     expect(adminLink).toHaveAttribute('href', '/admin');
 
-    // API Reference should be rendered with aria-current="page"
-    const currentPageElement = screen.getByRole('link', { current: 'page' });
-    expect(currentPageElement).toHaveTextContent('API Reference');
-    expect(currentPageElement).toHaveAttribute('aria-disabled', 'true');
+    const apiReferencesPage = screen.getByRole('link', { current: 'page' });
+    expect(apiReferencesPage).toHaveTextContent('API References');
+    expect(apiReferencesPage).toHaveAttribute('aria-disabled', 'true');
+
+    // Should have two breadcrumb items
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(2);
   });
 
-  it('renders correct breadcrumbs for a nested page', () => {
-    // Mock the pathname to be a nested page
+  it('renders correct breadcrumbs for a nested group page', () => {
     (usePathname as ReturnType<typeof vi.fn>).mockReturnValue(
       '/admin/api-reference/user'
     );
 
     render(<AdminBreadcrumbs />);
 
-    // Should show "Admin" -> "API Reference" -> "GET /api/user"
-    const adminLink = screen.getByText('Admin', { selector: 'a' });
-    expect(adminLink).toBeInTheDocument();
-    expect(adminLink).toHaveAttribute('href', '/admin');
+    // Get all breadcrumb items
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(4);
 
-    const apiRefLink = screen.getByText('API Reference', { selector: 'a' });
-    expect(apiRefLink).toBeInTheDocument();
-    expect(apiRefLink).toHaveAttribute('href', '/admin/api-reference');
+    // Check all links in order
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(4); // All items are links (3 clickable, 1 current)
 
-    // User API page should be rendered with aria-current="page"
-    const currentPageElement = screen.getByRole('link', { current: 'page' });
-    expect(currentPageElement).toHaveTextContent('GET /api/user');
-    expect(currentPageElement).toHaveAttribute('aria-disabled', 'true');
+    // Check clickable links
+    expect(links[0]).toHaveTextContent('Admin');
+    expect(links[0]).toHaveAttribute('href', '/admin');
+
+    expect(links[1]).toHaveTextContent('API References');
+    expect(links[1]).toHaveAttribute('href', '/admin/api-reference');
+
+    expect(links[2]).toHaveTextContent('User API');
+    expect(links[2]).toHaveAttribute('href', '#');
+
+    // Check current page
+    expect(links[3]).toHaveTextContent('GET /api/user');
+    expect(links[3]).toHaveAttribute('aria-current', 'page');
+    expect(links[3]).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('renders correct breadcrumbs for a deeply nested page', () => {
+    (usePathname as ReturnType<typeof vi.fn>).mockReturnValue(
+      '/admin/api-reference/user/sync'
+    );
+
+    render(<AdminBreadcrumbs />);
+
+    // Get all breadcrumb items
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(4);
+
+    // Check all links in order
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(4); // All items are links (3 clickable, 1 current)
+
+    // Check clickable links
+    expect(links[0]).toHaveTextContent('Admin');
+    expect(links[0]).toHaveAttribute('href', '/admin');
+
+    expect(links[1]).toHaveTextContent('API References');
+    expect(links[1]).toHaveAttribute('href', '/admin/api-reference');
+
+    expect(links[2]).toHaveTextContent('User API');
+    expect(links[2]).toHaveAttribute('href', '#');
+
+    // Check current page
+    expect(links[3]).toHaveTextContent('POST /api/user/sync');
+    expect(links[3]).toHaveAttribute('aria-current', 'page');
+    expect(links[3]).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('renders only Admin for unknown paths', () => {
-    // Mock the pathname to be an unknown path
     (usePathname as ReturnType<typeof vi.fn>).mockReturnValue(
       '/admin/unknown-path'
     );
 
     render(<AdminBreadcrumbs />);
 
-    // For unknown paths, Admin is rendered as a current page (span with role="link")
-    const adminElement = screen.getByText('Admin');
-    expect(adminElement).toBeInTheDocument();
-    expect(adminElement).toHaveAttribute('aria-current', 'page');
-    expect(adminElement).toHaveAttribute('aria-disabled', 'true');
+    // Should only show "Admin" as current page
+    const adminPage = screen.getByRole('link', { current: 'page' });
+    expect(adminPage).toHaveTextContent('Admin');
+    expect(adminPage).toHaveAttribute('aria-disabled', 'true');
 
-    // There should only be one breadcrumb item
-    const listItems = screen.getAllByRole('listitem');
-    expect(listItems.length).toBe(1);
+    // Should only have one breadcrumb item
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+
+    // Should only have one link (the current page)
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute('aria-disabled', 'true');
   });
 });

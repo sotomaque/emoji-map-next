@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GET } from '@/app/api/places/details/route';
+import { inngest } from '@/inngest/client';
 import { getPlaceDetailsWithCache } from '@/services/places/details/get-place-details-with-cache/get-place-details-with-cache';
 import { getSearchParams } from '@/services/places/details/get-search-params/get-search-params';
 import type { DetailResponse } from '@/types/details';
@@ -19,6 +20,12 @@ vi.mock(
     getSearchParams: vi.fn(),
   })
 );
+
+vi.mock('@/inngest/client', () => ({
+  inngest: {
+    send: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 describe('Places Details API', () => {
   // Sample data for tests
@@ -54,6 +61,11 @@ describe('Places Details API', () => {
       },
       generativeSummary: 'This is a generated summary of the place',
       isFree: false,
+      location: {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      },
+      formattedAddress: '123 Test St, Test City, TC 12345',
     },
     count: 1,
     cacheHit: false,
@@ -78,7 +90,7 @@ describe('Places Details API', () => {
     vi.clearAllMocks();
   });
 
-  it('should return place details for valid request', async () => {
+  it('should return place details and trigger Inngest event for valid request', async () => {
     // Create a mock request
     const request = new NextRequest(
       `https://example.com/api/places/details?id=${mockPlaceId}`
@@ -98,9 +110,18 @@ describe('Places Details API', () => {
       id: mockPlaceId,
       bypassCache: false,
     });
+
+    // Verify Inngest event was sent
+    expect(inngest.send).toHaveBeenCalledWith({
+      name: 'places/check-if-place-exists-and-create-if-not',
+      data: {
+        id: mockPlaceId,
+        details: mockDetailsResponse,
+      },
+    });
   });
 
-  it('should return cached data when available', async () => {
+  it('should return cached data and still trigger Inngest event when available', async () => {
     // Create a cached response with cacheHit set to true
     const cachedResponse = {
       ...mockDetailsResponse,
@@ -128,6 +149,15 @@ describe('Places Details API', () => {
       id: mockPlaceId,
       bypassCache: false,
     });
+
+    // Verify Inngest event was still sent even with cached data
+    expect(inngest.send).toHaveBeenCalledWith({
+      name: 'places/check-if-place-exists-and-create-if-not',
+      data: {
+        id: mockPlaceId,
+        details: cachedResponse,
+      },
+    });
   });
 
   it('should fetch from Google when cache is bypassed', async () => {
@@ -147,9 +177,18 @@ describe('Places Details API', () => {
       id: mockPlaceId,
       bypassCache: true,
     });
+
+    // Verify Inngest event was sent
+    expect(inngest.send).toHaveBeenCalledWith({
+      name: 'places/check-if-place-exists-and-create-if-not',
+      data: {
+        id: mockPlaceId,
+        details: mockDetailsResponse,
+      },
+    });
   });
 
-  it('should handle errors gracefully', async () => {
+  it('should handle errors gracefully and not send Inngest event', async () => {
     // Mock getPlaceDetailsWithCache to throw an error
     (
       getPlaceDetailsWithCache as unknown as ReturnType<typeof vi.fn>
@@ -166,6 +205,9 @@ describe('Places Details API', () => {
     expect(data).toHaveProperty('error');
     expect(data.error).toBe('Failed to fetch place details');
     expect(data).toHaveProperty('message');
+
+    // Verify Inngest event was not sent
+    expect(inngest.send).not.toHaveBeenCalled();
   });
 
   it('should handle missing ID parameter', async () => {
@@ -188,6 +230,9 @@ describe('Places Details API', () => {
     expect(response.status).toBe(500);
     expect(data).toHaveProperty('error');
     expect(data.message).toContain('ID is required');
+
+    // Verify Inngest event was not sent
+    expect(inngest.send).not.toHaveBeenCalled();
   });
 
   it('should pass additional parameters correctly', async () => {
@@ -207,6 +252,15 @@ describe('Places Details API', () => {
     expect(getPlaceDetailsWithCache).toHaveBeenCalledWith({
       id: mockPlaceId,
       bypassCache: true,
+    });
+
+    // Verify Inngest event was sent
+    expect(inngest.send).toHaveBeenCalledWith({
+      name: 'places/check-if-place-exists-and-create-if-not',
+      data: {
+        id: mockPlaceId,
+        details: mockDetailsResponse,
+      },
     });
   });
 });

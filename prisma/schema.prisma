@@ -1,22 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider        = "prisma-client-js"
-  // Add previewFeatures to enable better connection handling
   previewFeatures = ["metrics"]
-  // Add engineType to help with connection issues
   engineType      = "binary"
 }
 
 datasource db {
   provider = "postgresql"
-  // Use only the non-pooling URL to disable connection pooling
   url      = env("POSTGRES_URL_NON_POOLING")
-  // Remove directUrl since we're using the non-pooling URL directly
 }
 
-//
 model User {
   id        String     @id @unique
   email     String     @unique
@@ -26,8 +18,9 @@ model User {
   imageUrl  String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now()) @updatedAt
-  favorites Favorite[] // Relation to favorite places
-  ratings   Rating[] // Relation to ratings for this user
+  favorites Favorite[]
+  ratings   Rating[]
+  merchant  Merchant?
 
   @@index([id])
 }
@@ -38,12 +31,18 @@ model Place {
   description String?
   latitude    Float?
   longitude   Float?
+  address     String?
+  merchantId  String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
-  favorites   Favorite[] // Relation to users who favorited this place
-  ratings     Rating[] // Relation to ratings for this place
+  favorites   Favorite[]
+  photos      Photo[]
+  ratings     Rating[]
+  reviews     Review[]
+  merchant    Merchant?  @relation(fields: [merchantId], references: [id])
 
   @@index([name])
+  @@index([merchantId])
 }
 
 model Favorite {
@@ -52,11 +51,10 @@ model Favorite {
   placeId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, placeId]) // Prevents duplicate favorites
+  @@unique([userId, placeId])
   @@index([userId])
   @@index([placeId])
 }
@@ -65,24 +63,50 @@ model Rating {
   id        String   @id @default(cuid())
   userId    String
   placeId   String
-  rating    Int // Rating value (e.g., 1-5, validated in application code)
+  rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, placeId]) // Prevents duplicate ratings from same user for same place
+  @@unique([userId, placeId])
   @@index([userId])
   @@index([placeId])
 }
 
-// Working towards having the mapping of the emoji to the key the db 
-// will use to match the place to the category in a db
-// Currently CATEGORY_MAP is used locally and redefined in the iOS client
 model Category {
   id       Int      @id
   emoji    String   @unique
   name     String   @unique
   keywords String[]
+}
+
+model Review {
+  id                             String   @id @default(cuid())
+  placeId                        String
+  name                           String
+  relativePublishTimeDescription String
+  rating                         Int
+  text                           String
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @default(now()) @updatedAt
+  place                          Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  placeId   String
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model Merchant {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  places    Place[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

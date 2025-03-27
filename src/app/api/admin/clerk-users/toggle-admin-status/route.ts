@@ -2,8 +2,14 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { clerkClient, currentUser } from '@clerk/nextjs/server';
 import { z } from 'zod';
+import type { AdminClerkUsersToggleAdminStatusResponse } from '@/types/admin-clerk-users-toggle-admin-status';
+import type { ErrorResponse } from '@/types/error-response';
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+): Promise<
+  NextResponse<AdminClerkUsersToggleAdminStatusResponse | ErrorResponse>
+> {
   try {
     // check if user is admin
     const userMakingRequest = await currentUser();

@@ -166,6 +166,8 @@ describe('Rating API Routes', () => {
         description: null,
         latitude: null,
         longitude: null,
+        address: null,
+        merchantId: null,
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
       };
@@ -212,6 +214,8 @@ describe('Rating API Routes', () => {
         description: null,
         latitude: null,
         longitude: null,
+        address: null,
+        merchantId: null,
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
       };
@@ -307,6 +311,8 @@ describe('Rating API Routes', () => {
         description: null,
         latitude: null,
         longitude: null,
+        address: null,
+        merchantId: null,
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
       };
@@ -396,6 +402,8 @@ describe('Rating API Routes', () => {
         description: null,
         latitude: null,
         longitude: null,
+        address: null,
+        merchantId: null,
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
       };
@@ -471,6 +479,8 @@ describe('Rating API Routes', () => {
         description: null,
         latitude: null,
         longitude: null,
+        address: null,
+        merchantId: null,
         createdAt: FIXED_DATE,
         updatedAt: FIXED_DATE,
       };

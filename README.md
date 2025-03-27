@@ -34,7 +34,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - 🔐 User authentication with Clerk
 - 🗄️ PostgreSQL database with Prisma ORM
 - 🔄 Git hooks with Husky for code quality checks
-- 🚦 Feature flags with Statsig
 
 ### Data Flow
 
@@ -75,7 +74,6 @@ A Next.js web application that displays places on a map using emoji markers. Thi
 - [Prisma](https://www.prisma.io/) - ORM for database access
 - [Clerk](https://clerk.com/) - User authentication
 - [Husky](https://typicode.github.io/husky/) - Git hooks for code quality
-- [Statsig](https://statsig.com/) - Feature flags and experimentation
 
 ## Getting Started
 
@@ -110,15 +108,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
 
 # Upstash Redis (for caching)
-KV_URL=your_upstash_redis_url
-KV_REST_API_READ_ONLY_TOKEN=your_upstash_read_only_token
 KV_REST_API_TOKEN=your_upstash_redis_token
 KV_REST_API_URL=your_upstash_redis_url
-
-# Statsig (Feature Flags)
-EXPERIMENTATION_CONFIG_ITEM_KEY=your_statsig_config_key
-NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key
-STATSIG_SERVER_API_KEY=your_statsig_server_key
 
 # Cache Keys 
 SEARCH_CACHE_KEY_VERSION
@@ -381,563 +372,63 @@ export async function POST(req: Request) {
 }
 ```
 
-## API Architecture Diagrams
+## Event Processing with Inngest
 
-The following diagrams provide a visual representation of the API architecture and data flow in the application. These diagrams are created using [Mermaid](https://mermaid.js.org/), a JavaScript-based diagramming and charting tool that renders Markdown-inspired text definitions to create diagrams dynamically.
+The application uses Inngest for background job processing and event-driven operations. This allows us to handle time-consuming tasks asynchronously without blocking the main request-response cycle.
 
-### API Structure
+### Running Inngest Dev Server
 
-This diagram shows the overall structure of the API endpoints and their relationships:
-
-```mermaid
-flowchart TD
-    %% API Structure Diagram for Emoji Map
-    %% Main API endpoints and their relationships
-
-    %% Define styles
-    classDef apiEndpoint fill:#f9f,stroke:#333,stroke-width:2px
-    classDef handler fill:#bbf,stroke:#333,stroke-width:1px
-    classDef external fill:#bfb,stroke:#333,stroke-width:1px
-
-    %% Client and main API route
-    Client[Client Application]:::apiEndpoint --> |HTTP Request| API["/api"]:::apiEndpoint
-
-    %% Main API categories
-    API --> Places["/places"]:::apiEndpoint
-    API --> Health["/health"]:::apiEndpoint
-    API --> Webhooks["/webhooks"]:::apiEndpoint
-
-    %% Places endpoints
-    Places --> PlacesNearby["/nearby"]:::apiEndpoint
-    Places --> PlacesDetails["/details"]:::apiEndpoint
-
-    %% Places handlers
-    PlacesNearby --> PlacesNearbyHandler["GET: Fetch nearby places"]:::handler
-    PlacesNearby --> PlacesNewHandler["GET: Optimized places endpoint"]:::handler
-
-    PlacesDetails --> PlacesDetailsHandler["GET: Fetch place details"]:::handler
-
-    %% Health and Webhooks handlers
-    Health --> HealthHandler["GET: Health check"]:::handler
-
-    Webhooks --> WebhooksHandler["POST: Handle Clerk webhooks"]:::handler
-    Webhooks --> WebhooksUpdateHandler["POST: Handle user updates"]:::handler
-
-    %% External services
-    PlacesNearbyHandler --> GooglePlacesAPI["Google Places API"]:::external
-    PlacesNewHandler --> GooglePlacesAPI
-    PlacesDetailsHandler --> GooglePlacesAPI
-
-    PlacesNearbyHandler --> Redis["Redis Cache"]:::external
-    PlacesNewHandler --> Redis
-    PlacesDetailsHandler --> Redis
-
-    %% Add notes
-    subgraph "External Services"
-        GooglePlacesAPI
-        Redis
-    end
-
-    %% Add a note
-    note["Note: All API routes are implemented as Next.js App Router handlers"]
-    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-```
-
-### Places API Flow
-
-This sequence diagram illustrates the data flow when fetching places from the API:
-
-```mermaid
-sequenceDiagram
-    %% Places API Flow Diagram
-    %% Shows the sequence of operations when fetching places
-
-    %% Define participants with styling
-    participant Client as 🌐 Client
-    participant API as 🔄 Next.js API Route
-    participant Cache as 💾 Redis Cache
-    participant Google as 🔍 Google Places API
-
-    %% Add styling
-    autonumber
-
-    %% Request flow
-    Client->>+API: GET /api/places/nearby/places-new
-    Note over API: Process request parameters<br/>(location, radius, keywords)
-
-    %% Cache check
-    API->>+Cache: Check cache for results
-
-    %% Conditional flow based on cache
-    alt Cache hit
-        Cache-->>-API: Return cached results
-        API-->>-Client: Return processed places (from cache)
-        Note right of Client: Fast response (< 100ms)
-    else Cache miss
-        Cache-->>-API: No cached data
-        API->>+Google: Fetch from Google Places API
-        Note over Google: Search for places<br/>based on parameters
-        Google-->>-API: Return places data
-
-        rect rgb(240, 248, 255)
-            Note over API: Data Processing
-            API->>API: Process places with utility functions
-            Note over API: findMatchingKeyword()<br/>createSimplifiedPlace()
-        end
-
-        API->>Cache: Store results in cache (TTL: 7 days)
-        API-->>-Client: Return processed places (from API)
-        Note right of Client: Slower response (300-800ms)
-    end
-
-    %% Add a note about caching
-    Note over Cache: Cache key format:<br/>places:{location}:{radius}:{keywords}
-```
-
-### Feature Flag System
-
-This diagram shows how feature flags are implemented in the application:
-
-```mermaid
-flowchart TD
-    %% Feature Flag System Diagram
-    %% Shows how feature flags control application behavior
-
-    %% Define styles
-    classDef userFlow fill:#f9f,stroke:#333,stroke-width:2px
-    classDef featureFlag fill:#bbf,stroke:#333,stroke-width:1px
-    classDef component fill:#bfb,stroke:#333,stroke-width:1px
-    classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
-
-    %% User flow
-    A[User Request]:::userFlow --> B{Check Feature Flags}:::decision
-    B -->|ENABLE_APP = true| C[Show App Route]:::userFlow
-    B -->|ENABLE_APP = false| D[Hide App Route]:::userFlow
-
-    C --> E[Render Navigation]:::component
-    D --> E
-
-    %% Feature Flag System components
-    subgraph "Feature Flag System"
-        direction TB
-        F[Statsig Client]:::featureFlag --> G[useGateValue Hook]:::featureFlag
-        G --> B
-
-        %% Add feature flag examples
-        H[Feature Flags]:::featureFlag
-        H --> |Controls| I[ENABLE_APP]:::featureFlag
-        H --> |Controls| J[ENABLE_SEARCH]:::featureFlag
-        H --> |Controls| K[ENABLE_PROFILE]:::featureFlag
-    end
-
-    %% Navigation components
-    subgraph "Navigation Components"
-        direction LR
-        E --> H1[DesktopNav]:::component
-        E --> I1[MobileNav]:::component
-        E --> J1[Footer]:::component
-    end
-
-    %% Nav items filtering
-    subgraph "useNavItems Hook"
-        direction TB
-        K1[filterNavItems]:::component --> L{Check Feature Flags}:::decision
-        L -->|Enabled| M[Include Route]:::component
-        L -->|Disabled| N[Exclude Route]:::component
-    end
-
-    %% Connect components
-    H1 --> K1
-    I1 --> K1
-    J1 --> K1
-
-    %% Add notes
-    note["Note: Feature flags can be updated remotely<br>without requiring a new deployment"]
-    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-```
-
-### Places Data Processing
-
-This flowchart illustrates how place data is processed:
-
-```mermaid
-flowchart LR
-    %% Places Data Processing Diagram
-    %% Shows how place data is processed from API to client
-
-    %% Define styles
-    classDef input fill:#f9f,stroke:#333,stroke-width:2px
-    classDef process fill:#bbf,stroke:#333,stroke-width:1px
-    classDef output fill:#bfb,stroke:#333,stroke-width:1px
-    classDef utility fill:#ffd,stroke:#333,stroke-width:1px
-
-    %% Input data
-    A[Google Places API Response]:::input --> B[processPlaces Function]:::process
-
-    %% Main processing steps
-    subgraph "Data Processing Pipeline"
-        direction TB
-        B --> C[Filter by Categories]:::process
-        C --> D[Match Keywords]:::process
-        D --> E[Create Simplified Places]:::process
-    end
-
-    %% Output destinations
-    E --> F[Cache Results]:::output
-    E --> G[Return to Client]:::output
-
-    %% Utility functions
-    subgraph "Utility Functions"
-        direction TB
-        H[findMatchingKeyword]:::utility --> |Used by| D
-        I[createSimplifiedPlace]:::utility --> |Used by| E
-    end
-
-    %% Add data transformation examples
-    subgraph "Data Transformation"
-        direction TB
-        J["Google Place Object<br>(Complex)"]:::input --> |Transform| K["Simplified Place<br>(Client-friendly)"]:::output
-    end
-
-    %% Add a note about the transformation
-    note["Transformation reduces data size by ~70%<br>and normalizes structure for client use"]
-    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-
-    %% Connect the transformation to the main flow
-    J -.-> A
-    K -.-> G
-```
-
-### Caching System
-
-This diagram shows how the caching system works:
-
-```mermaid
-flowchart TD
-    %% Caching System Diagram
-    %% Shows how the Redis caching system works
-
-    %% Define styles
-    classDef request fill:#f9f,stroke:#333,stroke-width:2px
-    classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
-    classDef process fill:#bbf,stroke:#333,stroke-width:1px
-    classDef data fill:#bfb,stroke:#333,stroke-width:1px
-    classDef config fill:#ddd,stroke:#333,stroke-width:1px
-
-    %% Main flow
-    A[API Request]:::request --> B{Check Cache}:::decision
-    B -->|Cache Hit| C[Return Cached Data]:::data
-    B -->|Cache Miss| D[Fetch from Google API]:::process
-
-    D --> E[Process Data]:::process
-    E --> F[Store in Cache]:::process
-    F --> G[Return Processed Data]:::data
-    C --> G
-
-    %% Cache key generation
-    subgraph "Cache Key Generation"
-        direction TB
-        H[Text Query]:::request --> K[Generate Cache Key]:::process
-        I[Location]:::request --> K
-        J[Radius/Bounds]:::request --> K
-
-        %% Add example
-        example["Example: places:37.78,-122.41:5000:restaurant,pizza"]:::data
-        K -.-> example
-    end
-
-    %% Connect cache key to main flow
-    K --> B
-
-    %% Cache configuration
-    subgraph "Cache Configuration"
-        direction LR
-        L[TTL: Time to Live]:::config
-        M[bypassCache Parameter]:::config
-
-        %% Add TTL details
-        L1["Places: 7 days"]:::config
-        L2["Details: 1 hour"]:::config
-        L --> L1
-        L --> L2
-    end
-
-    %% Connect bypass parameter to flow
-    M -->|true| D
-    M -->|false| B
-
-    %% Add performance metrics
-    subgraph "Performance Metrics"
-        direction TB
-        P1["Cache Hit: ~50ms response"]:::data
-        P2["Cache Miss: ~500ms response"]:::data
-    end
-
-    %% Connect performance to flow paths
-    C -.-> P1
-    F -.-> P2
-
-    %% Add a note about cache invalidation
-    note["Note: Cache can be manually invalidated<br>by setting bypassCache=true in the request"]
-    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-```
-
-### Error Handling
-
-This flowchart illustrates the error handling flow:
-
-```mermaid
-flowchart TD
-    %% Error Handling Flow Diagram
-    %% Shows how errors are handled in the API
-
-    %% Define styles
-    classDef request fill:#f9f,stroke:#333,stroke-width:2px
-    classDef process fill:#bbf,stroke:#333,stroke-width:1px
-    classDef decision fill:#ffd,stroke:#333,stroke-width:1px,shape:diamond
-    classDef error fill:#faa,stroke:#333,stroke-width:1px
-    classDef response fill:#bfb,stroke:#333,stroke-width:1px
-
-    %% Main flow
-    A[API Request]:::request --> B{Try Request Processing}:::decision
-
-    %% Success path
-    B -->|Success| C[Return Data]:::response
-
-    %% Error paths
-    B -->|Error| D{Error Type}:::decision
-
-    D -->|API Error| E[Log API Error]:::error
-    D -->|Network Error| F[Log Network Error]:::error
-    D -->|Other Exception| G[Log General Error]:::error
-
-    %% Error responses
-    E --> H[Return Error Response]:::response
-    F --> H
-    G --> H
-
-    %% Error response details
-    subgraph "Error Response Structure"
-        direction TB
-        H --> I[HTTP Status Code]:::response
-        H --> J[Error Message]:::response
-
-        %% Add examples
-        I1["400: Bad Request"]:::response
-        I2["404: Not Found"]:::response
-        I3["500: Server Error"]:::response
-
-        I --> I1
-        I --> I2
-        I --> I3
-    end
-
-    %% Logging details
-    subgraph "Error Logging"
-        direction TB
-        K[Console Error]:::error
-
-        %% Add examples
-        K1["[API] Google Places API error: INVALID_REQUEST"]:::error
-        K2["[API] Network error: Connection timeout"]:::error
-        K3["[API] Unexpected error in places-new route"]:::error
-
-        K --> K1
-        K --> K2
-        K --> K3
-    end
-
-    %% Connect logging to error types
-    E -.-> K1
-    F -.-> K2
-    G -.-> K3
-
-    %% Add error handling strategies
-    subgraph "Error Handling Strategies"
-        direction TB
-        S1["Retry Logic"]:::process
-        S2["Fallback Data"]:::process
-        S3["Graceful Degradation"]:::process
-    end
-
-    %% Add a note about error handling
-    note["Note: All errors are prefixed with [API]<br>for easier identification in logs"]
-    style note fill:#ffffcc,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
-```
-
-## Project Structure
-
-```
-web/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── docs/
-│   │   │   ├── health/
-│   │   │   ├── places/
-│   │   │   │   ├── nearby/
-│   │   │   │   └── details/
-│   │   │   ├── webhooks/
-│   │   │   └── docs/
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── map/
-│   │   ├── nav/
-│   │   ├── ui/
-│   │   └── providers/
-│   ├── constants/
-│   ├── hooks/
-│   ├── types/
-│   ├── services/
-│   ├── lib/
-│   ├── utils/
-│   ├── __tests__/
-│   ├── __fixtures__/
-│   ├── env.ts
-│   └── middleware.ts
-├── prisma/
-│   └── schema.prisma
-├── public/
-├── .env.local
-├── vitest.config.ts
-├── vitest.setup.ts
-└── various config files
-```
-
-## Architecture
-
-The application follows a modern Next.js architecture with the following key components:
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Client Browser                            │
-└───────────────────────────────────┬─────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Next.js App Router                        │
-├─────────────────┬─────────────────┬────────────────┬────────────────┤
-│ React Components│  Zustand Store  │  React Query   │   TailwindCSS  │
-└─────────────────┴─────────────────┴────────────────┴────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                           Next.js API Routes                        │
-├─────────────────┬─────────────────┬────────────────┬────────────────┤
-│  /api/places    │  /api/webhooks  │  /api/health   │  /api/docs     │
-└─────────────────┴─────────────────┴────────────────┴────────────────┘
-                                    │
-                 ┌──────────────────┬─────────────────┐
-                 │                  │                 │
-                 ▼                  ▼                 ▼
-┌───────────────────┐   ┌───────────────────┐  ┌───────────────────┐
-│ Google Places API │   │   Upstash Redis   │  │  PostgreSQL DB    │
-└───────────────────┘   └───────────────────┘  └───────────────────┘
-                                                       ▲
-                                                       │
-                                              ┌───────────────────┐
-                                              │  Clerk Auth       │
-                                              └───────────────────┘
-```
-
-### Frontend
-
-- **React Components**: UI components for the map, markers, and user interface
-- **Zustand Store**: Global state management for filters and user preferences
-- **React Query**: Data fetching and client-side caching
-- **Tailwind CSS**: Utility-first CSS framework for styling
-
-### Backend
-
-- **Next.js API Routes**: Server-side API endpoints
-
-  - `/api/places/nearby`: Fetches nearby places with Redis caching (7-day expiration)
-  - `/api/places/details`: Fetches place details with Redis caching (1-hour expiration)
-  - `/api/webhooks`: Processes Clerk webhook events for user data synchronization
-  - `/api/health`: Health check endpoint for monitoring
-  - `/api/docs`: OpenAPI documentation endpoint
-
-- **External Services**:
-  - **Google Places API**: Provides location data for places
-  - **Upstash Redis**: Serverless Redis for caching API responses
-  - **PostgreSQL Database**: Stores user data and other persistent information
-  - **Clerk Authentication**: Manages user authentication and profile data
-
-### Data Flow
-
-1. **User Authentication**:
-
-   - User authenticates via Clerk
-   - Clerk sends webhook events to `/api/webhooks`
-   - User data is synchronized with PostgreSQL database
-
-2. **Place Search**:
-
-   - Client requests nearby places from `/api/places/nearby`
-   - API checks Redis cache for matching data
-   - If cache hit, returns filtered data from cache
-   - If cache miss, fetches from Google Places API and caches the result
-   - Results are returned to the client
-
-3. **Place Details**:
-   - Client requests place details from `/api/places/details`
-   - API checks Redis cache for matching data
-   - If cache hit, returns data from cache
-   - If cache miss, fetches from Google Places API and caches the result
-   - Results are returned to the client
-
-## Database
-
-The application uses PostgreSQL as the database, with Prisma as the ORM. The database schema is defined in `prisma/schema.prisma`.
-
-### Database Schema
-
-The database includes the following models:
-
-- **User**: Stores user information synchronized with Clerk authentication
-- **PlaceCache**: Stores cached Google Places API responses
-
-### Migrations
-
-For production environments, it's recommended to use Prisma Migrate to manage database migrations:
+To run the Inngest development server locally:
 
 ```bash
-# Create a new migration
-npx prisma migrate dev --name <migration-name>
-
-# Apply migrations in production
-npx prisma migrate deploy
+pnpm inngest
 ```
 
-## Authentication
+This will start the Inngest dev server, providing a local UI to monitor and debug events.
 
-The application uses Clerk for authentication and user management. Clerk provides a complete authentication solution with features like:
+### Event Functions
 
-- Social login (Google, GitHub, etc.)
-- Email/password authentication
-- Multi-factor authentication
-- User profile management
-- Session management
+The application defines several Inngest functions for background processing:
 
-### Authentication Flow
+```typescript
+// Example of an Inngest function that processes place data
+export const checkIfPlaceExistsAndCreateIfNot = inngest.createFunction(
+  { id: 'places/check-if-place-exists-and-create-if-not' },
+  { event: 'places/check-if-place-exists-and-create-if-not' },
+  async ({ event }) => {
+    // Process place data asynchronously
+    // Create or update place in database
+  }
+);
+```
 
-1. Users sign in using Clerk's authentication components in the frontend
-2. Clerk issues a JWT token upon successful authentication
-3. The token is used to authenticate API requests to the backend
-4. User data is synchronized with the Supabase PostgreSQL database via webhooks
+### Event Flow
 
-### Webhook Integration
+1. **Event Triggering**: Events are sent to Inngest from various parts of the application:
+   ```typescript
+   await inngest.send({
+     name: 'places/check-if-place-exists-and-create-if-not',
+     data: { id, details },
+   });
+   ```
 
-When user data changes in Clerk (e.g., a user signs up, updates their profile, or is deleted), Clerk sends webhook events to the application. The application processes these events and updates the Supabase PostgreSQL database accordingly.
+2. **Event Processing**: Inngest functions process these events asynchronously:
+   - Events are queued and processed in the background
+   - Retries are handled automatically
+   - Event processing status can be monitored
 
-Webhook requests are secured using Svix headers, which include:
+3. **Error Handling**: Inngest provides built-in error handling:
+   - Automatic retries for failed events
+   - Dead letter queues for unprocessable events
+   - Error monitoring and alerting
 
-- `svix-id`: A unique identifier for the webhook event
-- `svix-timestamp`: The time the webhook was sent
-- `svix-signature`: A signature that verifies the webhook came from Clerk
+### Benefits
 
-The webhook endpoint validates these headers using Clerk's signing secret before processing the webhook payload.
+- **Non-blocking Operations**: Long-running tasks don't block the main request thread
+- **Reliability**: Automatic retries and error handling
+- **Scalability**: Events are processed independently and can scale horizontally
+- **Monitoring**: Built-in monitoring and debugging tools
+- **Development Experience**: Local dev server for testing and debugging
 
 ## Database Integration
 

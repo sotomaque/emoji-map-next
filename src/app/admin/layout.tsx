@@ -19,7 +19,7 @@ export default function AdminLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className='flex h-16 shrink-0 items-center gap-2 border-b'>
+        <header className='flex h-16 shrink-0 items-center gap-2 border-b border-purple-100 dark:border-border bg-white/90 dark:bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-white/60'>
           <div className='flex items-center gap-2 px-3'>
             <SidebarTrigger />
             <Separator orientation='vertical' className='mr-2 h-4' />

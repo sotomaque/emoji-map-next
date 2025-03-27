@@ -5,6 +5,15 @@ import {
 } from './details-validator';
 
 describe('details-validator', () => {
+  // Default location data for tests
+  const defaultLocation = {
+    location: {
+      latitude: 37.7749,
+      longitude: -122.4194,
+    },
+    formattedAddress: '123 Test St, San Francisco, CA 94105',
+  };
+
   describe('mapPriceLevel', () => {
     it('should map PRICE_LEVEL_FREE to 1', () => {
       expect(mapPriceLevel('PRICE_LEVEL_FREE')).toBe(1);
@@ -42,6 +51,7 @@ describe('details-validator', () => {
         priceLevel: 'PRICE_LEVEL_MODERATE',
         rating: 4.5,
         userRatingCount: 100,
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(validResponse);
@@ -51,6 +61,10 @@ describe('details-validator', () => {
         expect(result.data.priceLevel).toBe('PRICE_LEVEL_MODERATE');
         expect(result.data.rating).toBe(4.5);
         expect(result.data.userRatingCount).toBe(100);
+        expect(result.data.location).toEqual(defaultLocation.location);
+        expect(result.data.formattedAddress).toBe(
+          defaultLocation.formattedAddress
+        );
       }
     });
 
@@ -59,6 +73,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         rating: 4.0,
         userRatingCount: 50,
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(minimalResponse);
@@ -75,6 +90,7 @@ describe('details-validator', () => {
         priceLevel: 'PRICE_LEVEL_MODERATE',
         rating: 4.5,
         userRatingCount: 100,
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(responseWithoutName);
@@ -86,6 +102,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         priceLevel: 'PRICE_LEVEL_MODERATE',
         userRatingCount: 100,
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(
@@ -99,6 +116,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         priceLevel: 'PRICE_LEVEL_MODERATE',
         rating: 4.5,
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(
@@ -112,6 +130,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         rating: 4.5,
         userRatingCount: 100,
+        ...defaultLocation,
         reviews: [
           {
             name: 'Valid Review',
@@ -214,6 +233,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         rating: 4.5,
         userRatingCount: 100,
+        ...defaultLocation,
         paymentOptions: {
           acceptsCreditCards: true,
           acceptsDebitCards: false,
@@ -238,6 +258,7 @@ describe('details-validator', () => {
         rating: 4.8,
         userRatingCount: 200,
         priceLevel: 'PRICE_LEVEL_FREE',
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(
@@ -255,6 +276,7 @@ describe('details-validator', () => {
         rating: 4.5,
         userRatingCount: 100,
         priceLevel: 'INVALID_PRICE_LEVEL',
+        ...defaultLocation,
       };
 
       const result = googleDetailsResponseSchema.safeParse(invalidPriceLevel);
@@ -278,6 +300,7 @@ describe('details-validator', () => {
           rating: 4.0,
           userRatingCount: 50,
           priceLevel,
+          ...defaultLocation,
         };
 
         const result = googleDetailsResponseSchema.safeParse(response);
@@ -293,6 +316,7 @@ describe('details-validator', () => {
         name: 'Test Place',
         rating: 4.5,
         userRatingCount: 100,
+        ...defaultLocation,
         reviews: [
           // Valid review with both text.text and originalText.text
           {

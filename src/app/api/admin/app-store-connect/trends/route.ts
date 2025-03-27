@@ -3,6 +3,14 @@ import { promisify } from 'util';
 import { gunzip } from 'zlib';
 import jwt from 'jsonwebtoken';
 import { env } from '@/env';
+import type {
+  AdminAppStoreConnectTrendsResponse,
+  DailyInstallData,
+  Frequency,
+  InstallData,
+  ReportRow,
+} from '@/types/admin-app-store-connect';
+import type { ErrorResponse } from '@/types/error-response';
 
 // Promisify gunzip for async/await usage
 const gunzipAsync = promisify(gunzip);
@@ -14,29 +22,6 @@ const KEY_ID = env.APP_STORE_CONNECT_KEY_ID;
 const PRIVATE_KEY = env.APP_STORE_CONNECT_PRIVATE_KEY;
 const VENDOR_NUMBER = env.APP_STORE_CONNECT_VENDOR_NUMBER;
 const APP_SKU = env.APP_STORE_CONNECT_APP_SKU;
-
-// Types
-type Frequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-
-interface DailyInstallData {
-  date: string;
-  installs: number;
-  countries: { [key: string]: number };
-}
-
-interface InstallData {
-  dates: DailyInstallData[];
-  totalInstalls: number;
-  countries: { [key: string]: number };
-}
-
-interface ReportRow {
-  'Product Type Identifier': string;
-  'Country Code': string;
-  Units: string;
-  'Begin Date': string;
-  SKU: string;
-}
 
 // Generate JWT Token
 function generateToken(): string {
@@ -234,7 +219,9 @@ function processReportData(
 }
 
 // GET handler for the route
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+): Promise<NextResponse<AdminAppStoreConnectTrendsResponse | ErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const frequency = (

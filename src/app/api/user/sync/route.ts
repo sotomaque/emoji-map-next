@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { getUserId } from '@/services/user/get-user-id';
+import type { ErrorResponse } from '@/types/error-response';
 import { log } from '@/utils/log';
 
 // Validation schemas
@@ -46,6 +47,25 @@ async function checkRateLimit(userId: string): Promise<boolean> {
   return true;
 }
 
+type SyncResponse = {
+  message: string;
+  result: {
+    favorites: {
+      processed: number;
+      created: number;
+      existing: number;
+      errors: number;
+    };
+    ratings: {
+      processed: number;
+      created: number;
+      existing: number;
+      updated: number;
+      errors: number;
+    };
+  };
+};
+
 /**
  * POST handler for syncing a user's favorites and ratings
  *
@@ -56,7 +76,9 @@ async function checkRateLimit(userId: string): Promise<boolean> {
  *
  * @returns A NextResponse with the user's favorites and ratings
  */
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<SyncResponse | ErrorResponse>> {
   try {
     const userId = await getUserId(request);
 

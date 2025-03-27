@@ -8,7 +8,6 @@ import { IOS_GITHUB_REPO, WEB_GITHUB_REPO } from './links';
  * - label: Display text for the navigation item
  * - href: URL the navigation item links to
  * - target: Whether to open in a new tab (true) or same tab (false)
- * - featureFlag: Optional feature flag that controls visibility
  * - hidden: Optional flag to hide from main navigation but still accessible
  *
  * @type {NavItem[]}

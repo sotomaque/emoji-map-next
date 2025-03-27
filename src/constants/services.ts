@@ -7,16 +7,39 @@ import {
   POSTMAN_COLLECTION,
   SLACK_INVITE_LINK,
   SLACK_WORKSPACE,
-  STATSIG_CONSOLE,
   SUPABASE_CONSOLE,
   UPSTASH_CONSOLE,
   VERCEL_CONSOLE,
   GMAIL_CONSOLE,
   RESEND_CONSOLE,
   KEYBASE_CONSOLE,
+  INNGEST_CONSOLE,
+  GOOGLE_PLACES_API_DOCS,
+  GOOGLE_PLACES_API_BILLING_CONSOLE,
 } from './links';
 
-export const SERVICES = [
+interface ServiceLink {
+  title: string;
+  href: string;
+}
+
+interface ServiceCommand {
+  title: string;
+  command: string;
+}
+
+interface Service {
+  title: string;
+  description: string;
+  href: string;
+  logoUrl?: string;
+  logoComponent?: 'InngestLogo';
+  darkInvert?: boolean;
+  links: ServiceLink[];
+  commands?: ServiceCommand[];
+}
+
+export const SERVICES: Service[] = [
   {
     title: 'App Launchpad',
     description: 'App Store screenshots',
@@ -75,6 +98,33 @@ export const SERVICES = [
       {
         title: 'Go to Console',
         href: GOOGLE_PLACES_API_CONSOLE,
+      },
+      {
+        title: 'Go to Docs',
+        href: GOOGLE_PLACES_API_DOCS,
+      },
+      {
+        title: 'Go to Billing Console',
+        href: GOOGLE_PLACES_API_BILLING_CONSOLE,
+      },
+    ],
+  },
+  {
+    title: 'Inngest',
+    description: 'Event-driven background processing',
+    href: '/admin/services/inngest',
+    logoComponent: 'InngestLogo',
+    darkInvert: true,
+    links: [
+      {
+        title: 'Go to Console',
+        href: INNGEST_CONSOLE,
+      },
+    ],
+    commands: [
+      {
+        title: 'Run local Inngest server',
+        command: 'pnpm inngest',
       },
     ],
   },
@@ -141,19 +191,6 @@ export const SERVICES = [
       {
         title: 'Go to Workspace',
         href: SLACK_WORKSPACE,
-      },
-    ],
-  },
-  {
-    title: 'Statsig',
-    description: 'Feature flags',
-    href: '/admin/services/statsig',
-    logoUrl: '/services/statsig.png',
-    darkInvert: true,
-    links: [
-      {
-        title: 'Go to Console',
-        href: STATSIG_CONSOLE,
       },
     ],
   },

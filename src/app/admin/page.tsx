@@ -60,7 +60,7 @@ export default function AdminPage() {
             title='Local Development'
             description='Guide for running the application locally'
             icon={<Terminal className='h-5 w-5' />}
-            link='/admin/running-application-locally'
+            link='/admin/running-application'
           />
         </div>
       </div>

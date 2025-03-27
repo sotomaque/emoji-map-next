@@ -2,12 +2,9 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchPlacePhotos } from '@/services/places/photos/fetch-place-photos/fetch-place-photos';
 import { getSearchParams } from '@/services/places/photos/get-search-params/getSearchParams';
+import type { ErrorResponse } from '@/types/error-response';
 import type { PhotosResponse } from '@/types/google-photos';
 import { log } from '@/utils/log';
-
-interface ErrorResponse {
-  error: string;
-}
 
 /**
  * API route handler for fetching place photos.

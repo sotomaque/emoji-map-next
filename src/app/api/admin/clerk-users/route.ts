@@ -1,8 +1,12 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { clerkClient, currentUser } from '@clerk/nextjs/server';
+import type { AdminClerkUsersResponse } from '@/types/admin-clerk-users';
+import type { ErrorResponse } from '@/types/error-response';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse<AdminClerkUsersResponse | ErrorResponse>> {
   const user = await currentUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

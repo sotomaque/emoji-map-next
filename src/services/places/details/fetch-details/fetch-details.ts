@@ -45,6 +45,8 @@ export async function fetchDetails(id: string) {
       'restroom',
       'paymentOptions',
       'generativeSummary.overview.text',
+      'location',
+      'formattedAddress',
     ];
 
     const params = new URLSearchParams({

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { InngestLogo } from '@/components/ui/icons/inngest-logo';
 import { SERVICES } from '@/constants/services';
 
 export default function ServicesPage() {
@@ -29,6 +30,7 @@ interface ServiceCardProps {
   description: string;
   href: string;
   logoUrl?: string;
+  logoComponent?: 'InngestLogo';
   darkInvert?: boolean;
 }
 
@@ -37,14 +39,17 @@ function ServiceCard({
   description,
   href,
   logoUrl,
+  logoComponent,
   darkInvert = false,
 }: ServiceCardProps) {
   return (
     <Link href={href} className='block h-full'>
       <div className='bg-card border rounded-lg shadow-sm p-6 h-full hover:border-primary/50 transition-colors'>
         <div className='space-y-3'>
-          {logoUrl && (
-            <div className='flex items-center justify-center h-14 mb-2'>
+          <div className='flex items-center justify-center h-14 mb-2'>
+            {logoComponent === 'InngestLogo' ? (
+              <InngestLogo width={100} height={30} inverted={darkInvert} />
+            ) : logoUrl ? (
               <Image
                 src={logoUrl}
                 alt={`${title} Logo`}
@@ -52,8 +57,8 @@ function ServiceCard({
                 height={50}
                 className={darkInvert ? 'dark:invert' : ''}
               />
-            </div>
-          )}
+            ) : null}
+          </div>
           <h2 className='text-xl font-semibold text-center'>{title}</h2>
           <p className='text-muted-foreground text-center'>{description}</p>
         </div>

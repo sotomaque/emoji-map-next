@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,7 +65,8 @@ const PhotosSkeleton = () => {
   );
 };
 
-export default function PlacesPhotosPage() {
+// Create a client component for the form
+function PhotosForm() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -180,14 +181,6 @@ export default function PlacesPhotosPage() {
 
   return (
     <div className='flex flex-col gap-8 p-4'>
-      {/* Title + Description */}
-      <div>
-        <h1 className='text-2xl font-bold'>Place Photos</h1>
-        <p className='text-sm text-muted-foreground'>
-          View photos for a specific place using its Place ID.
-        </p>
-      </div>
-
       {/* Search Form Card */}
       <Card>
         <CardHeader>
@@ -529,6 +522,25 @@ export default function PlacesPhotosPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Main page component
+export default function PlacesPhotosPage() {
+  return (
+    <div className='flex flex-col gap-8 p-4'>
+      {/* Title + Description */}
+      <div>
+        <h1 className='text-2xl font-bold'>Place Photos</h1>
+        <p className='text-sm text-muted-foreground'>
+          View photos for a specific place using its Place ID.
+        </p>
+      </div>
+
+      <Suspense fallback={<PhotosSkeleton />}>
+        <PhotosForm />
+      </Suspense>
     </div>
   );
 }

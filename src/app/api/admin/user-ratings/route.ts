@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import type { RatingResponse } from '@/types/admin-user-ratings';
+import type { ErrorResponse } from '@/types/error-response';
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+): Promise<NextResponse<RatingResponse | ErrorResponse>> {
   // Check if user is admin
   const user = await currentUser();
   if (!user) {
@@ -41,7 +45,12 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(ratings);
+    return NextResponse.json({
+      ratings,
+      totalCount: ratings.length,
+      limit: 10,
+      offset: 0,
+    });
   } catch (error) {
     console.error('Error fetching ratings:', error);
     return NextResponse.json(

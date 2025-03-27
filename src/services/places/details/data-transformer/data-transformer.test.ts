@@ -60,6 +60,11 @@ describe('data-transformer', () => {
             text: 'This is a generative summary of the restaurant',
           },
         },
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Test St, San Francisco, CA 94105',
       };
 
       // Act
@@ -95,6 +100,11 @@ describe('data-transformer', () => {
         },
         generativeSummary: 'This is a generative summary of the restaurant',
         isFree: false,
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Test St, San Francisco, CA 94105',
       });
     });
 
@@ -106,6 +116,11 @@ describe('data-transformer', () => {
         rating: 4.8,
         userRatingCount: 50,
         reviews: [],
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Museum St, San Francisco, CA 94105',
       };
 
       // Act
@@ -124,6 +139,11 @@ describe('data-transformer', () => {
         rating: 4.0,
         userRatingCount: 30,
         reviews: [],
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Unknown St, San Francisco, CA 94105',
       };
 
       // Act
@@ -142,6 +162,11 @@ describe('data-transformer', () => {
         userRatingCount: 10,
         reviews: [],
         priceLevel: 'PRICE_LEVEL_UNSPECIFIED',
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Minimal St, San Francisco, CA 94105',
       };
 
       // Act
@@ -173,6 +198,11 @@ describe('data-transformer', () => {
         },
         generativeSummary: '',
         isFree: false,
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Minimal St, San Francisco, CA 94105',
       });
     });
 
@@ -190,6 +220,11 @@ describe('data-transformer', () => {
         generativeSummary: {
           // Missing overview field
         },
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        formattedAddress: '123 Partial St, San Francisco, CA 94105',
       };
 
       // Act
@@ -221,6 +256,11 @@ describe('data-transformer', () => {
           rating: 4.0,
           userRatingCount: 20,
           reviews: [],
+          location: {
+            latitude: 37.7749,
+            longitude: -122.4194,
+          },
+          formattedAddress: `123 ${input} St, San Francisco, CA 94105`,
         };
 
         // Act
