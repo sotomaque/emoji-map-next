@@ -43,6 +43,8 @@ export function transformDetailsData(
     },
     generativeSummary: data.generativeSummary?.overview?.text || '',
     isFree,
+    location: data.location,
+    formattedAddress: data.formattedAddress || '',
   };
 
   return normalizedData;

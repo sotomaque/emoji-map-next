@@ -84,6 +84,11 @@ export const googleDetailsResponseSchema = z.object({
       overview: textObjectSchema.optional(),
     })
     .optional(),
+  location: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
+  formattedAddress: z.string().optional(),
 });
 
 // Define the type for the validated data

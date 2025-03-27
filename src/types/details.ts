@@ -38,6 +38,8 @@ export type Detail = {
   paymentOptions: GooglePlaceDetails['paymentOptions'];
   generativeSummary: GooglePlaceDetails['generativeSummary']['overview']['text'];
   isFree: boolean;
+  location: GooglePlaceDetails['location'];
+  formattedAddress: GooglePlaceDetails['formattedAddress'];
 };
 
 /**
@@ -69,4 +71,6 @@ export type GoogleDetailsResponse = {
   restroom: GooglePlaceDetails['restroom'];
   paymentOptions: GooglePlaceDetails['paymentOptions'];
   generativeSummary: GooglePlaceDetails['generativeSummary'];
+  location: GooglePlaceDetails['location'];
+  formattedAddress: GooglePlaceDetails['formattedAddress'];
 };

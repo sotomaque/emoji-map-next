@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 import { getPlaceDetailsWithCache } from '@/services/places/details/get-place-details-with-cache/get-place-details-with-cache';
 import { getSearchParams } from '@/services/places/details/get-search-params/get-search-params';
 import type { DetailResponse } from '@/types/details';
@@ -31,6 +32,47 @@ export async function GET(
   try {
     const { id, bypassCache } = getSearchParams(request);
     const details = await getPlaceDetailsWithCache({ id, bypassCache });
+
+    // check if the place exists in prisma
+    const place = await prisma.place.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    // if it doesn't exist, create it
+    if (!place) {
+      const googlePlaceDisplayName = details.data.displayName;
+      const googlePlaceEditorialSummary = details.data.editorialSummary;
+      const googlePlaceReviews = details.data.reviews
+        .map((review) => ({
+          name: review.name, // googles id for the review
+          relativePublishTimeDescription: review.relativePublishTimeDescription,
+          rating: review.rating,
+          text: review.text?.text ?? '',
+        }))
+        .filter((review) => Boolean(review.text && review.text.length > 0));
+
+      const latitude = details.data.location.latitude;
+      const longitude = details.data.location.longitude;
+      const formattedAddress = details.data.formattedAddress;
+
+      await prisma.place.create({
+        data: {
+          id,
+          name: googlePlaceDisplayName,
+          description: googlePlaceEditorialSummary,
+          latitude: latitude,
+          longitude: longitude,
+          address: formattedAddress,
+          reviews: {
+            createMany: {
+              data: googlePlaceReviews,
+            },
+          },
+        },
+      });
+    }
 
     return NextResponse.json(details);
   } catch (error) {
