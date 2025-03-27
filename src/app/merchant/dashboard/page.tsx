@@ -55,10 +55,10 @@ type PlaceWithRelations = Place & {
 
 type MerchantResponse = {
   merchant:
-  | (Merchant & {
-    places: PlaceWithRelations[];
-  })
-  | null;
+    | (Merchant & {
+        places: PlaceWithRelations[];
+      })
+    | null;
 };
 
 type AssociateResponse = {
@@ -88,9 +88,9 @@ type DashboardAction =
   | { type: 'OPEN_CLAIM_DIALOG' }
   | { type: 'START_LOADING' }
   | {
-    type: 'UPDATE_LOADING_STEP';
-    payload: { index: number; status: LoadingStep['status'] };
-  }
+      type: 'UPDATE_LOADING_STEP';
+      payload: { index: number; status: LoadingStep['status'] };
+    }
   | { type: 'SHOW_LIST'; payload: { searchResults: AdminSearchResult[] } }
   | { type: 'CLOSE_DIALOG' }
   | { type: 'SET_SUBMITTING'; payload: boolean }
@@ -400,17 +400,17 @@ export default function MerchantDashboard() {
                 <div className='text-2xl font-bold'>
                   {merchantData?.merchant?.places?.length
                     ? (
-                      merchantData.merchant.places.reduce<number>(
-                        (acc, place) =>
-                          acc +
-                          place.ratings.reduce<number>(
-                            (sum, r) => sum + r.rating,
-                            0
-                          ) /
-                          (place.ratings.length || 1),
-                        0
-                      ) / merchantData.merchant.places.length
-                    ).toFixed(1)
+                        merchantData.merchant.places.reduce<number>(
+                          (acc, place) =>
+                            acc +
+                            place.ratings.reduce<number>(
+                              (sum, r) => sum + r.rating,
+                              0
+                            ) /
+                              (place.ratings.length || 1),
+                          0
+                        ) / merchantData.merchant.places.length
+                      ).toFixed(1)
                     : '--'}
                 </div>
               )}
@@ -458,7 +458,7 @@ export default function MerchantDashboard() {
                   ) || 0}
                 </div>
               )}
-              { }
+              {}
               <ImageIcon className='h-4 w-4 text-muted-foreground' />
             </div>
           </CardContent>
@@ -507,11 +507,11 @@ export default function MerchantDashboard() {
                       <p className='text-sm text-muted-foreground'>
                         {place.ratings.length > 0
                           ? (
-                            place.ratings.reduce(
-                              (sum, r) => sum + r.rating,
-                              0
-                            ) / place.ratings.length
-                          ).toFixed(1)
+                              place.ratings.reduce(
+                                (sum, r) => sum + r.rating,
+                                0
+                              ) / place.ratings.length
+                            ).toFixed(1)
                           : '--'}{' '}
                         ({place.ratings.length} ratings)
                       </p>
