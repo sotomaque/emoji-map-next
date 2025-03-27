@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { env } from '@/env';
-import type { AdminSearchResponse } from '@/types/admin-search';
+import type { MerchantPlaceSearchResponse } from '@/types/admin-search';
 import type { ErrorResponse } from '@/types/error-response';
 
 const FIELDS = [
@@ -36,7 +36,7 @@ const GoogleResponseSchema = z.object({
 
 export async function POST(
   request: NextRequest
-): Promise<NextResponse<AdminSearchResponse | ErrorResponse>> {
+): Promise<NextResponse<MerchantPlaceSearchResponse | ErrorResponse>> {
   try {
     // get Name, City, State from request body
     const body = await request.json();

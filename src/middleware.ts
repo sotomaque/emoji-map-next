@@ -13,6 +13,8 @@ const isPublic = createRouteMatcher([
 
 const isAdmin = createRouteMatcher(['/admin(.*)']);
 
+const isMerchantDashboard = createRouteMatcher(['/merchant/dashboard(.*)']);
+
 // Simple middleware configuration that allows public access to specified routes
 export default clerkMiddleware(async (auth, req) => {
   if (isPublic(req)) {
@@ -22,6 +24,12 @@ export default clerkMiddleware(async (auth, req) => {
   const { orgId, orgRole } = await auth();
 
   if (isAdmin(req)) {
+    if (orgId !== env.CLERK_ORG_ID || orgRole !== 'org:admin') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+
+  if (isMerchantDashboard(req)) {
     if (orgId !== env.CLERK_ORG_ID || orgRole !== 'org:admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }

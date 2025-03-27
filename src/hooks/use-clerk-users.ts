@@ -1,12 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { User } from '@clerk/nextjs/server';
-
-interface PaginatedUsersResponse {
-  users: User[];
-  totalCount: number;
-  limit: number;
-  offset: number;
-}
+import type { AdminClerkUsersResponse } from '@/types/admin-clerk-users';
 
 interface UsePaginatedClerkUsersParams {
   limit?: number;
@@ -16,16 +9,18 @@ interface UsePaginatedClerkUsersParams {
 async function fetchClerkUsers({
   limit = 10,
   offset = 0,
-}: UsePaginatedClerkUsersParams = {}): Promise<PaginatedUsersResponse> {
+}: UsePaginatedClerkUsersParams = {}): Promise<AdminClerkUsersResponse> {
   const params = new URLSearchParams({
     limit: limit.toString(),
     offset: offset.toString(),
   });
 
   const response = await fetch(`/api/admin/clerk-users?${params.toString()}`);
+
   if (!response.ok) {
     throw new Error('Failed to fetch Clerk users');
   }
+
   return response.json();
 }
 

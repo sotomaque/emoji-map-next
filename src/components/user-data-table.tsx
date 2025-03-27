@@ -36,11 +36,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { User } from '@/hooks/use-db-users';
+import type { UserWithCounts } from '@/types/admin-db-users';
 import { UserDetailsDialog } from './user-details-dialog';
 
 interface UserDataTableProps {
-  users: User[];
+  users: UserWithCounts[];
   totalCount: number;
   limit: number;
   offset: number;
@@ -59,7 +59,7 @@ export function UserDataTable({
   onPaginationChange,
 }: UserDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserWithCounts | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Filter users based on search term
@@ -161,7 +161,7 @@ export function UserDataTable({
   };
 
   // Handle row click to open details dialog
-  const handleRowClick = (user: User) => {
+  const handleRowClick = (user: UserWithCounts) => {
     setSelectedUser(user);
     setDialogOpen(true);
   };
@@ -276,7 +276,9 @@ export function UserDataTable({
                           {user.id}
                         </code>
                       </TableCell>
-                      <TableCell>{formatDate(user.createdAt)}</TableCell>
+                      <TableCell>
+                        {formatDate(new Date(user.createdAt).toISOString())}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

@@ -2,25 +2,12 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import type { PaginatedDBUsersResponse } from '@/types/admin-db-users';
 import type { ErrorResponse } from '@/types/error-response';
-import type { User } from '@prisma/client';
-
-// Define an expanded user type that includes counts
-export interface UserWithCounts extends User {
-  favoritesCount: number;
-  ratingsCount: number;
-}
-
-export interface PaginatedUserResponse {
-  users: UserWithCounts[];
-  totalCount: number;
-  limit: number;
-  offset: number;
-}
 
 export async function GET(
   request: NextRequest
-): Promise<NextResponse<PaginatedUserResponse | ErrorResponse>> {
+): Promise<NextResponse<PaginatedDBUsersResponse | ErrorResponse>> {
   // check if user is admin
   const user = await currentUser();
   if (!user) {

@@ -44,6 +44,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { AdminClerkUsersToggleAdminStatusResponse } from '@/types/admin-clerk-users-toggle-admin-status';
+import type { ErrorResponse } from '@/types/error-response';
 import { ClerkUserDetailsDialog } from './clerk-user-details-dialog';
 import type { User } from '@clerk/nextjs/server';
 
@@ -57,6 +59,9 @@ interface ClerkUserDataTableProps {
   onPaginationChange: (limit: number, offset: number) => void;
 }
 
+// TODOs for follow up PR:
+// Search index userids
+// invalidate query on success of make admin call
 export function ClerkUserDataTable({
   users,
   totalCount,
@@ -71,7 +76,11 @@ export function ClerkUserDataTable({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Mutation for toggling admin status
-  const toggleAdminMutation = useMutation({
+  const toggleAdminMutation = useMutation<
+    AdminClerkUsersToggleAdminStatusResponse,
+    ErrorResponse,
+    string
+  >({
     mutationFn: async (userId: string) => {
       const response = await fetch(
         '/api/admin/clerk-users/toggle-admin-status',
@@ -86,7 +95,7 @@ export function ClerkUserDataTable({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to toggle admin status');
+        throw error as ErrorResponse;
       }
 
       return response.json();
@@ -102,8 +111,8 @@ export function ClerkUserDataTable({
         } ${name}`
       );
     },
-    onError: (error: Error) => {
-      toast.error('Error: ' + error.message);
+    onError: (error: ErrorResponse) => {
+      toast.error('Error: ' + error.error);
     },
   });
 

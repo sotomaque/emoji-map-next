@@ -35,39 +35,27 @@ import {
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type {
+  AdminAppStoreConnectTrendsResponse,
+  Frequency,
+  InstallData,
+} from '@/types/admin-app-store-connect';
 
 // Feature flags
 const IS_WEEKLY_ENABLED = false;
 const IS_MONTHLY_ENABLED = false;
 
 // Types
-interface DailyInstallData {
-  date: string;
-  installs: number;
-  countries: { [key: string]: number };
-}
-
-interface InstallData {
-  dates: DailyInstallData[];
-  totalInstalls: number;
-  countries: { [key: string]: number };
-}
-
-interface ApiResponse {
-  message: string;
-  data: InstallData;
-}
-
-type TimeFrame = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-
 type TimeFrameLabels = {
-  [K in TimeFrame]?: string;
+  [K in Frequency]?: string;
 } & {
   DAILY: string; // DAILY is always required
 };
 
 // API fetch function
-async function fetchInstallData(timeFrame: TimeFrame): Promise<ApiResponse> {
+async function fetchInstallData(
+  timeFrame: Frequency
+): Promise<AdminAppStoreConnectTrendsResponse> {
   const response = await fetch(
     `/api/admin/app-store-connect/trends?frequency=${timeFrame}`
   );
@@ -80,8 +68,8 @@ async function fetchInstallData(timeFrame: TimeFrame): Promise<ApiResponse> {
 }
 
 // Custom hook for fetching install data
-function useInstallData(timeFrame: TimeFrame) {
-  return useQuery<ApiResponse, Error>({
+function useInstallData(timeFrame: Frequency) {
+  return useQuery<AdminAppStoreConnectTrendsResponse, Error>({
     queryKey: ['installs', timeFrame],
     queryFn: () => fetchInstallData(timeFrame),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -111,7 +99,7 @@ function InstallChart({
   timeFrame,
 }: {
   data: InstallData;
-  timeFrame: TimeFrame;
+  timeFrame: Frequency;
 }) {
   const chartData =
     timeFrame === 'MONTHLY'
@@ -224,7 +212,7 @@ function ErrorAlert({ message }: { message: string }) {
 
 // Main page component
 export default function AppStoreTrendsPage() {
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>('DAILY');
+  const [timeFrame, setTimeFrame] = useState<Frequency>('DAILY');
   const { data, isLoading, error } = useInstallData(timeFrame);
 
   const availableTimeFrames: TimeFrameLabels = {
@@ -248,7 +236,7 @@ export default function AppStoreTrendsPage() {
           <Tabs
             defaultValue='DAILY'
             value={timeFrame}
-            onValueChange={(value) => setTimeFrame(value as TimeFrame)}
+            onValueChange={(value) => setTimeFrame(value as Frequency)}
           >
             <TabsList className={`grid w-full grid-cols-${numColumns}`}>
               <TabsTrigger value='DAILY'>Daily</TabsTrigger>
@@ -260,7 +248,7 @@ export default function AppStoreTrendsPage() {
               )}
             </TabsList>
 
-            {(Object.entries(availableTimeFrames) as [TimeFrame, string][]).map(
+            {(Object.entries(availableTimeFrames) as [Frequency, string][]).map(
               ([key, label]) => (
                 <TabsContent key={key} value={key}>
                   <Card>

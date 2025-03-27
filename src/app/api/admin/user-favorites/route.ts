@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import type { FavoriteResponse } from '@/types/admin-user-favorites';
+import type { ErrorResponse } from '@/types/error-response';
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+): Promise<NextResponse<FavoriteResponse | ErrorResponse>> {
   // Check if user is admin
   const user = await currentUser();
   if (!user) {
@@ -41,7 +45,12 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(favorites);
+    return NextResponse.json({
+      favorites,
+      totalCount: favorites.length,
+      limit: 10,
+      offset: 0,
+    });
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return NextResponse.json(
