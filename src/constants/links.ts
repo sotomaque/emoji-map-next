@@ -40,3 +40,6 @@ export const APPLE_DEEPLINK = `https://apps.apple.com/app/id${APPLE_APPSTORE_ID}
 export const RESEND_CONSOLE = 'https://resend.com/emails';
 
 export const KEYBASE_CONSOLE = 'https://keybase.io/team/emojimap';
+
+export const INNGEST_CONSOLE =
+  'https://us.inngest.com/admin/projects/emoji-map';

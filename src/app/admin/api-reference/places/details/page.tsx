@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,7 +85,8 @@ const PlaceDetailsSkeleton = () => {
   );
 };
 
-export default function PlacesDetailsPage() {
+// Create a client component for the form
+function DetailsForm() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -211,7 +212,10 @@ export default function PlacesDetailsPage() {
     }
 
     return (
-      <div className='flex justify-between items-start py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0'>
+      <div
+        className='flex justify-between items-start py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0'
+        key={label}
+      >
         <span className='font-medium'>{label}:</span>
         <span className='text-right max-w-[60%]'>{formattedValue}</span>
       </div>
@@ -370,10 +374,11 @@ export default function PlacesDetailsPage() {
                   size='sm'
                   onClick={() => {
                     router.push(
-                      `/admin/api-reference/places/photos?id=${placeDetailsQuery.data.data?.name?.replace(
-                        'places/',
-                        ''
-                      ) || placeId
+                      `/admin/api-reference/places/photos?id=${
+                        placeDetailsQuery.data.data?.name?.replace(
+                          'places/',
+                          ''
+                        ) || placeId
                       }`
                     );
                   }}
@@ -560,15 +565,16 @@ export default function PlacesDetailsPage() {
                                       {[1, 2, 3, 4, 5].map((star) => (
                                         <span
                                           key={`rating-star-${star}`}
-                                          className={`text-xl ${(placeDetailsQuery.data.data
-                                            .rating || 0) >= star
-                                            ? 'text-yellow-400'
-                                            : (placeDetailsQuery.data.data
-                                              .rating || 0) >=
-                                              star - 0.5
+                                          className={`text-xl ${
+                                            (placeDetailsQuery.data.data
+                                              .rating || 0) >= star
+                                              ? 'text-yellow-400'
+                                              : (placeDetailsQuery.data.data
+                                                  .rating || 0) >=
+                                                star - 0.5
                                               ? 'text-yellow-400/70'
                                               : 'text-gray-300'
-                                            }`}
+                                          }`}
                                         >
                                           ★
                                         </span>
@@ -589,7 +595,7 @@ export default function PlacesDetailsPage() {
                                   </span>
                                   <div className='text-right max-w-[60%]'>
                                     {placeDetailsQuery.data.data.priceLevel ===
-                                      null ? (
+                                    null ? (
                                       <span>Not specified</span>
                                     ) : (
                                       <span>
@@ -741,7 +747,7 @@ export default function PlacesDetailsPage() {
                             {/* Reviews section */}
                             {placeDetailsQuery.data.data.reviews &&
                               placeDetailsQuery.data.data.reviews.length >
-                              0 && (
+                                0 && (
                                 <div className='p-3 border rounded-md bg-muted/30'>
                                   <p className='text-sm font-medium mb-3'>
                                     Reviews:
@@ -758,10 +764,11 @@ export default function PlacesDetailsPage() {
                                               {[1, 2, 3, 4, 5].map((star) => (
                                                 <span
                                                   key={`review-star-${index}-${star}`}
-                                                  className={`text-xl ${review.rating >= star
-                                                    ? 'text-yellow-400'
-                                                    : 'text-gray-300'
-                                                    }`}
+                                                  className={`text-xl ${
+                                                    review.rating >= star
+                                                      ? 'text-yellow-400'
+                                                      : 'text-gray-300'
+                                                  }`}
                                                 >
                                                   ★
                                                 </span>
@@ -774,11 +781,11 @@ export default function PlacesDetailsPage() {
                                           </p>
                                           <p className='text-sm'>
                                             {typeof review.text === 'object' &&
-                                              review.text?.text
+                                            review.text?.text
                                               ? review.text.text
                                               : typeof review.text === 'string'
-                                                ? review.text
-                                                : 'No review text'}
+                                              ? review.text
+                                              : 'No review text'}
                                           </p>
                                         </div>
                                       )
@@ -806,6 +813,25 @@ export default function PlacesDetailsPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Main page component
+export default function PlacesDetailsPage() {
+  return (
+    <div className='flex flex-col gap-8 p-4'>
+      {/* Title + Description */}
+      <div>
+        <h1 className='text-2xl font-bold'>Place Details</h1>
+        <p className='text-sm text-muted-foreground'>
+          Get detailed information about a specific place using its Place ID.
+        </p>
+      </div>
+
+      <Suspense fallback={<PlaceDetailsSkeleton />}>
+        <DetailsForm />
+      </Suspense>
     </div>
   );
 }

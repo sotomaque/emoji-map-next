@@ -16,10 +16,6 @@ const mockGoogleResponse = {
       id: 'place-1',
       formattedAddress: '123 Main St, San Francisco, CA 94105',
       nationalPhoneNumber: '+1 (555) 123-4567',
-      location: {
-        latitude: 37.7749,
-        longitude: -122.4194,
-      },
       displayName: {
         text: 'Test Business',
       },
@@ -28,10 +24,6 @@ const mockGoogleResponse = {
       id: 'place-2',
       formattedAddress: '456 Market St, San Francisco, CA 94105',
       nationalPhoneNumber: '+1 (555) 987-6543',
-      location: {
-        latitude: 37.7749,
-        longitude: -122.4194,
-      },
       displayName: {
         text: 'Another Business',
       },
@@ -133,10 +125,6 @@ describe('Merchant Search Route', () => {
       id: 'place-1',
       formattedAddress: '123 Main St, San Francisco, CA 94105',
       nationalPhoneNumber: '+1 (555) 123-4567',
-      location: {
-        latitude: 37.7749,
-        longitude: -122.4194,
-      },
       displayName: 'Test Business',
     });
   });

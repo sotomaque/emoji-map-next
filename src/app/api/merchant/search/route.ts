@@ -9,7 +9,6 @@ const FIELDS = [
   'places.id',
   'places.formattedAddress',
   'places.nationalPhoneNumber',
-  'places.location',
   'places.displayName.text',
 ].join(',');
 const GOOGLE_SEARCH_BASE_URL = `${env.GOOGLE_PLACES_URL}/places:searchText`;
@@ -28,10 +27,6 @@ const GoogleResponseSchema = z.object({
       id: z.string(),
       formattedAddress: z.string(),
       nationalPhoneNumber: z.string(),
-      location: z.object({
-        latitude: z.number(),
-        longitude: z.number(),
-      }),
       displayName: z.object({
         text: z.string(),
       }),
@@ -84,7 +79,6 @@ export async function POST(
           id: place.id,
           formattedAddress: place.formattedAddress,
           nationalPhoneNumber: place.nationalPhoneNumber,
-          location: place.location,
           displayName: place.displayName.text,
         })),
         count: data.data.places.length,

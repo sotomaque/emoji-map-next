@@ -1,24 +1,24 @@
 import { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '@/app/api/merchant/associate/route';
-import { getUserId } from '@/services/user/get-user-id';
 
 // Mock dependencies
+vi.mock('@clerk/nextjs/server', () => ({
+  auth: vi.fn(),
+}));
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     $transaction: vi.fn((callback) => callback(mockTx)),
     user: { findUnique: vi.fn() },
-    place: { findUnique: vi.fn() },
+    place: { findUnique: vi.fn(), upsert: vi.fn() },
     merchant: {
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
   },
-}));
-
-vi.mock('@/services/user/get-user-id', () => ({
-  getUserId: vi.fn(),
 }));
 
 // Types
@@ -29,7 +29,10 @@ type RequestBody = {
 // Mock transaction object
 const mockTx = {
   user: { findUnique: vi.fn() },
-  place: { findUnique: vi.fn() },
+  place: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
   merchant: {
     findUnique: vi.fn(),
     create: vi.fn(),
@@ -44,10 +47,34 @@ const mockUser = {
   username: 'testuser',
 };
 
+const mockPlaceDetails = {
+  displayName: 'Test Place Display Name',
+  editorialSummary: 'A great test place',
+  location: {
+    latitude: 37.7749,
+    longitude: -122.4194,
+  },
+  reviews: [
+    {
+      name: 'Reviewer 1',
+      relativePublishTimeDescription: '2 days ago',
+      rating: 5,
+      text: { text: 'Great place!' },
+    },
+  ],
+};
+
 const mockPlace = {
   id: 'place-1',
   name: 'Test Place',
-  merchant: null,
+  description: 'A great test place',
+  latitude: 37.7749,
+  longitude: -122.4194,
+  merchantId: null,
+  photos: [],
+  ratings: [],
+  reviews: [],
+  favorites: [],
 };
 
 const mockMerchant = {
@@ -68,6 +95,9 @@ function createNextRequest(body: RequestBody): NextRequest {
 describe('Merchant Associate Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default auth mock to return a userId
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(auth).mockResolvedValue({ userId: 'user-1' } as any);
     global.fetch = vi.fn();
   });
 
@@ -83,7 +113,9 @@ describe('Merchant Associate Route', () => {
   });
 
   it('should handle unauthorized requests', async () => {
-    vi.mocked(getUserId).mockResolvedValue('');
+    // Mock auth to return no userId
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(auth).mockResolvedValue({ userId: null } as any);
 
     const request = createNextRequest({ placeId: 'place-1' });
 
@@ -96,15 +128,16 @@ describe('Merchant Associate Route', () => {
   });
 
   it("should make request to create place if it doesn't exist", async () => {
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(null);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(null);
     vi.mocked(mockTx.merchant.create).mockResolvedValue(mockMerchant);
+    vi.mocked(mockTx.place.upsert).mockResolvedValue(mockPlace);
 
+    // Mock the place details API response
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ place: mockPlace }),
+      json: () => Promise.resolve({ data: mockPlaceDetails }),
     });
 
     const request = createNextRequest({ placeId: 'place-1' });
@@ -113,12 +146,41 @@ describe('Merchant Associate Route', () => {
     const data = await response.json();
 
     expect(global.fetch).toHaveBeenCalled();
+    expect(mockTx.place.upsert).toHaveBeenCalledWith({
+      where: { id: 'place-1' },
+      create: {
+        id: 'place-1',
+        name: mockPlaceDetails.displayName,
+        description: mockPlaceDetails.editorialSummary,
+        latitude: mockPlaceDetails.location.latitude,
+        longitude: mockPlaceDetails.location.longitude,
+        reviews: {
+          createMany: {
+            data: [
+              {
+                name: mockPlaceDetails.reviews[0].name,
+                relativePublishTimeDescription:
+                  mockPlaceDetails.reviews[0].relativePublishTimeDescription,
+                rating: mockPlaceDetails.reviews[0].rating,
+                text: mockPlaceDetails.reviews[0].text.text,
+              },
+            ],
+          },
+        },
+      },
+      update: {},
+      include: {
+        photos: true,
+        ratings: true,
+        reviews: true,
+        favorites: true,
+      },
+    });
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
   });
 
   it('should not make request to create place if it already exists', async () => {
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(mockPlace);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(null);
@@ -135,7 +197,6 @@ describe('Merchant Associate Route', () => {
   });
 
   it('should make the user a merchant if they are not already a merchant', async () => {
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(mockPlace);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(null);
@@ -153,7 +214,6 @@ describe('Merchant Associate Route', () => {
   });
 
   it('should handle the case where the user is already a merchant', async () => {
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(mockPlace);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(mockMerchant);
@@ -181,11 +241,16 @@ describe('Merchant Associate Route', () => {
       user: { ...mockUser, id: 'user-2', email: 'other@example.com' },
     };
 
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue({
       ...mockPlace,
-      merchant: otherMerchant,
+      merchantId: otherMerchant.id,
+    });
+    vi.mocked(mockTx.merchant.findUnique).mockImplementation((args) => {
+      if (args.where.id === otherMerchant.id) {
+        return Promise.resolve(otherMerchant);
+      }
+      return Promise.resolve(null);
     });
 
     const request = createNextRequest({ placeId: 'place-1' });
@@ -205,7 +270,6 @@ describe('Merchant Associate Route', () => {
       places: [existingPlace],
     };
 
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(mockPlace);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(merchantWithPlace);
@@ -225,7 +289,6 @@ describe('Merchant Associate Route', () => {
   });
 
   it('should return the merchant account with all necessary data', async () => {
-    vi.mocked(getUserId).mockResolvedValue('user-1');
     vi.mocked(mockTx.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(mockTx.place.findUnique).mockResolvedValue(mockPlace);
     vi.mocked(mockTx.merchant.findUnique).mockResolvedValue(null);

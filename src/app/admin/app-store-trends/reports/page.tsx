@@ -75,7 +75,7 @@ async function fetchInstallData(timeFrame: TimeFrame): Promise<ApiResponse> {
     throw new Error('Failed to fetch install data');
   }
   const data = await response.json();
-  console.log('Raw API response:', data);
+
   return data;
 }
 
@@ -116,19 +116,19 @@ function InstallChart({
   const chartData =
     timeFrame === 'MONTHLY'
       ? [
-          {
-            date: data.dates[0].date,
-            installs: data.totalInstalls,
-          },
-        ]
+        {
+          date: data.dates[0].date,
+          installs: data.totalInstalls,
+        },
+      ]
       : data.dates;
 
   // Calculate trend
   const trend =
     chartData.length > 1
       ? ((chartData[chartData.length - 1].installs - chartData[0].installs) /
-          chartData[0].installs) *
-        100
+        chartData[0].installs) *
+      100
       : 0;
 
   return (
@@ -194,8 +194,8 @@ function InstallChart({
           {timeFrame === 'DAILY'
             ? 'Showing daily installs for the last 5 days'
             : timeFrame === 'WEEKLY'
-            ? 'Showing weekly installs for the last 5 weeks'
-            : 'Showing installs for the last completed month'}
+              ? 'Showing weekly installs for the last 5 weeks'
+              : 'Showing installs for the last completed month'}
         </div>
       </CardFooter>
     </>
@@ -270,8 +270,8 @@ export default function AppStoreTrendsPage() {
                         {key === 'DAILY'
                           ? 'Shows daily downloads for the last 5 days'
                           : key === 'WEEKLY'
-                          ? 'Shows weekly downloads for the last 5 weeks'
-                          : 'Shows downloads for the last completed month'}
+                            ? 'Shows weekly downloads for the last 5 weeks'
+                            : 'Shows downloads for the last completed month'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

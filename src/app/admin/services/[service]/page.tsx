@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { InngestLogo } from '@/components/ui/icons/inngest-logo';
 import { SERVICES } from '@/constants/services';
 
 interface ServicePageProps {
@@ -40,8 +41,14 @@ export default async function ServicePage({ params }: ServicePageProps) {
       <div className='flex items-center justify-center my-12'>
         <div className='bg-card border rounded-lg shadow-sm p-8 max-w-md w-full'>
           <div className='space-y-6'>
-            {matchingService.logoUrl && (
-              <div className='flex justify-center'>
+            <div className='flex justify-center'>
+              {matchingService.logoComponent === 'InngestLogo' ? (
+                <InngestLogo
+                  width={120}
+                  height={36}
+                  inverted={matchingService.darkInvert}
+                />
+              ) : matchingService.logoUrl ? (
                 <Image
                   src={matchingService.logoUrl}
                   alt={`${matchingService.title} Logo`}
@@ -49,8 +56,8 @@ export default async function ServicePage({ params }: ServicePageProps) {
                   height={120}
                   className={matchingService.darkInvert ? 'dark:invert' : ''}
                 />
-              </div>
-            )}
+              ) : null}
+            </div>
 
             <div className='text-center space-y-2'>
               <h2 className='text-2xl font-semibold'>
@@ -79,6 +86,25 @@ export default async function ServicePage({ params }: ServicePageProps) {
                 </Button>
               ))}
             </div>
+
+            {matchingService.commands &&
+              matchingService.commands.length > 0 && (
+                <div className='mt-6 space-y-3'>
+                  <h3 className='text-sm font-medium'>Commands</h3>
+                  <div className='space-y-2'>
+                    {matchingService.commands.map((cmd) => (
+                      <div key={cmd.title} className='space-y-1.5'>
+                        <p className='text-sm text-muted-foreground'>
+                          {cmd.title}
+                        </p>
+                        <code className='relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm'>
+                          {cmd.command}
+                        </code>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
