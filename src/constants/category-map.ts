@@ -478,3 +478,14 @@ export const CATEGORY_MAP = [
     primaryType: ['vegetarian_restaurant'],
   },
 ];
+
+export const CATEGORY_MAP_LOOKUP: Record<
+  number,
+  (typeof CATEGORY_MAP)[number]
+> = CATEGORY_MAP.reduce(
+  (acc, c) => ({
+    ...acc,
+    [c.key]: c,
+  }),
+  {}
+);

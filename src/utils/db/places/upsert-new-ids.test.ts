@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from '@/lib/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '@/lib/db';
 import { upsertNewIds } from './upsert-new-ids';
 
 // Mock the database operations
