@@ -11,26 +11,7 @@ export async function GET(
   request: NextRequest
 ): Promise<NextResponse<UserResponse | ErrorResponse>> {
   try {
-    log.info('User API called, validating auth token...');
-    let userId;
-
-    try {
-      userId = await getUserId(request);
-      log.info(`Auth successful, userId: ${userId}`);
-    } catch (authError) {
-      log.error('Authentication failed in /api/user:', authError);
-      return NextResponse.json(
-        {
-          error: 'Authentication failed',
-          message:
-            authError instanceof Error
-              ? authError.message
-              : 'Unknown auth error',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 401 }
-      );
-    }
+    const userId = await getUserId(request);
 
     // check if user exists in our database
     log.info(`Looking for user ${userId} in database...`);
@@ -103,26 +84,7 @@ export async function DELETE(
   request: NextRequest
 ): Promise<NextResponse<DeleteUserResponse | ErrorResponse>> {
   try {
-    log.info('User deletion API called, validating auth token...');
-    let userId;
-
-    try {
-      userId = await getUserId(request);
-      log.info(`Auth successful, userId: ${userId}`);
-    } catch (authError) {
-      log.error('Authentication failed in /api/user/delete:', authError);
-      return NextResponse.json(
-        {
-          error: 'Authentication failed',
-          message:
-            authError instanceof Error
-              ? authError.message
-              : 'Unknown auth error',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 401 }
-      );
-    }
+    const userId = await getUserId(request);
 
     // check if user exists in our database
     log.info(`Looking for user ${userId} in database...`);
