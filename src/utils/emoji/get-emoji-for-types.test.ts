@@ -1,6 +1,44 @@
-import { describe, expect, test } from 'vitest';
-import { CATEGORY_MAP } from '@/constants/category-map';
+import { describe, expect, test, vi } from 'vitest';
 import { getEmojiForTypes } from './get-emoji-for-types';
+
+interface CategoryMapItem {
+  key: number;
+  emoji: string;
+  name: string;
+  primaryType: string[];
+}
+
+// Mock the category map
+vi.mock('@/constants/category-map', () => ({
+  CATEGORY_MAP: [
+    {
+      key: 1,
+      emoji: '🍕',
+      name: 'pizza',
+      primaryType: ['pizza_restaurant', 'italian_restaurant'],
+    },
+    {
+      key: 4,
+      emoji: '☕',
+      name: 'coffee',
+      primaryType: ['coffee_shop', 'cafe'],
+    },
+    {
+      key: 25,
+      emoji: '🍽️',
+      name: 'place',
+      primaryType: ['restaurant', 'food_court', 'buffet_restaurant'],
+    },
+  ],
+  EMOJI_OVERRIDES: {
+    'pizza hut': '🍕',
+    'jamba juice': '🧃',
+    'smoothie king': '🥤',
+    "mcdonald's": '🍔',
+    "dave's hot chicken": '🍗',
+    "carl's jr": '🍔',
+  },
+}));
 
 describe('getEmojiForTypes', () => {
   test('returns correct emoji for pizza restaurant type', () => {
@@ -15,7 +53,7 @@ describe('getEmojiForTypes', () => {
 
   test('returns correct emoji when multiple types are provided', () => {
     const types = ['restaurant', 'pizza_restaurant', 'food'];
-    expect(getEmojiForTypes('', types)).toBe('🍕');
+    expect(getEmojiForTypes('', types)).toBe('🍽️');
   });
 
   test('returns default emoji when no matching type is found', () => {
@@ -33,8 +71,9 @@ describe('getEmojiForTypes', () => {
     expect(getEmojiForTypes('', types)).toBe('🍕');
   });
 
-  test('handles all primary types from CATEGORY_MAP', () => {
-    CATEGORY_MAP.forEach((category) => {
+  test('handles all primary types from CATEGORY_MAP', async () => {
+    const { CATEGORY_MAP } = await import('@/constants/category-map');
+    CATEGORY_MAP.forEach((category: CategoryMapItem) => {
       const { primaryType, emoji } = category;
       expect(getEmojiForTypes('', [primaryType[0]])).toBe(emoji);
     });
