@@ -36,7 +36,7 @@ model Place {
   merchantId   String?    @map("merchant_id")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at")
-  lastSyncedAt DateTime   @map("last_synced_at")
+  lastSyncedAt DateTime?  @map("last_synced_at")
   favorites    Favorite[]
   photos       Photo[]
   ratings      Rating[]
