@@ -450,10 +450,11 @@ function RatingsCard({ ratings }: RatingsCardProps) {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
                             key={`rating-star-${rating.id}-${star}`}
-                            className={`text-sm ${rating.rating >= star
-                              ? 'text-yellow-400'
-                              : 'text-gray-300'
-                              }`}
+                            className={`text-sm ${
+                              rating.rating >= star
+                                ? 'text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
                           >
                             ★
                           </span>
