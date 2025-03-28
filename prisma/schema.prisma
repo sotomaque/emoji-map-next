@@ -27,20 +27,21 @@ model User {
 }
 
 model Place {
-  id          String     @id @default(cuid())
-  name        String?
-  description String?
-  latitude    Float?
-  longitude   Float?
-  address     String?
-  merchantId  String?    @map("merchant_id")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
-  favorites   Favorite[]
-  photos      Photo[]
-  ratings     Rating[]
-  reviews     Review[]
-  merchant    Merchant?  @relation(fields: [merchantId], references: [id])
+  id           String     @id @default(cuid())
+  name         String?
+  description  String?
+  latitude     Float?
+  longitude    Float?
+  address      String?
+  merchantId   String?    @map("merchant_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at")
+  lastSyncedAt DateTime   @map("last_synced_at")
+  favorites    Favorite[]
+  photos       Photo[]
+  ratings      Rating[]
+  reviews      Review[]
+  merchant     Merchant?  @relation(fields: [merchantId], references: [id])
 
   @@index([name])
   @@index([merchantId])
