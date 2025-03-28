@@ -58,10 +58,14 @@ export async function GET(
 
       log.info(`User ${userId} found, returning data`);
       // Make sure we're returning the exact structure expected by the Zod schema
-      return NextResponse.json({
-        user: dbUser,
-        status: 200,
-      });
+      return NextResponse.json(
+        {
+          user: dbUser,
+        },
+        {
+          status: 200,
+        }
+      );
     } catch (dbError) {
       log.error('Database error when fetching user:', dbError);
       return NextResponse.json(
@@ -89,7 +93,15 @@ export async function GET(
   }
 }
 
-export async function DELETE(request: NextRequest) {
+type DeleteUserResponse = {
+  message: string;
+  userId: string;
+  timestamp: string;
+};
+
+export async function DELETE(
+  request: NextRequest
+): Promise<NextResponse<DeleteUserResponse | ErrorResponse>> {
   try {
     log.info('User deletion API called, validating auth token...');
     let userId;

@@ -190,10 +190,12 @@ describe('User API Routes', () => {
           ratings: true,
         },
       });
-      expect(NextResponse.json).toHaveBeenCalledWith({
-        user: mockDbUser,
-        status: 200,
-      });
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          user: mockDbUser,
+        },
+        { status: 200 }
+      );
     });
 
     it('should return user with ratings if found in database', async () => {
@@ -252,10 +254,14 @@ describe('User API Routes', () => {
           ratings: true,
         },
       });
-      expect(NextResponse.json).toHaveBeenCalledWith({
-        user: mockDbUser,
-        status: 200,
-      });
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          user: mockDbUser,
+        },
+        {
+          status: 200,
+        }
+      );
     });
 
     it('should handle database errors and return 500 status', async () => {
