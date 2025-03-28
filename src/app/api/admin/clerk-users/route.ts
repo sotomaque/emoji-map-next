@@ -35,8 +35,6 @@ export async function GET(
       }),
     });
 
-    console.log('response', response);
-
     return NextResponse.json({
       users: response.data,
       totalCount: response.totalCount,
