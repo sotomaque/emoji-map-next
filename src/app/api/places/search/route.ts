@@ -48,13 +48,13 @@ const fields = [
   'places.types',
 ].join(',');
 
-const placesClient = new v1.PlacesClient({
-  apiKey: env.GOOGLE_PLACES_API_KEY,
-});
-
 async function searchPlaces(
   params: RequestParameters
 ): Promise<RequestResponse> {
+  const placesClient = new v1.PlacesClient({
+    apiKey: env.GOOGLE_PLACES_API_KEY,
+  });
+
   const includedTypes = uniq(
     params.keys?.flatMap((key) => CATEGORY_MAP_LOOKUP[key].primaryType) ??
       SEARCH_CONFIG.DEFAULT_INCLUDED_TYPES
@@ -116,15 +116,16 @@ export async function POST(request: Request) {
 
   try {
     const results = await (validatedBody.data.bypassCache
-      ? searchPlaces(validatedBody.data)
-      : retrieveOrCache<RequestResponse>(cacheKey, () =>
-          searchPlaces(validatedBody.data)
+      ? { cacheHit: false, ...(await searchPlaces(validatedBody.data)) }
+      : retrieveOrCache<RequestResponse & { cacheHit: boolean }>(
+          cacheKey,
+          async () => ({
+            cacheHit: false,
+            ...(await searchPlaces(validatedBody.data)),
+          })
         ));
 
-    return Response.json({
-      cacheHit: false,
-      ...results,
-    });
+    return Response.json(results);
   } catch (e) {
     log.error(JSON.stringify(e));
 
