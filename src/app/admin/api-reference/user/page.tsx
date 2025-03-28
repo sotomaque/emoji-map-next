@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -173,7 +175,9 @@ export default function UserPage() {
           <AlertCircle className='h-4 w-4' />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            {error instanceof Error ? error.message : 'Failed to load user data'}
+            {error instanceof Error
+              ? error.message
+              : 'Failed to load user data'}
           </AlertDescription>
         </Alert>
       </div>
@@ -201,6 +205,16 @@ export default function UserPage() {
               <div>
                 <dt className='font-medium'>ID</dt>
                 <dd className='text-sm text-muted-foreground'>{user.id}</dd>
+              </div>
+              <div>
+                <dt className='font-medium'>Email</dt>
+                <dd className='text-sm text-muted-foreground'>{user.email}</dd>
+              </div>
+              <div>
+                <dt className='font-medium'>Name</dt>
+                <dd className='text-sm text-muted-foreground'>
+                  {user.firstName} {user.lastName}
+                </dd>
               </div>
               <div>
                 <dt className='font-medium'>Created At</dt>
@@ -255,10 +269,7 @@ export default function UserPage() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder='Enter your first name'
-                          {...field}
-                        />
+                        <Input placeholder='Enter your first name' {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -287,10 +298,7 @@ export default function UserPage() {
                   >
                     Reset
                   </Button>
-                  <Button
-                    type='submit'
-                    disabled={updateUserMutation.isPending}
-                  >
+                  <Button type='submit' disabled={updateUserMutation.isPending}>
                     {updateUserMutation.isPending
                       ? 'Updating...'
                       : 'Update User'}
@@ -301,30 +309,183 @@ export default function UserPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Favorites</CardTitle>
-            <CardDescription>User&apos;s favorite locations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-sm text-muted-foreground'>
-              {user.favorites?.length ?? 0} favorite locations
-            </p>
-          </CardContent>
-        </Card>
+        {/* Favorites Card */}
+        <FavoritesCard favorites={user.favorites} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ratings</CardTitle>
-            <CardDescription>User&apos;s location ratings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-sm text-muted-foreground'>
-              {user.ratings?.length ?? 0} rated locations
-            </p>
-          </CardContent>
-        </Card>
+        {/* Ratings Card */}
+        <RatingsCard ratings={user.ratings} />
       </div>
     </div>
+  );
+}
+
+interface FavoritesCardProps {
+  favorites?: Favorite[];
+}
+
+function FavoritesCard({ favorites }: FavoritesCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className='flex items-center justify-between'>
+          <div>
+            <CardTitle>Favorites</CardTitle>
+            <CardDescription>User&apos;s favorite locations</CardDescription>
+          </div>
+          {favorites && favorites.length > 0 && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <ChevronUpIcon className='h-4 w-4' />
+              ) : (
+                <ChevronDownIcon className='h-4 w-4' />
+              )}
+              <span className='ml-2'>
+                {isExpanded ? 'Hide Details' : 'Show Details'}
+              </span>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className='text-sm text-muted-foreground mb-4'>
+          {favorites?.length ?? 0} favorite locations
+        </p>
+
+        {isExpanded && favorites && favorites.length > 0 && (
+          <div className='space-y-4'>
+            {favorites.map((favorite) => (
+              <div
+                key={favorite.id}
+                className='p-3 border rounded-md bg-muted/30'
+              >
+                <div className='flex justify-between items-start'>
+                  <div>
+                    <p className='font-medium text-sm'>Place ID:</p>
+                    <p className='text-sm text-muted-foreground'>
+                      {favorite.placeId}
+                    </p>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Added: {new Date(favorite.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      router.push(
+                        `/admin/api-reference/places/details?id=${favorite.placeId}`
+                      )
+                    }
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface RatingsCardProps {
+  ratings?: Rating[];
+}
+
+function RatingsCard({ ratings }: RatingsCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className='flex items-center justify-between'>
+          <div>
+            <CardTitle>Ratings</CardTitle>
+            <CardDescription>User&apos;s location ratings</CardDescription>
+          </div>
+          {ratings && ratings.length > 0 && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <ChevronUpIcon className='h-4 w-4' />
+              ) : (
+                <ChevronDownIcon className='h-4 w-4' />
+              )}
+              <span className='ml-2'>
+                {isExpanded ? 'Hide Details' : 'Show Details'}
+              </span>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className='text-sm text-muted-foreground mb-4'>
+          {ratings?.length ?? 0} rated locations
+        </p>
+
+        {isExpanded && ratings && ratings.length > 0 && (
+          <div className='space-y-4'>
+            {ratings.map((rating) => (
+              <div
+                key={rating.id}
+                className='p-3 border rounded-md bg-muted/30'
+              >
+                <div className='flex justify-between items-start'>
+                  <div>
+                    <div className='flex items-center gap-2'>
+                      <p className='font-medium text-sm'>Rating:</p>
+                      <div className='flex'>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={`rating-star-${rating.id}-${star}`}
+                            className={`text-sm ${rating.rating >= star
+                              ? 'text-yellow-400'
+                              : 'text-gray-300'
+                              }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className='font-medium text-sm mt-1'>Place ID:</p>
+                    <p className='text-sm text-muted-foreground'>
+                      {rating.placeId}
+                    </p>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Last Updated:{' '}
+                      {new Date(rating.updatedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() =>
+                      router.push(
+                        `/admin/api-reference/places/details?id=${rating.placeId}`
+                      )
+                    }
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
