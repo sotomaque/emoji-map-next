@@ -17,12 +17,18 @@ vi.mock('@googlemaps/places', () => ({
               displayName: { text: 'Test Place 1' },
               location: { latitude: 37.775, longitude: -122.419 },
               types: ['restaurant', 'food'],
+              currentOpeningHours: { openNow: true },
+              rating: 4.5,
+              priceLevel: 'PRICE_LEVEL_MODERATE',
             },
             {
               id: 'place-id-2',
               displayName: { text: 'Test Place 2' },
               location: { latitude: 37.776, longitude: -122.418 },
               types: ['cafe', 'food'],
+              currentOpeningHours: { openNow: false },
+              rating: 3.5,
+              priceLevel: 'PRICE_LEVEL_EXPENSIVE',
             },
           ],
         },
@@ -85,12 +91,18 @@ const samplePlaceResponse = {
       displayName: { text: 'Test Place 1' },
       location: { latitude: 37.775, longitude: -122.419 },
       types: ['restaurant', 'food'],
+      currentOpeningHours: { openNow: true },
+      rating: 4.5,
+      priceLevel: 'PRICE_LEVEL_MODERATE',
     },
     {
       id: 'place-id-2',
       displayName: { text: 'Test Place 2' },
       location: { latitude: 37.776, longitude: -122.418 },
       types: ['cafe', 'food'],
+      currentOpeningHours: { openNow: false },
+      rating: 3.5,
+      priceLevel: 'PRICE_LEVEL_EXPENSIVE',
     },
   ],
 };
@@ -171,6 +183,72 @@ describe('Places Search API', () => {
       }),
       expect.any(Object)
     );
+  });
+
+  test('filters by openNow when specified', async () => {
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        openNow: true,
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(data.results).toHaveLength(1);
+    expect(data.results[0].id).toBe('place-id-1');
+  });
+
+  test('filters by minimumRating when specified', async () => {
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        minimumRating: 4.0,
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(data.results).toHaveLength(1);
+    expect(data.results[0].id).toBe('place-id-1');
+  });
+
+  test('filters by priceLevels when specified', async () => {
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        priceLevels: [2], // PRICE_LEVEL_MODERATE
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(data.results).toHaveLength(1);
+    expect(data.results[0].id).toBe('place-id-1');
+  });
+
+  test('combines multiple filters correctly', async () => {
+    const request = new Request('http://localhost/api/places/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        location: sampleLocation,
+        openNow: true,
+        minimumRating: 4.0,
+        priceLevels: [2],
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(data.results).toHaveLength(1);
+    expect(data.results[0].id).toBe('place-id-1');
   });
 
   test('uses cache when available', async () => {
