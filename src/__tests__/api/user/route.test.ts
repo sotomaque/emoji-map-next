@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GET, DELETE } from '@/app/api/user/route';
+import { GET, DELETE, PATCH } from '@/app/api/user/route';
 import { prisma } from '@/lib/db';
 import { getUserId } from '@/services/user/get-user-id';
 import { log } from '@/utils/log';
@@ -10,10 +10,24 @@ import type { User, Favorite, Rating } from '@prisma/client';
 // Define minimal types to match what we need for mocking
 interface ClerkUserAPI {
   deleteUser: (userId: string) => Promise<unknown>;
+  updateUser: (
+    userId: string,
+    data: { firstName?: string; lastName?: string }
+  ) => Promise<unknown>;
+}
+
+interface ClerkEmailAPI {
+  createEmailAddress: (data: {
+    userId: string;
+    emailAddress: string;
+    primary: boolean;
+    verified: boolean;
+  }) => Promise<unknown>;
 }
 
 interface MockClerkClient {
   users: ClerkUserAPI;
+  emailAddresses: ClerkEmailAPI;
 }
 
 // Mock dependencies
@@ -24,11 +38,19 @@ vi.mock('@clerk/nextjs/server', () => ({
     }),
     users: {
       deleteUser: vi.fn().mockResolvedValue({}),
+      updateUser: vi.fn().mockResolvedValue({}),
+    },
+    emailAddresses: {
+      createEmailAddress: vi.fn().mockResolvedValue({}),
     },
   }),
   clerkClient: vi.fn().mockResolvedValue({
     users: {
       deleteUser: vi.fn().mockResolvedValue({}),
+      updateUser: vi.fn().mockResolvedValue({}),
+    },
+    emailAddresses: {
+      createEmailAddress: vi.fn().mockResolvedValue({}),
     },
   } as MockClerkClient),
 }));
@@ -48,17 +70,33 @@ vi.mock('@/services/user/get-user-id', () => ({
 }));
 
 // Create a proper mock for NextRequest
+interface RequestBody {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 class MockNextRequest {
   nextUrl: URL;
   headers: Headers;
+  private body: RequestBody | null;
 
-  constructor(url: string, headers: Record<string, string> = {}) {
+  constructor(
+    url: string,
+    headers: Record<string, string> = {},
+    body: RequestBody | null = null
+  ) {
     this.nextUrl = new URL(url);
     this.headers = new Headers(headers);
+    this.body = body;
   }
 
   clone() {
     return this;
+  }
+
+  async json(): Promise<RequestBody> {
+    return this.body || {};
   }
 }
 
@@ -313,11 +351,17 @@ describe('User API Routes', () => {
       };
 
       const mockDeleteUser = vi.fn().mockResolvedValue({});
-      const mockClerkClient: MockClerkClient = {
+      const mockUpdateUser = vi.fn().mockResolvedValue({});
+      const mockCreateEmailAddress = vi.fn().mockResolvedValue({});
+      const mockClerkClient = {
         users: {
           deleteUser: mockDeleteUser,
+          updateUser: mockUpdateUser,
         },
-      };
+        emailAddresses: {
+          createEmailAddress: mockCreateEmailAddress,
+        },
+      } satisfies MockClerkClient;
 
       const { clerkClient } = await import('@clerk/nextjs/server');
       // @ts-expect-error - This is a mock implementation
@@ -410,6 +454,158 @@ describe('User API Routes', () => {
           error: 'Database error',
           message: 'Error deleting user from Clerk',
           timestamp: FIXED_DATE.toISOString(),
+        },
+        { status: 500 }
+      );
+    });
+  });
+
+  describe('PATCH /api/user', () => {
+    it('should successfully update both email and name', async () => {
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user',
+        { authorization: 'Bearer token' },
+        {
+          email: 'new@example.com',
+          firstName: 'NewFirst',
+          lastName: 'NewLast',
+        }
+      );
+
+      vi.mocked(getUserId).mockResolvedValue('user_123');
+
+      const mockCreateEmailAddress = vi.fn().mockResolvedValue({});
+      const mockUpdateUser = vi.fn().mockResolvedValue({});
+      const mockDeleteUser = vi.fn().mockResolvedValue({});
+      const mockClerkClient = {
+        users: {
+          deleteUser: mockDeleteUser,
+          updateUser: mockUpdateUser,
+        },
+        emailAddresses: {
+          createEmailAddress: mockCreateEmailAddress,
+        },
+      } satisfies MockClerkClient;
+
+      const { clerkClient } = await import('@clerk/nextjs/server');
+      // @ts-expect-error - This is a mock implementation
+      vi.mocked(clerkClient).mockResolvedValueOnce(mockClerkClient);
+
+      await PATCH(mockRequest as unknown as NextRequest);
+
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
+      expect(mockCreateEmailAddress).toHaveBeenCalledWith({
+        userId: 'user_123',
+        emailAddress: 'new@example.com',
+        primary: true,
+        verified: true,
+      });
+      expect(mockUpdateUser).toHaveBeenCalledWith('user_123', {
+        firstName: 'NewFirst',
+        lastName: 'NewLast',
+      });
+      expect(NextResponse.json).toHaveBeenCalledWith({
+        message: 'User updated successfully',
+        userId: 'user_123',
+        timestamp: FIXED_DATE.toISOString(),
+      });
+    });
+
+    it('should successfully update only email', async () => {
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user',
+        { authorization: 'Bearer token' },
+        { email: 'new@example.com' }
+      );
+
+      vi.mocked(getUserId).mockResolvedValue('user_123');
+
+      const mockCreateEmailAddress = vi.fn().mockResolvedValue({});
+      const mockUpdateUser = vi.fn().mockResolvedValue({});
+      const mockDeleteUser = vi.fn().mockResolvedValue({});
+      const mockClerkClient = {
+        users: {
+          deleteUser: mockDeleteUser,
+          updateUser: mockUpdateUser,
+        },
+        emailAddresses: {
+          createEmailAddress: mockCreateEmailAddress,
+        },
+      } satisfies MockClerkClient;
+
+      const { clerkClient } = await import('@clerk/nextjs/server');
+      // @ts-expect-error - This is a mock implementation
+      vi.mocked(clerkClient).mockResolvedValueOnce(mockClerkClient);
+
+      await PATCH(mockRequest as unknown as NextRequest);
+
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
+      expect(mockCreateEmailAddress).toHaveBeenCalledWith({
+        userId: 'user_123',
+        emailAddress: 'new@example.com',
+        primary: true,
+        verified: true,
+      });
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(NextResponse.json).toHaveBeenCalledWith({
+        message: 'User updated successfully',
+        userId: 'user_123',
+        timestamp: FIXED_DATE.toISOString(),
+      });
+    });
+
+    it('should handle Clerk API errors', async () => {
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user',
+        { authorization: 'Bearer token' },
+        { email: 'new@example.com' }
+      );
+
+      vi.mocked(getUserId).mockResolvedValue('user_123');
+
+      const clerkError = new Error('Error updating user in Clerk');
+      const { clerkClient } = await import('@clerk/nextjs/server');
+      vi.mocked(clerkClient).mockImplementationOnce(() => {
+        throw clerkError;
+      });
+
+      await PATCH(mockRequest as unknown as NextRequest);
+
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
+      expect(log.error).toHaveBeenCalledWith(
+        'Unexpected error in /api/user/patch:',
+        expect.any(Error)
+      );
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Unexpected error',
+          message: 'Error updating user in Clerk',
+        },
+        { status: 500 }
+      );
+    });
+
+    it('should handle unauthorized access', async () => {
+      const mockRequest = new MockNextRequest(
+        'https://example.com/api/user',
+        { authorization: 'Bearer token' },
+        { email: 'new@example.com' }
+      );
+
+      const errorMessage = 'Unauthorized: Missing authorization header';
+      vi.mocked(getUserId).mockRejectedValue(new Error(errorMessage));
+
+      await PATCH(mockRequest as unknown as NextRequest);
+
+      expect(getUserId).toHaveBeenCalledWith(mockRequest);
+      expect(log.error).toHaveBeenCalledWith(
+        'Unexpected error in /api/user/patch:',
+        expect.any(Error)
+      );
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Unexpected error',
+          message: errorMessage,
         },
         { status: 500 }
       );

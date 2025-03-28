@@ -144,3 +144,43 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const userId = await getUserId(request);
+
+    const { email, firstName, lastName } = await request.json();
+
+    const client = await clerkClient();
+    // update email first
+    await client.emailAddresses.createEmailAddress({
+      userId,
+      emailAddress: email,
+      primary: true,
+      verified: true,
+    });
+
+    // update name if provided
+    if (firstName || lastName) {
+      await client.users.updateUser(userId, {
+        firstName,
+        lastName,
+      });
+    }
+
+    return NextResponse.json({
+      message: 'User updated successfully',
+      userId: userId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    log.error('Unexpected error in /api/user/patch:', error);
+    return NextResponse.json(
+      {
+        error: 'Unexpected error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
