@@ -4,6 +4,10 @@ import z from 'zod';
 import { CATEGORY_MAP_LOOKUP } from '@/constants/category-map';
 import { SEARCH_CONFIG } from '@/constants/search';
 import { env } from '@/env';
+import {
+  DEFAULT_PRICE_LEVEL,
+  PRICE_LEVEL_MAP,
+} from '@/services/places/details/validator/details-validator';
 import { getEmojiForTypes } from '@/utils/emoji/get-emoji-for-types';
 import { log } from '@/utils/log';
 import { generateCacheKey } from '@/utils/places/cache-utils';
@@ -17,7 +21,8 @@ const zodSchema = z.object({
     .refine((levels) => levels.every((level) => level >= 1 && level <= 4), {
       message: 'Price levels must be between 1 and 4 inclusive',
     })
-    .optional(),
+    .optional()
+    .default([1, 2, 3, 4]),
   radius: z.number().optional().default(SEARCH_CONFIG.DEFAULT_RADIUS_METERS),
   location: z.object({
     latitude: z.number(),
@@ -28,7 +33,7 @@ const zodSchema = z.object({
     .number()
     .optional()
     .default(SEARCH_CONFIG.DEFAULT_RECORD_COUNT),
-  minimumRating: z.number().min(1).max(5).optional(),
+  minimumRating: z.number().min(0).max(5).optional().default(0),
 });
 
 type RequestParameters = z.infer<typeof zodSchema>;
@@ -42,9 +47,12 @@ type RequestResponse = {
 };
 
 const fields = [
+  'places.currentOpeningHours.openNow',
   'places.displayName',
   'places.id',
   'places.location',
+  'places.priceLevel',
+  'places.rating',
   'places.types',
 ].join(',');
 
@@ -89,14 +97,27 @@ async function searchPlaces(
   );
 
   const transformedResults =
-    results.places?.map((place) => ({
-      id: place.id as string,
-      location:
-        place.location as RequestResponse['results'][number]['location'],
-      emoji: getEmojiForTypes(place.displayName?.text ?? '', place.types ?? []),
-    })) ?? [];
-
-  console.log(transformedResults);
+    results.places
+      ?.filter(
+        (place) =>
+          (!params.openNow ||
+            (params.openNow && place.currentOpeningHours?.openNow)) &&
+          (place.rating ?? 0) >= params.minimumRating &&
+          params.priceLevels.includes(
+            PRICE_LEVEL_MAP[place.priceLevel ?? DEFAULT_PRICE_LEVEL]
+          )
+      )
+      .map((place) => ({
+        id: place.id as string,
+        name: place.displayName,
+        price: place.priceLevel,
+        location:
+          place.location as RequestResponse['results'][number]['location'],
+        emoji: getEmojiForTypes(
+          place.displayName?.text ?? '',
+          place.types ?? []
+        ),
+      })) ?? [];
 
   return {
     results: transformedResults,
