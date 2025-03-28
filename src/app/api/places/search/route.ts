@@ -5,6 +5,9 @@ import { CATEGORY_MAP_LOOKUP } from '@/constants/category-map';
 import { SEARCH_CONFIG } from '@/constants/search';
 import { env } from '@/env';
 import { getEmojiForTypes } from '@/utils/emoji/get-emoji-for-types';
+import { log } from '@/utils/log';
+import { generateCacheKey } from '@/utils/places/cache-utils';
+import { retrieveOrCache } from '@/utils/redis/cache-utils';
 
 const zodSchema = z.object({
   keys: z.array(z.number()).optional(),
@@ -28,16 +31,78 @@ const zodSchema = z.object({
   minimumRating: z.number().min(1).max(5).optional(),
 });
 
+type RequestParameters = z.infer<typeof zodSchema>;
+type RequestResponse = {
+  results: {
+    emoji: string;
+    id: string;
+    location: { latitude: number; longitude: number };
+  }[];
+  count: number;
+};
+
 const fields = [
-  'places.id',
-  'places.types',
-  'places.location',
   'places.displayName',
+  'places.id',
+  'places.location',
+  'places.types',
 ].join(',');
 
 const placesClient = new v1.PlacesClient({
   apiKey: env.GOOGLE_PLACES_API_KEY,
 });
+
+async function searchPlaces(
+  params: RequestParameters
+): Promise<RequestResponse> {
+  const includedTypes = uniq(
+    params.keys?.flatMap((key) => CATEGORY_MAP_LOOKUP[key].primaryType) ??
+      SEARCH_CONFIG.DEFAULT_INCLUDED_TYPES
+  );
+
+  const [results] = await placesClient.searchNearby(
+    {
+      locationRestriction: {
+        circle: {
+          center: params.location,
+          radius: params.radius,
+        },
+      },
+      excludedTypes: SEARCH_CONFIG.DEFAULT_EXCLUDED_TYPES,
+      // The API only supports up to a maximum of 50 types being filtered on, which should suffice
+      // for every situation. If we have more than 50, we'll filter it down to the base _restaurant types.
+      includedTypes:
+        includedTypes.length > 50
+          ? includedTypes.filter(
+              (type) => type.includes('restaurant') || type.includes('coffee')
+            )
+          : includedTypes,
+      maxResultCount: params.maxResultCount,
+    },
+    {
+      otherArgs: {
+        headers: {
+          'X-Goog-FieldMask': fields,
+        },
+      },
+    }
+  );
+
+  const transformedResults =
+    results.places?.map((place) => ({
+      id: place.id as string,
+      location:
+        place.location as RequestResponse['results'][number]['location'],
+      emoji: getEmojiForTypes(place.displayName?.text ?? '', place.types ?? []),
+    })) ?? [];
+
+  console.log(transformedResults);
+
+  return {
+    results: transformedResults,
+    count: transformedResults.length,
+  };
+}
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -47,56 +112,21 @@ export async function POST(request: Request) {
     return Response.json(validatedBody.error, { status: 400 });
   }
 
-  const includedTypes = uniq(
-    validatedBody.data.keys?.flatMap(
-      (key) => CATEGORY_MAP_LOOKUP[key].primaryType
-    ) ?? SEARCH_CONFIG.DEFAULT_INCLUDED_TYPES
-  );
+  const cacheKey = generateCacheKey(validatedBody.data);
 
   try {
-    const [results] = await placesClient.searchNearby(
-      {
-        locationRestriction: {
-          circle: {
-            center: validatedBody.data.location,
-            radius: validatedBody.data.radius,
-          },
-        },
-        excludedTypes: SEARCH_CONFIG.DEFAULT_EXCLUDED_TYPES,
-        // The API only supports up to a maximum of 50 types being filtered on, which should suffice
-        // for every situation. If we have more than 50, we'll filter it down to the base _restaurant types.
-        includedTypes:
-          includedTypes.length > 50
-            ? includedTypes.filter(
-                (type) => type.includes('restaurant') || type.includes('coffee')
-              )
-            : includedTypes,
-        maxResultCount: validatedBody.data.maxResultCount,
-      },
-      {
-        otherArgs: {
-          headers: {
-            'X-Goog-FieldMask': fields,
-          },
-        },
-      }
-    );
-
-    const transformedResults =
-      results.places?.map((place) => ({
-        id: place.id,
-        location: place.location,
-        name: place.displayName,
-        emoji: getEmojiForTypes(place.types ?? []),
-      })) ?? [];
+    const results = await (validatedBody.data.bypassCache
+      ? searchPlaces(validatedBody.data)
+      : retrieveOrCache<RequestResponse>(cacheKey, () =>
+          searchPlaces(validatedBody.data)
+        ));
 
     return Response.json({
-      results: transformedResults,
-      count: transformedResults.length,
       cacheHit: false,
+      ...results,
     });
   } catch (e) {
-    console.dir(e, { depth: null });
+    log.error(JSON.stringify(e));
 
     return Response.json({
       results: [],
