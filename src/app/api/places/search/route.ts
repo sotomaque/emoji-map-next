@@ -109,8 +109,6 @@ async function searchPlaces(
       )
       .map((place) => ({
         id: place.id as string,
-        name: place.displayName,
-        price: place.priceLevel,
         location:
           place.location as RequestResponse['results'][number]['location'],
         emoji: getEmojiForTypes(
