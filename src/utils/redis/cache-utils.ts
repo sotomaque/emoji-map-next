@@ -1,3 +1,12 @@
+import { Redis } from '@upstash/redis';
+import { SEARCH_CONFIG } from '@/constants/search';
+import { env } from '@/env';
+
+const redis = new Redis({
+  url: env.KV_REST_API_URL,
+  token: env.KV_REST_API_TOKEN,
+});
+
 /**
  * Rounds a coordinate to a specified number of decimal places
  *
@@ -38,4 +47,20 @@ export function normalizeLocation(
   const roundedLng = roundCoordinate(lng, decimals);
 
   return `${roundedLat},${roundedLng}`;
+}
+
+export async function retrieveOrCache<T>(
+  key: string,
+  retrieveFn: () => Promise<T>,
+  ttl: number = SEARCH_CONFIG.CACHE_EXPIRATION_TIME
+): Promise<T & { cacheHit: boolean }> {
+  const result = await redis.get<T>(key);
+
+  if (result) return { ...result, cacheHit: true };
+
+  const dataToCache = await retrieveFn();
+
+  await redis.set(key, dataToCache, { ex: ttl });
+
+  return { ...dataToCache, cacheHit: false };
 }
