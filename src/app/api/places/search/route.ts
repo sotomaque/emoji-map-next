@@ -111,10 +111,13 @@ async function searchPlaces(
         id: place.id as string,
         location:
           place.location as RequestResponse['results'][number]['location'],
-        emoji: getEmojiForTypes(
-          place.displayName?.text ?? '',
-          place.types ?? []
-        ),
+        emoji:
+          params.keys?.length === 1
+            ? CATEGORY_MAP_LOOKUP[params.keys[0]].emoji
+            : getEmojiForTypes(
+                place.displayName?.text ?? '',
+                place.types ?? []
+              ),
       })) ?? [];
 
   return {

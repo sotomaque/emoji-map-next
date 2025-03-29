@@ -71,9 +71,11 @@ vi.mock('@/constants/category-map', () => ({
   CATEGORY_MAP_LOOKUP: {
     1: {
       primaryType: ['restaurant', 'food'],
+      emoji: '🍽️',
     },
     2: {
       primaryType: ['cafe', 'food'],
+      emoji: '☕',
     },
   },
 }));
@@ -408,5 +410,61 @@ describe('Places Search API', () => {
       }),
       expect.any(Object)
     );
+  });
+
+  describe('emoji assignment', () => {
+    test('uses category emoji directly when single key is provided', async () => {
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+          keys: [1], // Restaurant category
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(data.results).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            emoji: '🍽️', // Should use the emoji directly from CATEGORY_MAP_LOOKUP
+          }),
+        ])
+      );
+    });
+
+    test('uses getEmojiForTypes when multiple keys are provided', async () => {
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+          keys: [1, 2], // Restaurant and Cafe categories
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Should use getEmojiForTypes which will look at the place types
+      expect(data.results[0].emoji).toBe('🍽️');
+      expect(data.results[1].emoji).toBe('☕');
+    });
+
+    test('uses getEmojiForTypes when no keys are provided', async () => {
+      const request = new Request('http://localhost/api/places/search', {
+        method: 'POST',
+        body: JSON.stringify({
+          location: sampleLocation,
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Should use getEmojiForTypes which will look at the place types
+      expect(data.results[0].emoji).toBe('🍽️');
+      expect(data.results[1].emoji).toBe('☕');
+    });
   });
 });
